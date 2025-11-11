@@ -1,12 +1,11 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-// Ajuste o caminho se o seu 'cliente.interfaces.ts' estiver em outro lugar
-import { ClienteResponse } from '../../../core/models/cliente.interfaces';
+import { MatButtonModule } from '@angular/material/button';
+import { ClienteRequest } from '../../../core/models/cliente.interfaces'; // Ajuste o caminho se necessário
 
 @Component({
   selector: 'app-cliente-form-dialog',
@@ -19,36 +18,54 @@ import { ClienteResponse } from '../../../core/models/cliente.interfaces';
     MatInputModule,
     MatButtonModule
   ],
-  // --- CORREÇÃO AQUI ---
-  templateUrl: './cliente-form-dialog.html',
-  // styleUrl: './cliente-form-dialog.scss' // Verifique se você tem um arquivo .scss
+  templateUrl: './cliente-form-dialog.component.html',
+  styleUrls: ['./cliente-form-dialog.component.scss'] // Adicionado para consistência
 })
-export class ClienteFormDialog {
-  form: FormGroup;
-  isEditMode: boolean;
+export class ClienteFormDialogComponent implements OnInit {
+
+  public form: FormGroup;
+  public isEditMode: boolean = false;
 
   constructor(
     private fb: FormBuilder,
-    public dialogRef: MatDialogRef<ClienteFormDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: ClienteResponse | null
+    public dialogRef: MatDialogRef<ClienteFormDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: ClienteRequest | null // data será o Cliente para editar, ou null para criar
   ) {
-    this.isEditMode = !!data; // Se 'data' existir, estamos editando
-
+    // Inicializa o formulário
     this.form = this.fb.group({
-      nome: [data?.nome || '', Validators.required],
-      email: [data?.email || '', Validators.email],
-      telefone: [data?.telefone || ''],
-      cpfCnpj: [data?.cpfCnpj || ''],
-      endereco: [data?.endereco || '']
+      nome: ['', Validators.required],
+      email: ['', Validators.email],
+      telefone: [''],
+      cpfCnpj: [''],
+      endereco: ['']
     });
   }
 
-  onSave(): void {
-    if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
+  ngOnInit(): void {
+    // Se recebemos dados (modo de edição), preenche o formulário
+    if (this.data) {
+      this.isEditMode = true;
+      this.form.patchValue(this.data);
     }
   }
 
+  /**
+   * Chamado ao clicar em Salvar.
+   * Se o formulário for válido, fecha o diálogo e retorna os dados do formulário.
+   */
+  onSave(): void {
+    if (this.form.valid) {
+      this.dialogRef.close(this.form.value);
+    } else {
+      // Marca todos os campos como tocados para exibir erros, se houver
+      this.form.markAllAsTouched();
+    }
+  }
+
+  /**
+   * Chamado ao clicar em Cancelar.
+   * Fecha o diálogo sem retornar dados.
+   */
   onCancel(): void {
     this.dialogRef.close();
   }
