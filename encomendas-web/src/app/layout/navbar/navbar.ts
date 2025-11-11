@@ -16,9 +16,8 @@ import { TeamService, Equipe } from '../../core/team/team.service';
 
 @Component({
   selector: 'app-navbar',
-  standalone: true, // <--- CORREÇÃO: ADICIONA ISTO
+  standalone: true,
   imports: [
-    // ADICIONA OS MÓDULOS QUE O HTML USA
     CommonModule,
     MatToolbarModule,
     MatButtonModule,
@@ -35,7 +34,7 @@ export class Navbar implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private teamService: TeamService,
+    public teamService: TeamService, // <-- CORREIDO: Mudado para public
     private themeService: ThemeService,
     private router: Router
   ) {}
@@ -45,8 +44,9 @@ export class Navbar implements OnInit {
     this.isDark$ = this.themeService.isDark$;
   }
 
-  selecionarEquipa(equipa: Equipe): void {
-    this.teamService.selecionarEquipa(equipa);
+  // CORRIGIDO: Nome do método
+  selecionarEquipe(equipe: Equipe): void {
+    this.teamService.selecionarEquipe(equipe); // CORRIGIDO: Nome do método
     window.location.reload(); // Recarrega para atualizar o contexto
   }
 

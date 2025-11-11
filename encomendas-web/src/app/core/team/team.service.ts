@@ -49,19 +49,19 @@ export class TeamService {
 
   /**
    * Define uma equipe como ativa na aplicação.
-   * @param equipa O objeto Equipe que foi selecionado.
+   * @param equipe O objeto Equipe que foi selecionado.
    */
-  selecionarEquipa(equipa: Equipe): void {
-    if (equipa && equipa.id) {
-      localStorage.setItem(this.TEAM_KEY, equipa.id);
-      this.equipeAtivaSubject.next(equipa);
+  selecionarEquipe(equipe: Equipe): void {
+    if (equipe && equipe.id) {
+      localStorage.setItem(this.TEAM_KEY, equipe.id);
+      this.equipeAtivaSubject.next(equipe);
     }
   }
 
   /**
    * Limpa a seleção de equipe (ex: ao fazer logout).
    */
-  limparEquipaAtiva(): void {
+  limparEquipeAtiva(): void {
     localStorage.removeItem(this.TEAM_KEY);
     this.equipeAtivaSubject.next(null);
   }
@@ -70,7 +70,7 @@ export class TeamService {
    * Retorna o ID da equipe ativa salvo no localStorage.
    * Útil para saber qual equipe estava selecionada ao recarregar a página.
    */
-  getEquipaAtivaId(): string | null {
+  getEquipeAtivaId(): string | null {
     return localStorage.getItem(this.TEAM_KEY);
   }
 
@@ -78,7 +78,7 @@ export class TeamService {
    * Retorna o valor atual (snapshot) da equipe ativa.
    * Prefira usar o observable equipeAtiva$ quando possível.
    */
-  getEquipaAtivaValor(): Equipe | null {
+  getEquipeAtivaValor(): Equipe | null {
     return this.equipeAtivaSubject.getValue();
   }
 }

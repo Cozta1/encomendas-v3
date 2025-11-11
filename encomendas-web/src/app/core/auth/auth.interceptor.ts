@@ -8,7 +8,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const teamService = inject(TeamService); // <--- INJETA O SERVIÇO
 
   const token = authService.getToken();
-  const teamId = teamService.getEquipaAtivaId(); // <--- AGORA FUNCIONA
+  const teamId = teamService.getEquipeAtivaId(); // <--- AGORA FUNCIONA
 
   let headers = req.headers;
 
