@@ -1,18 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable, BehaviorSubject, switchMap, of } from 'rxjs'; // Importar BehaviorSubject e operadores
+import { Observable } from 'rxjs';
 import { ClienteService } from '../../core/services/cliente.service';
-import { ClienteResponse, ClienteRequest } from '../../core/models/cliente.interfaces';
+import { ClienteResponse } from '../../core/models/cliente.interfaces';
 
 // Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // Importar MatDialog
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// Importar o Componente do Diálogo
-import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/cliente-form-dialog.component';
+// --- CORREÇÃO AQUI ---
+// Removemos o '.component' do final do caminho e da classe
+import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/cliente-form-dialog';
 
 @Component({
   selector: 'app-clientes',
@@ -23,98 +24,55 @@ import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/
     MatButtonModule,
     MatIconModule,
     MatCardModule,
-    MatDialogModule // Adicionar MatDialogModule
+    MatDialogModule
   ],
   templateUrl: './clientes.html',
-  styleUrl: './clientes.scss'
+  // styleUrl: './clientes.scss' // Verifique se você tem este arquivo
 })
 export class Clientes implements OnInit {
 
-  // Usar um BehaviorSubject para permitir a atualização da lista
-  private clientesSubject = new BehaviorSubject<ClienteResponse[]>([]);
-  public clientes$ = this.clientesSubject.asObservable();
-
+  public clientes$!: Observable<ClienteResponse[]>;
   public displayedColumns: string[] = ['nome', 'email', 'telefone', 'cpfCnpj', 'acoes'];
 
   constructor(
     private clienteService: ClienteService,
-    private dialog: MatDialog // Injetar o serviço de Diálogo
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    // Carrega os clientes na inicialização
     this.carregarClientes();
   }
 
-  /**
-   * Busca os clientes do serviço e atualiza o Subject.
-   */
   carregarClientes(): void {
-    this.clienteService.getClientes().subscribe(clientes => {
-      this.clientesSubject.next(clientes);
-    });
+    this.clientes$ = this.clienteService.getClientes();
   }
 
-  /**
-   * Abre o modal de criação de cliente.
-   */
   adicionarCliente(): void {
     const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '450px',
-      data: null // Passa null para o modo "Criar"
+      width: '500px',
+      data: null
     });
 
-    // Depois que o modal fechar
-    dialogRef.afterClosed().pipe(
-      // Filtra: só continua se o resultado não for nulo (ou seja, se o usuário salvou)
-      switchMap((result: ClienteRequest | undefined) => {
-        if (result) {
-          // Chama o serviço para criar o cliente no backend
-          return this.clienteService.criarCliente(result);
-        }
-        return of(null); // Se o usuário cancelou, retorna um observable nulo
-      })
-    ).subscribe(novoCliente => {
-      if (novoCliente) {
-        console.log('Cliente criado com sucesso!');
-        // Atualiza a tabela!
-        this.carregarClientes();
+    dialogRef.afterClosed().subscribe(resultado => {
+      if (resultado) {
+        this.clienteService.criarCliente(resultado).subscribe({
+          next: () => { // Corrigido de ()_ para ()
+            console.log('Cliente criado com sucesso!');
+            this.carregarClientes();
+          },
+          error: (err: any) => { // Especifica o tipo 'any' para o erro
+            console.error('Erro ao criar cliente', err);
+          }
+        });
       }
     });
   }
 
-  /**
-   * Abre o modal de edição de cliente.
-   */
   editarCliente(cliente: ClienteResponse): void {
-    event?.stopPropagation();
-
-    // Abre o mesmo diálogo, mas passa os dados do cliente
-    const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '450px',
-      data: cliente // Passa o cliente para o modo "Editar"
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        console.log('TODO: Implementar lógica de ATUALIZAÇÃO do cliente', result);
-        // this.clienteService.atualizarCliente(cliente.id, result).subscribe(...)
-        // this.carregarClientes();
-      }
-    });
+    console.log('TODO: Editar cliente', cliente.id);
   }
 
-  /**
-   * (TODO) Abre um diálogo de confirmação para remover o cliente.
-   */
   removerCliente(cliente: ClienteResponse): void {
-    event?.stopPropagation();
-    console.log('TODO: Abrir confirmação de remoção para:', cliente.nome);
-    // const confirmRef = this.dialog.open(ConfirmDialogComponent, { data: { ... } });
-    // confirmRef.afterClosed().subscribe(confirmado => {
-    //   if (confirmado) {
-    //     this.clienteService.removerCliente(cliente.id).subscribe(() => this.carregarClientes());
-    //   }
-    // });
+    console.log('TODO: Remover cliente', cliente.id);
   }
 }
