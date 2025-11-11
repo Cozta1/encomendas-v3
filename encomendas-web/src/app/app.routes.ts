@@ -1,28 +1,33 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login';
-// CORREÇÕES AQUI:
+import { Login} from './login/login';
 import { Main } from './layout/main/main';
 import { Dashboard } from './dashboard/dashboard';
 import { authGuard } from './core/auth/auth.guard';
 
-export const routes: Routes = [
-  // Rota pública (fora do layout principal)
-  { path: 'login', component: LoginComponent },
+// Importe os novos componentes
+import { Clientes } from './pages/clientes/clientes';
+import { Produtos } from './pages/produtos/produtos';
+import { Encomendas } from './pages/encomendas/encomendas';
+import { Fornecedores } from './pages/fornecedores/fornecedores';
 
-  // Rota "pai" que usa o Main como layout
+export const routes: Routes = [
+  { path: 'login', component: Login },
   {
-    path: '', // O caminho raiz da aplicação protegida
-    component: Main, // <-- CORREÇÃO AQUI
+    path: '',
+    component: Main,
     canActivate: [authGuard],
     children: [
-      // Rotas "filhas" que aparecem dentro do <router-outlet> do Main
-      { path: 'dashboard', component: Dashboard }, // <-- CORREÇÃO AQUI
+      { path: 'dashboard', component: Dashboard },
 
-      // Redireciona a raiz autenticada (ex: http://localhost:4200/) para o dashboard
+      // --- ADICIONE ESTAS ROTAS ---
+      { path: 'clientes', component: Clientes },
+      { path: 'produtos', component: Produtos },
+      { path: 'encomendas', component: Encomendas },
+      { path: 'fornecedores', component: Fornecedores },
+      // -----------------------------
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-
-  // Rota coringa
   { path: '**', redirectTo: '' }
 ];

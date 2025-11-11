@@ -9,7 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
-// CORREÇÃO DOS CAMINHOS DOS SERVIÇOS
+// Caminhos corretos dos serviços
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { TeamService, Equipe } from '../../core/team/team.service';
@@ -34,7 +34,8 @@ export class Navbar implements OnInit {
 
   constructor(
     private authService: AuthService,
-    public teamService: TeamService, // <-- CORREIDO: Mudado para public
+    // Deixamos público para o HTML acessar o equipeAtiva$
+    public teamService: TeamService,
     private themeService: ThemeService,
     private router: Router
   ) {}
@@ -44,10 +45,11 @@ export class Navbar implements OnInit {
     this.isDark$ = this.themeService.isDark$;
   }
 
-  // CORRIGIDO: Nome do método
+  // *** ESTA É A CORREÇÃO ***
   selecionarEquipe(equipe: Equipe): void {
-    this.teamService.selecionarEquipe(equipe); // CORRIGIDO: Nome do método
-    window.location.reload(); // Recarrega para atualizar o contexto
+    this.teamService.selecionarEquipe(equipe);
+    // REMOVEMOS O window.location.reload()
+    // O BehaviorSubject no serviço vai atualizar o nome no botão instantaneamente.
   }
 
   toggleTheme(): void {

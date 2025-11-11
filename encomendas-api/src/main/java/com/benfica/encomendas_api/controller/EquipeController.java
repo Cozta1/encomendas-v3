@@ -1,6 +1,7 @@
 package com.benfica.encomendas_api.controller;
 
 import com.benfica.encomendas_api.dto.EquipeDTO;
+import com.benfica.encomendas_api.dto.EquipeResponseDTO; // <-- IMPORTAR O NOVO DTO
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.service.EquipeService;
 import com.benfica.encomendas_api.model.Usuario;
@@ -20,10 +21,14 @@ public class EquipeController {
     @Autowired
     private EquipeService equipeService;
 
+    // MODIFICADO: Agora retorna o DTO
     @GetMapping
-    public ResponseEntity<List<Equipe>> listarTodas() {
-        List<Equipe> equipes = equipeService.listarTodas();
-        return ResponseEntity.ok(equipes);
+    public ResponseEntity<List<EquipeResponseDTO>> listarEquipesDoUsuario(@AuthenticationPrincipal Usuario usuarioLogado) {
+
+        // (Pode remover os System.out.println de debug agora)
+
+        List<EquipeResponseDTO> equipesDTO = equipeService.listarEquipesDoUsuario(usuarioLogado);
+        return ResponseEntity.ok(equipesDTO);
     }
 
     @PostMapping

@@ -1,8 +1,9 @@
-package com.benfica.encomendas_api.security;
+package com.benfica.encomendas_api.config;
 
 import com.benfica.encomendas_api.security.CustomUserDetailsService;
 import com.benfica.encomendas_api.security.JwtAuthenticationEntryPoint;
 import com.benfica.encomendas_api.security.JwtAuthenticationFilter;
+import com.benfica.encomendas_api.security.TeamContextFilter; // <-- IMPORT ADICIONADO
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +34,9 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
+    @Autowired
+    private TeamContextFilter teamContextFilter; // <-- INJEÇÃO ADICIONADA
+
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
@@ -51,34 +55,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Desabilita CSRF pois usamos JWT (stateless)
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Define o entry point para lidar com erros de autenticação (401)
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-                // Define a sessão como stateless (não guarda estado no servidor)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Configura as permissões de rotas
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Rotas públicas de autenticação (login, registro)
-                        .requestMatchers("/error").permitAll()       // Permite acesso a erros padrão do Spring
-                        // .requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll() // Exemplo: liberar GET público
-                        .anyRequest().authenticated()                // Todas as outras rotas exigem autenticação
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .anyRequest().authenticated()
                 );
 
-        // Adiciona nosso filtro JWT antes do filtro padrão de username/password
+        // 1. Adiciona o filtro de autenticação JWT
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        // 2. Adiciona o filtro de contexto de Equipe DEPOIS do filtro JWT
+        // (Garante que a autenticação já ocorreu antes de tentarmos ler o header da equipe)
+        http.addFilterAfter(teamContextFilter, JwtAuthenticationFilter.class); // <-- LINHA ADICIONADA
 
         return http.build();
     }
 
-    // Configuração CORS para desenvolvimento (libera tudo)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // Em produção, substitua "*" pelos domínios permitidos
+        configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
+        // Permite que o frontend leia o header X-Team-ID (se você precisar)
+        // configuration.setExposedHeaders(List.of("X-Team-ID"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
