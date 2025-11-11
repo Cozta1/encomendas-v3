@@ -1,0 +1,18 @@
+.spacer {
+  /* Este é o "truque" padrão do Material para empurrar itens para a direita */
+  flex: 1 1 auto;
+}
+
+.navbar-brand {
+  font-weight: 500;
+}
+
+.team-selector {
+  /* Adiciona um espaço entre o nome da equipe e o seletor */
+  margin-left: 24px;
+}
+
+/* Garante que os ícones fiquem alinhados com o texto nos botões */
+mat-icon {
+  vertical-align: middle;
+}

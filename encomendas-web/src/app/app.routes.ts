@@ -1,28 +1,28 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './login/login'; // Ficheiro simplificado
-import { MainComponent } from './layout/main/main'; // Ficheiro simplificado
-import { Dashboard } from './dashboard/dashboard'; // Ficheiro simplificado
+import { LoginComponent } from './login/login';
+// CORREÇÕES AQUI:
+import { Main } from './layout/main/main';
+import { Dashboard } from './dashboard/dashboard';
 import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   // Rota pública (fora do layout principal)
   { path: 'login', component: LoginComponent },
 
-  // Rota "pai" que usa o MainComponent como layout
-  // Todas as rotas aqui dentro exigem login (devido ao authGuard)
+  // Rota "pai" que usa o Main como layout
   {
     path: '', // O caminho raiz da aplicação protegida
-    component: MainComponent,
+    component: Main, // <-- CORREÇÃO AQUI
     canActivate: [authGuard],
     children: [
-      // Rotas "filhas" que aparecem dentro do <router-outlet> do MainComponent
-      { path: 'dashboard', component: Dashboard },
+      // Rotas "filhas" que aparecem dentro do <router-outlet> do Main
+      { path: 'dashboard', component: Dashboard }, // <-- CORREÇÃO AQUI
 
       // Redireciona a raiz autenticada (ex: http://localhost:4200/) para o dashboard
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
 
-  // Rota coringa (se não encontrar, redireciona para a raiz, que será tratada pelo guard)
+  // Rota coringa
   { path: '**', redirectTo: '' }
 ];

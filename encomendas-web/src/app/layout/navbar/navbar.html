@@ -1,1 +1,34 @@
-<p>navbar works!</p>
+<mat-toolbar color="primary">
+  <span>Sistema de Encomendas</span>
+
+  <!-- Spacer para empurrar os controlos para a direita -->
+  <span class="spacer"></span>
+
+  <!-- Menu de Equipas -->
+  <button mat-button [matMenuTriggerFor]="menuEquipas">
+    <mat-icon>groups</mat-icon>
+    <!-- Mostra o nome da equipa ativa, ou "Selecionar Equipa" se nenhuma estiver ativa -->
+    <span *ngIf="teamService.equipaAtiva$ | async as equipaAtiva; else semEquipa">
+      {{ equipaAtiva.nome }}
+    </span>
+    <ng-template #semEquipa>
+      Selecionar Equipa
+    </ng-template>
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+  <mat-menu #menuEquipas="matMenu">
+    <button *ngFor="let equipa of equipes$ | async" mat-menu-item (click)="selecionarEquipa(equipa)">
+      <span>{{ equipa.nome }}</span>
+    </button>
+  </mat-menu>
+
+  <!-- Botão de Tema -->
+  <button mat-icon-button (click)="toggleTheme()" aria-label="Alternar tema claro/escuro">
+    <mat-icon>{{ (isDark$ | async) ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
+
+  <!-- Botão de Sair -->
+  <button mat-icon-button (click)="logout()" aria-label="Sair">
+    <mat-icon>logout</mat-icon>
+  </button>
+</mat-toolbar>
