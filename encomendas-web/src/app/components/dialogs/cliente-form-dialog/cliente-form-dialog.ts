@@ -18,17 +18,17 @@ import { ClienteRequest } from '../../../core/models/cliente.interfaces'; // Aju
     MatInputModule,
     MatButtonModule
   ],
-  templateUrl: './cliente-form-dialog.component.html',
-  styleUrls: ['./cliente-form-dialog.component.scss'] // Adicionado para consistência
+  templateUrl: './cliente-form-dialog.html',
+  styleUrls: ['./cliente-form-dialog.scss'] // Adicionado para consistência
 })
-export class ClienteFormDialogComponent implements OnInit {
+export class ClienteFormDialog implements OnInit {
 
   public form: FormGroup;
   public isEditMode: boolean = false;
 
   constructor(
     private fb: FormBuilder,
-    public dialogRef: MatDialogRef<ClienteFormDialogComponent>,
+    public dialogRef: MatDialogRef<ClienteFormDialog>,
     @Inject(MAT_DIALOG_DATA) public data: ClienteRequest | null // data será o Cliente para editar, ou null para criar
   ) {
     // Inicializa o formulário

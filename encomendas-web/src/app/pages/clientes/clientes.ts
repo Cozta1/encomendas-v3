@@ -12,7 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // Importar MatDialog
 
 // Importar o Componente do Diálogo
-import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/cliente-form-dialog.component';
+import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/cliente-form-dialog';
 
 @Component({
   selector: 'app-clientes',
