@@ -7,17 +7,25 @@ import { ClienteResponse, ClienteRequest } from '../models/cliente.interfaces';
   providedIn: 'root'
 })
 export class ClienteService {
-  private readonly API_URL = 'http://localhost:8080/api/clientes';
+  private readonly API_URL = 'http://localhost:8080/api/clientes'; // Porta 8080
 
   constructor(private http: HttpClient) {}
 
-  // Busca clientes. O interceptor já adiciona Auth e X-Team-ID
   getClientes(): Observable<ClienteResponse[]> {
     return this.http.get<ClienteResponse[]>(this.API_URL);
   }
 
-  // (Futuro) Criar cliente
   criarCliente(cliente: ClienteRequest): Observable<ClienteResponse> {
     return this.http.post<ClienteResponse>(this.API_URL, cliente);
+  }
+
+  // --- NOVO MÉTODO (UPDATE) ---
+  atualizarCliente(id: string, cliente: ClienteRequest): Observable<ClienteResponse> {
+    return this.http.put<ClienteResponse>(`${this.API_URL}/${id}`, cliente);
+  }
+
+  // --- NOVO MÉTODO (DELETE) ---
+  removerCliente(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/${id}`);
   }
 }

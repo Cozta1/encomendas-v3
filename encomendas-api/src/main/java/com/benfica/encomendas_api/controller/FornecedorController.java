@@ -2,8 +2,8 @@ package com.benfica.encomendas_api.controller;
 
 import com.benfica.encomendas_api.dto.FornecedorRequestDTO;
 import com.benfica.encomendas_api.dto.FornecedorResponseDTO;
+import com.benfica.encomendas_api.security.TeamContextHolder;
 import com.benfica.encomendas_api.service.FornecedorService;
-import com.benfica.encomendas_api.security.TeamContextHolder; // Ajuste o import se o seu pacote for com _
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,27 +20,36 @@ public class FornecedorController {
     @Autowired
     private FornecedorService fornecedorService;
 
-    /**
-     * Endpoint para listar todos os fornecedores da equipe ativa (vinda do context).
-     */
     @GetMapping
-    public ResponseEntity<List<FornecedorResponseDTO>> listarFornecedores() {
-        // Pega o ID da equipe do ThreadLocal (preenchido pelo TeamContextFilter)
-        UUID equipeId = TeamContextHolder.getTeamId();
-
+    public ResponseEntity<List<FornecedorResponseDTO>> listarFornecedoresPorEquipe() {
+        UUID equipeId = TeamContextHolder.getTeamId(); // Pega a equipe ativa
         List<FornecedorResponseDTO> dtos = fornecedorService.listarFornecedoresPorEquipe(equipeId);
         return ResponseEntity.ok(dtos);
     }
 
-    /**
-     * Endpoint para criar um novo fornecedor para a equipe ativa (vinda do context).
-     */
     @PostMapping
     public ResponseEntity<FornecedorResponseDTO> criarFornecedor(@Valid @RequestBody FornecedorRequestDTO dto) {
-        // Pega o ID da equipe do ThreadLocal
         UUID equipeId = TeamContextHolder.getTeamId();
+        FornecedorResponseDTO novoDTO = fornecedorService.criarFornecedor(dto, equipeId);
+        return new ResponseEntity<>(novoDTO, HttpStatus.CREATED);
+    }
 
-        FornecedorResponseDTO novoFornecedor = fornecedorService.criarFornecedor(dto, equipeId);
-        return new ResponseEntity<>(novoFornecedor, HttpStatus.CREATED);
+    // --- NOVO ENDPOINT (UPDATE) ---
+    @PutMapping("/{id}")
+    public ResponseEntity<FornecedorResponseDTO> atualizarFornecedor(
+            @PathVariable UUID id,
+            @Valid @RequestBody FornecedorRequestDTO dto) {
+
+        UUID equipeId = TeamContextHolder.getTeamId();
+        FornecedorResponseDTO dtoAtualizado = fornecedorService.atualizarFornecedor(id, dto, equipeId);
+        return ResponseEntity.ok(dtoAtualizado);
+    }
+
+    // --- NOVO ENDPOINT (DELETE) ---
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> removerFornecedor(@PathVariable UUID id) {
+        UUID equipeId = TeamContextHolder.getTeamId();
+        fornecedorService.removerFornecedor(id, equipeId);
+        return ResponseEntity.noContent().build(); // Retorna 204 No Content
     }
 }

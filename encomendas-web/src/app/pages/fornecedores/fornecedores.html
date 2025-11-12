@@ -12,7 +12,7 @@
       Esta é a tag <table> que faltava, ligando o dataSource ao
       observable 'fornecedores$'
     -->
-    <table mat-table [dataSource]="fornecedores$ | async" class="mat-elevation-z0" style="width: 100%;">
+    <table mat-table [dataSource]="(fornecedores$ | async) || []" class="mat-elevation-z0" style="width: 100%;">
 
       <!-- Coluna Nome -->
       <ng-container matColumnDef="nome">
