@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core'; // 1. Adicionar OnDestroy
 import { CommonModule } from '@angular/common';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs'; // 2. Adicionar Subscription e skip
 import { ClienteService } from '../../core/services/cliente.service';
 import { ClienteResponse } from '../../core/models/cliente.interfaces';
+import { TeamService } from '../../core/team/team.service'; // 3. Importar TeamService
 
 // Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
@@ -23,28 +24,45 @@ import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/
     MatIconModule,
     MatCardModule,
     MatDialogModule,
-    MatSnackBarModule // Adicionado
+    MatSnackBarModule
   ],
   templateUrl: './clientes.html',
   styleUrl: './clientes.scss'
 })
-export class Clientes implements OnInit {
+export class Clientes implements OnInit, OnDestroy { // 4. Implementar OnDestroy
 
-  public clientes$!: Observable<ClienteResponse[]>;
+  // REFAKTOR: Usar BehaviorSubject
+  private clientesSubject = new BehaviorSubject<ClienteResponse[]>([]);
+  public clientes$ = this.clientesSubject.asObservable();
+
   public displayedColumns: string[] = ['nome', 'email', 'telefone', 'cpfCnpj', 'acoes'];
+
+  private teamSubscription: Subscription | undefined; // 5. Para guardar a subscrição
 
   constructor(
     private clienteService: ClienteService,
+    private teamService: TeamService, // 6. Injetar o TeamService
     private dialog: MatDialog,
-    private snackBar: MatSnackBar // Adicionado
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
-    this.carregarClientes();
+    this.carregarClientes(); // Carrega os dados na primeira vez
+
+    // 7. Ouve mudanças na equipe (ignora a primeira, pois 'carregarClientes' já foi chamado)
+    this.teamSubscription = this.teamService.equipeAtiva$.pipe(skip(1)).subscribe(() => {
+      this.carregarClientes();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.teamSubscription?.unsubscribe(); // 8. Limpa a subscrição
   }
 
   carregarClientes(): void {
-    this.clientes$ = this.clienteService.getClientes();
+    this.clienteService.getClientes().subscribe(data => {
+      this.clientesSubject.next(data);
+    });
   }
 
   adicionarCliente(): void {
@@ -69,21 +87,18 @@ export class Clientes implements OnInit {
     });
   }
 
-  // --- MÉTODO ATUALIZADO (EDITAR) ---
   editarCliente(cliente: ClienteResponse): void {
-    // Abre o MESMO modal, mas agora passa os dados do cliente
     const dialogRef = this.dialog.open(ClienteFormDialog, {
       width: '500px',
-      data: cliente // Passa os dados para preencher o formulário
+      data: cliente
     });
 
     dialogRef.afterClosed().subscribe(resultado => {
-      // Se o usuário salvou (e não cancelou)
       if (resultado) {
         this.clienteService.atualizarCliente(cliente.id, resultado).subscribe({
           next: () => {
             this.snackBar.open('Cliente atualizado com sucesso!', 'OK', { duration: 3000 });
-            this.carregarClientes(); // Atualiza a tabela
+            this.carregarClientes();
           },
           error: (err) => {
             console.error('Erro ao atualizar cliente', err);
@@ -94,14 +109,12 @@ export class Clientes implements OnInit {
     });
   }
 
-  // --- MÉTODO ATUALIZADO (REMOVER) ---
   removerCliente(cliente: ClienteResponse): void {
-    // Pergunta de confirmação simples
     if (confirm(`Tem certeza que deseja remover o cliente "${cliente.nome}"?`)) {
       this.clienteService.removerCliente(cliente.id).subscribe({
         next: () => {
           this.snackBar.open('Cliente removido com sucesso!', 'OK', { duration: 3000 });
-          this.carregarClientes(); // Atualiza a tabela
+          this.carregarClientes();
         },
         error: (err) => {
           console.error('Erro ao remover cliente', err);

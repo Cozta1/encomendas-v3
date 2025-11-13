@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.math.BigDecimal; // Importar
 import java.util.UUID;
 
 @Data
@@ -17,5 +17,5 @@ public class ProdutoResponseDTO {
     private String nome;
     private String codigo;
     private String descricao;
-    private BigDecimal preco;
+    private BigDecimal precoBase; // --- RENOMEADO ---
 }

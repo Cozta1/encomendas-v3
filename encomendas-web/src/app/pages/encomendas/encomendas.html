@@ -8,7 +8,7 @@
   </mat-card-header>
 
   <mat-card-content>
-    <table mat-table [dataSource]="(encomendas$ | async) || []" class="mat-elevation-z0" style="width: 100%;">
+    <table mat-table [dataSource]="(encomendas$ | async) || []" [trackBy]="trackPorId" class="mat-elevation-z0" style="width: 100%;">
 
       <ng-container matColumnDef="data">
         <th mat-header-cell *matHeaderCellDef> Data </th>
@@ -22,12 +22,32 @@
 
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef> Status </th>
-        <td mat-cell *matCellDef="let e">
+        <td mat-cell *matCellDef="let e" class="status-cell">
+
+          <button mat-icon-button
+                  color="accent"
+                  matTooltip="Retornar Etapa"
+                  (click)="retornarEtapa(e)"
+                  [disabled]="e.status === 'PENDENTE' || e.status === 'CANCELADO'">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
           <mat-chip-listbox>
-            <mat-chip [color]="e.status === 'PENDENTE' ? 'warn' : (e.status === 'CONCLUIDO' ? 'primary' : 'accent')" selected>
+            <mat-chip [color]="e.status === 'PENDENTE' ? 'warn' : (e.status === 'CONCLUIDO' ? 'primary' : (e.status === 'CANCELADO' ? 'default' : 'accent'))"
+                      [ngClass]="{'chip-cancelado': e.status === 'CANCELADO'}"
+                      selected>
               {{e.status}}
             </mat-chip>
           </mat-chip-listbox>
+
+          <button mat-icon-button
+                  color="primary"
+                  matTooltip="Avançar Etapa"
+                  (click)="avancarEtapa(e)"
+                  [disabled]="e.status === 'CONCLUIDO' || e.status === 'CANCELADO'">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
         </td>
       </ng-container>
 
@@ -46,25 +66,17 @@
         <td mat-cell *matCellDef="let e" style="text-align: right;">
 
           <button mat-icon-button
-                  color="accent"
-                  matTooltip="Retornar Etapa"
-                  (click)="retornarEtapa(e)"
-                  [disabled]="e.status === 'PENDENTE'">
-            <mat-icon>chevron_left</mat-icon>
-          </button>
-
-          <button mat-icon-button
-                  color="primary"
-                  matTooltip="Avançar Etapa"
-                  (click)="avancarEtapa(e)"
-                  [disabled]="e.status === 'CONCLUIDO' || e.status === 'CANCELADO'">
-            <mat-icon>chevron_right</mat-icon>
-          </button>
-
-          <button mat-icon-button
                   matTooltip="Ver Detalhes"
                   (click)="verDetalhes(e)">
             <mat-icon>visibility</mat-icon>
+          </button>
+
+          <button mat-icon-button
+                  color="warn"
+                  matTooltip="Cancelar Encomenda"
+                  (click)="cancelarEncomenda(e)"
+                  [disabled]="e.status === 'CONCLUIDO' || e.status === 'CANCELADO'">
+            <mat-icon>block</mat-icon>
           </button>
 
           <button mat-icon-button

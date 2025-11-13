@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
+import { TeamService } from '../../core/team/team.service';
 
 // Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
@@ -14,9 +15,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-// Importar o Componente do Diálogo de Formulário
+// Importar Diálogos
 import { EncomendaFormDialog } from '../../components/dialogs/encomenda-form-dialog/encomenda-form-dialog';
-// --- IMPORTAR O NOVO DIÁLOGO DE DETALHES ---
 import { EncomendaDetalheDialog } from '../../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
 
 
@@ -37,21 +37,32 @@ import { EncomendaDetalheDialog } from '../../components/dialogs/encomenda-detal
   templateUrl: './encomendas.html',
   styleUrl: './encomendas.scss'
 })
-export class Encomendas implements OnInit {
+export class Encomendas implements OnInit, OnDestroy {
 
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
   public encomendas$ = this.encomendasSubject.asObservable();
 
   public displayedColumns: string[] = ['data', 'cliente', 'status', 'itens', 'total', 'acoes'];
 
+  private teamSubscription: Subscription | undefined;
+
   constructor(
     private encomendaService: EncomendaService,
+    private teamService: TeamService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     this.carregarEncomendas();
+
+    this.teamSubscription = this.teamService.equipeAtiva$.pipe(skip(1)).subscribe(() => {
+      this.carregarEncomendas();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.teamSubscription?.unsubscribe();
   }
 
   carregarEncomendas(): void {
@@ -83,41 +94,60 @@ export class Encomendas implements OnInit {
   }
 
   avancarEtapa(encomenda: EncomendaResponse): void {
-    if (confirm(`Tem certeza que deseja AVANÇAR a etapa da encomenda de "${encomenda.cliente.nome}"?`)) {
-      this.encomendaService.avancarEtapa(encomenda.id).subscribe({
-        next: (encomendaAtualizada) => {
-          this.snackBar.open(`Status alterado para: ${encomendaAtualizada.status}`, 'OK', { duration: 3000 });
-          this.carregarEncomendas();
-        },
-        error: (err) => {
-          console.error('Erro ao avançar etapa', err);
-          this.snackBar.open(err.error?.message || 'Erro ao avançar etapa.', 'Fechar', { duration: 5000 });
-        }
-      });
-    }
+    this.encomendaService.avancarEtapa(encomenda.id).subscribe({
+      next: (encomendaAtualizada) => {
+        this.snackBar.open(`Status alterado para: ${encomendaAtualizada.status}`, 'OK', { duration: 2000 });
+        this.atualizarEncomendaNaLista(encomendaAtualizada);
+      },
+      error: (err) => {
+        console.error('Erro ao avançar etapa', err);
+        this.snackBar.open(err.error?.message || 'Erro ao avançar etapa.', 'Fechar', { duration: 5000 });
+      }
+    });
   }
 
   retornarEtapa(encomenda: EncomendaResponse): void {
-    if (confirm(`Tem certeza que deseja RETORNAR a etapa da encomenda de "${encomenda.cliente.nome}"?`)) {
-      this.encomendaService.retornarEtapa(encomenda.id).subscribe({
-        next: (encomendaAtualizada) => {
-          this.snackBar.open(`Status alterado para: ${encomendaAtualizada.status}`, 'OK', { duration: 3000 });
-          this.carregarEncomendas();
-        },
-        error: (err) => {
-          console.error('Erro ao retornar etapa', err);
-          this.snackBar.open(err.error?.message || 'Erro ao retornar etapa.', 'Fechar', { duration: 5000 });
-        }
-      });
+    this.encomendaService.retornarEtapa(encomenda.id).subscribe({
+      next: (encomendaAtualizada) => {
+        this.snackBar.open(`Status alterado para: ${encomendaAtualizada.status}`, 'OK', { duration: 2000 });
+        this.atualizarEncomendaNaLista(encomendaAtualizada);
+      },
+      error: (err) => {
+        console.error('Erro ao retornar etapa', err);
+        this.snackBar.open(err.error?.message || 'Erro ao retornar etapa.', 'Fechar', { duration: 5000 });
+      }
+    });
+  }
+
+  // --- NOVO MÉTODO ---
+  cancelarEncomenda(encomenda: EncomendaResponse): void {
+    // Como é uma mudança de estado, removemos o confirm()
+    this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
+      next: (encomendaAtualizada) => {
+        this.snackBar.open(`Encomenda #${encomenda.id.substring(0, 4)}... CANCELADA`, 'OK', { duration: 2000 });
+        this.atualizarEncomendaNaLista(encomendaAtualizada);
+      },
+      error: (err) => {
+        console.error('Erro ao cancelar encomenda', err);
+        this.snackBar.open(err.error?.message || 'Erro ao cancelar encomenda.', 'Fechar', { duration: 5000 });
+      }
+    });
+  }
+
+  private atualizarEncomendaNaLista(encomendaAtualizada: EncomendaResponse): void {
+    const encomendasAtuais = this.encomendasSubject.getValue();
+    const index = encomendasAtuais.findIndex(e => e.id === encomendaAtualizada.id);
+
+    if (index !== -1) {
+      encomendasAtuais[index] = encomendaAtualizada;
+      this.encomendasSubject.next([...encomendasAtuais]);
     }
   }
 
-  // --- MÉTODO ATUALIZADO ---
   verDetalhes(encomenda: EncomendaResponse): void {
-    // Abre o novo diálogo de detalhes, passando a encomenda
     this.dialog.open(EncomendaDetalheDialog, {
-      width: '600px', // Um pouco mais estreito que o form
-      data: encomenda // Passa o objeto 'encomenda' completo
+      width: '600px',
+      data: encomenda
     });
   }
 
@@ -134,5 +164,9 @@ export class Encomendas implements OnInit {
         }
       });
     }
+  }
+
+  public trackPorId(index: number, item: EncomendaResponse): string {
+    return item.id;
   }
 }

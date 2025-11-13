@@ -11,22 +11,27 @@ import java.util.UUID;
 @Builder
 public class EncomendaItemResponseDTO {
     private UUID id;
-    private ProdutoResponseDTO produto; // DTO de Produto aninhado
+    private ProdutoResponseDTO produto;
+    private FornecedorResponseDTO fornecedor; // --- NOVO CAMPO ---
     private int quantidade;
-    private BigDecimal precoUnitario;
+    private BigDecimal precoCotado; // --- RENOMEADO ---
     private BigDecimal subtotal;
 
     public static EncomendaItemResponseDTO fromEntity(EncomendaItem item) {
         return EncomendaItemResponseDTO.builder()
                 .id(item.getId())
-                .produto(ProdutoResponseDTO.builder() // Constrói o DTO de Produto
+                .produto(ProdutoResponseDTO.builder()
                         .id(item.getProduto().getId())
                         .nome(item.getProduto().getNome())
                         .codigo(item.getProduto().getCodigo())
-                        .preco(item.getProduto().getPreco())
+                        .precoBase(item.getProduto().getPrecoBase()) // --- ATUALIZADO ---
+                        .build())
+                .fornecedor(FornecedorResponseDTO.builder() // --- NOVO BLOCO ---
+                        .id(item.getFornecedor().getId())
+                        .nome(item.getFornecedor().getNome())
                         .build())
                 .quantidade(item.getQuantidade())
-                .precoUnitario(item.getPrecoUnitario())
+                .precoCotado(item.getPrecoCotado()) // --- ATUALIZADO ---
                 .subtotal(item.getSubtotal())
                 .build();
     }

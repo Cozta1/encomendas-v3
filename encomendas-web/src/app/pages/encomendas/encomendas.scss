@@ -19,3 +19,17 @@
 .mat-mdc-cell.mat-mdc-no-data-row {
   text-align: center;
 }
+
+/* Alinha os botões e o chip na coluna de status */
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px; // Espaço pequeno entre os botões e o chip
+}
+
+// --- NOVO ESTILO ---
+/* Estilo para o chip cancelado (cinzento) */
+.chip-cancelado {
+  background-color: #e0e0e0 !important; // cinza
+  color: #616161 !important; // texto cinza escuro
+}

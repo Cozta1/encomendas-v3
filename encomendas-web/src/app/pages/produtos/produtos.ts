@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core'; // 1. Adicionar OnDestroy
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs'; // 2. Adicionar Subscription e skip
 import { ProdutoService } from '../../core/services/produto.service';
 import { ProdutoResponse } from '../../core/models/produto.interfaces';
+import { TeamService } from '../../core/team/team.service'; // 3. Importar TeamService
 
 // Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
@@ -30,22 +31,33 @@ import { ProdutoFormDialog } from '../../components/dialogs/produto-form-dialog/
   templateUrl: './produtos.html',
   styleUrl: './produtos.scss'
 })
-export class Produtos implements OnInit {
+export class Produtos implements OnInit, OnDestroy { // 4. Implementar OnDestroy
 
-  // Usar BehaviorSubject para permitir recarregamento fácil da tabela
   private produtosSubject = new BehaviorSubject<ProdutoResponse[]>([]);
   public produtos$ = this.produtosSubject.asObservable();
 
   public displayedColumns: string[] = ['nome', 'codigo', 'descricao', 'preco', 'acoes'];
 
+  private teamSubscription: Subscription | undefined; // 5. Para guardar a subscrição
+
   constructor(
     private produtoService: ProdutoService,
+    private teamService: TeamService, // 6. Injetar o TeamService
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
-    this.carregarProdutos();
+    this.carregarProdutos(); // Carrega os dados na primeira vez
+
+    // 7. Ouve mudanças na equipe
+    this.teamSubscription = this.teamService.equipeAtiva$.pipe(skip(1)).subscribe(() => {
+      this.carregarProdutos();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.teamSubscription?.unsubscribe(); // 8. Limpa a subscrição
   }
 
   carregarProdutos(): void {
@@ -57,7 +69,7 @@ export class Produtos implements OnInit {
   adicionarProduto(): void {
     const dialogRef = this.dialog.open(ProdutoFormDialog, {
       width: '500px',
-      data: null // Modo de criação
+      data: null
     });
 
     dialogRef.afterClosed().subscribe(resultado => {
@@ -65,7 +77,7 @@ export class Produtos implements OnInit {
         this.produtoService.criarProduto(resultado).subscribe({
           next: () => {
             this.snackBar.open('Produto criado com sucesso!', 'OK', { duration: 3000 });
-            this.carregarProdutos(); // Atualiza a tabela
+            this.carregarProdutos();
           },
           error: (err) => {
             console.error('Erro ao criar produto', err);
@@ -79,7 +91,7 @@ export class Produtos implements OnInit {
   editarProduto(produto: ProdutoResponse): void {
     const dialogRef = this.dialog.open(ProdutoFormDialog, {
       width: '500px',
-      data: produto // Passa o produto para o modo de edição
+      data: produto
     });
 
     dialogRef.afterClosed().subscribe(resultado => {

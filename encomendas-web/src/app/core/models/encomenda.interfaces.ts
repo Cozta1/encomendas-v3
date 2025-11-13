@@ -1,4 +1,5 @@
 import { ClienteResponse } from './cliente.interfaces';
+import { FornecedorResponse } from './fornecedor.interfaces'; // 1. Importar
 import { ProdutoResponse } from './produto.interfaces';
 
 /**
@@ -6,8 +7,9 @@ import { ProdutoResponse } from './produto.interfaces';
  */
 export interface EncomendaItemRequest {
   produtoId: string;
+  fornecedorId: string; // 2. Adicionar
+  precoCotado: number; // 3. Adicionar
   quantidade: number;
-  precoUnitario?: number; // Opcional, o backend pode calcular
 }
 
 /**
@@ -16,8 +18,9 @@ export interface EncomendaItemRequest {
 export interface EncomendaItemResponse {
   id: string;
   produto: ProdutoResponse;
+  fornecedor: FornecedorResponse; // 4. Adicionar
   quantidade: number;
-  precoUnitario: number;
+  precoCotado: number; // 5. Renomear de precoUnitario
   subtotal: number;
 }
 
@@ -27,7 +30,7 @@ export interface EncomendaItemResponse {
 export interface EncomendaRequest {
   clienteId: string;
   itens: EncomendaItemRequest[];
-  status?: string; // Ex: PENDENTE, CONCLUIDO
+  status?: string;
   observacoes?: string;
 }
 

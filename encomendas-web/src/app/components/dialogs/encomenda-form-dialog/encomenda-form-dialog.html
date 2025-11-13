@@ -17,7 +17,7 @@
 
     <div formArrayName="itens">
       <h3 style="margin-top: 16px;">Itens da Encomenda</h3>
-      <mat-error *ngIf="itens.invalid && (itens.dirty || itens.touched) && form.get('itens')?.hasError('required')">
+      <mat-error *ngIf="itens.length === 0 && form.get('itens')?.hasError('required') && (form.dirty || form.touched)">
         A encomenda deve ter pelo menos 1 item.
       </mat-error>
 
@@ -25,11 +25,26 @@
 
         <mat-form-field appearance="outline" class="item-produto">
           <mat-label>Produto</mat-label>
-          <mat-select formControlName="produtoId" required>
+          <mat-select formControlName="produtoId" required (selectionChange)="onProdutoSelecionado($event.value, i)">
             <mat-option *ngFor="let produto of (produtos$ | async)" [value]="produto.id">
-              {{ produto.nome }} ({{ produto.preco | currency:'BRL' }})
+              {{ produto.nome }} (Base: {{ produto.precoBase | currency:'BRL' }})
             </mat-option>
           </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="item-fornecedor">
+          <mat-label>Fornecedor</mat-label>
+          <mat-select formControlName="fornecedorId" required>
+            <mat-option *ngFor="let f of (fornecedores$ | async)" [value]="f.id">
+              {{ f.nome }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="item-preco">
+          <mat-label>Preço Cotado</mat-label>
+          <input matInput formControlName="precoCotado" type="number" min="0.01" required>
+          <mat-error *ngIf="item.get('precoCotado')?.hasError('min')">Inválido</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="item-quantidade">
@@ -37,7 +52,7 @@
           <input matInput formControlName="quantidade" type="number" min="1" required>
         </mat-form-field>
 
-        <button mat-icon-button color="warn" (click)="removerItem(i)" type="button" class="item-remover">
+        <button mat-icon-button color="warn" (click)="removerItem(i)" type="button" class="item-remover" matTooltip="Remover item">
           <mat-icon>delete</mat-icon>
         </button>
       </div>

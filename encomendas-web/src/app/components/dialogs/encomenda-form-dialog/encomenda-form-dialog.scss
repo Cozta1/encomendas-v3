@@ -1,4 +1,4 @@
-/* Linha de um item (Produto + Quantidade + Botão) */
+/* Linha de um item */
 .item-row {
   display: flex;
   align-items: center;
@@ -8,11 +8,25 @@
 
 /* O select do produto ocupa a maior parte do espaço */
 .item-produto {
-  flex-grow: 1;
+  flex: 2; /* 2x o espaço */
+  min-width: 150px;
 }
 
-/* O campo de quantidade é fixo */
+/* Select do fornecedor */
+.item-fornecedor {
+  flex: 2; /* 2x o espaço */
+  min-width: 150px;
+}
+
+/* O campo de preço */
+.item-preco {
+  flex: 1; /* 1x o espaço */
+  width: 100px;
+}
+
+/* O campo de quantidade */
 .item-quantidade {
+  flex: 1; /* 1x o espaço */
   width: 80px;
 }
 

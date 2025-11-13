@@ -38,7 +38,7 @@ public class ProdutoService {
                 .nome(dto.getNome())
                 .codigo(dto.getCodigo())
                 .descricao(dto.getDescricao())
-                .preco(dto.getPreco())
+                .precoBase(dto.getPreco()) // --- ATUALIZADO ---
                 .equipe(equipe)
                 .build();
 
@@ -58,7 +58,7 @@ public class ProdutoService {
         produto.setNome(dto.getNome());
         produto.setCodigo(dto.getCodigo());
         produto.setDescricao(dto.getDescricao());
-        produto.setPreco(dto.getPreco());
+        produto.setPrecoBase(dto.getPreco()); // --- ATUALIZADO ---
 
         Produto atualizado = produtoRepository.save(produto);
         return paraResponseDTO(atualizado);
@@ -76,14 +76,13 @@ public class ProdutoService {
         produtoRepository.delete(produto);
     }
 
-    // Método helper para converter Entidade para DTO
     private ProdutoResponseDTO paraResponseDTO(Produto produto) {
         return ProdutoResponseDTO.builder()
                 .id(produto.getId())
                 .nome(produto.getNome())
                 .codigo(produto.getCodigo())
                 .descricao(produto.getDescricao())
-                .preco(produto.getPreco())
+                .precoBase(produto.getPrecoBase()) // --- ATUALIZADO ---
                 .build();
     }
 }

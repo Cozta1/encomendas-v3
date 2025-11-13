@@ -18,7 +18,11 @@
       <div class="info-row">
         <mat-icon>info</mat-icon>
         <span><strong>Status:</strong>
-          <mat-chip [color]="getStatusColor(encomenda.status)" selected>{{encomenda.status}}</mat-chip>
+          <mat-chip [color]="getStatusColor(encomenda.status)"
+                    [ngClass]="{'chip-cancelado': encomenda.status === 'CANCELADO'}"
+                    selected>
+            {{encomenda.status}}
+          </mat-chip>
         </span>
       </div>
       <div class="info-row" *ngIf="encomenda.observacoes">
@@ -32,20 +36,32 @@
 
   <h3>Itens da Encomenda</h3>
   <mat-list role="list">
-    <mat-list-item *ngFor="let item of encomenda.itens" role="listitem" class="item-list-item">
-      <mat-icon matListItemIcon>inventory_2</mat-icon>
-      <div matListItemTitle>{{item.produto.nome}}</div>
-      <div matListItemLine>Código: {{item.produto.codigo || 'N/A'}}</div>
+    <div *ngFor="let item of encomenda.itens">
+      <mat-list-item role="listitem" class="item-list-item">
+        <mat-icon matListItemIcon>inventory_2</mat-icon>
 
-      <span class="item-detalhes">
-        {{item.quantidade}}x
-        {{item.precoUnitario | currency:'BRL'}}
-        = <strong>{{item.subtotal | currency:'BRL'}}</strong>
-      </span>
-    </mat-list-item>
+        <div matListItemTitle class="item-title-line">
+          <span>{{item.produto.nome}}</span>
+          <span class="item-subtotal">
+            {{item.subtotal | currency:'BRL'}}
+          </span>
+        </div>
+
+        <div matListItemLine class="item-detail-line">
+          <span>
+            {{item.quantidade}}x
+            <strong class="preco-cotado">{{item.precoCotado | currency:'BRL'}}</strong>
+            (Base: {{item.produto.precoBase | currency:'BRL'}})
+          </span>
+          <span class="item-fornecedor">
+            <mat-icon>local_shipping</mat-icon>
+            {{item.fornecedor.nome}}
+          </span>
+        </div>
+      </mat-list-item>
+      <mat-divider></mat-divider>
+    </div>
   </mat-list>
-
-  <mat-divider style="margin: 16px 0;"></mat-divider>
 
   <div class="total-summary">
     <h2>Total da Encomenda:</h2>

@@ -21,7 +21,6 @@ public class EncomendaItem {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // Relação ManyToOne: Muitos itens pertencem a UMA encomenda.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "encomenda_id", nullable = false)
     private Encomenda encomenda;
@@ -30,12 +29,18 @@ public class EncomendaItem {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
+    // --- NOVO CAMPO ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fornecedor_id") // Pode ser nulo se não houver cotação
+    private Fornecedor fornecedor;
+
     @Column(nullable = false)
     private int quantidade;
 
-    @Column(name = "preco_unitario", nullable = false, precision = 10, scale = 2)
-    private BigDecimal precoUnitario; // Preço do produto no momento da encomenda
+    // --- RENOMEADO ---
+    @Column(name = "preco_cotado", nullable = false, precision = 10, scale = 2)
+    private BigDecimal precoCotado; // Preço final negociado no momento da encomenda
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal subtotal; // (quantidade * preco_unitario)
+    private BigDecimal subtotal; // (quantidade * preco_cotado)
 }

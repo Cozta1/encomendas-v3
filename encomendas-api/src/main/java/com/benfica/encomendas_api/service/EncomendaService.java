@@ -3,15 +3,12 @@ package com.benfica.encomendas_api.service;
 import com.benfica.encomendas_api.dto.EncomendaRequestDTO;
 import com.benfica.encomendas_api.dto.EncomendaResponseDTO;
 import com.benfica.encomendas_api.model.*;
-import com.benfica.encomendas_api.repository.ClienteRepository;
-import com.benfica.encomendas_api.repository.EncomendaRepository;
-import com.benfica.encomendas_api.repository.EquipeRepository;
-import com.benfica.encomendas_api.repository.ProdutoRepository;
+import com.benfica.encomendas_api.repository.*; // 1. Importar todos os repositórios
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; // IMPORTAR
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException; // IMPORTAR
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -22,10 +19,10 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    // (Status definidos como constantes para evitar erros de digitação)
     private static final String STATUS_PENDENTE = "PENDENTE";
     private static final String STATUS_EM_PREPARO = "EM_PREPARO";
     private static final String STATUS_CONCLUIDO = "CONCLUIDO";
+    private static final String STATUS_CANCELADO = "CANCELADO";
 
     @Autowired
     private EncomendaRepository encomendaRepository;
@@ -35,10 +32,11 @@ public class EncomendaService {
     private ClienteRepository clienteRepository;
     @Autowired
     private ProdutoRepository produtoRepository;
+    @Autowired
+    private FornecedorRepository fornecedorRepository; // 2. Injetar FornecedorRepository
 
     @Transactional(readOnly = true)
     public List<EncomendaResponseDTO> listarEncomendasPorEquipe(UUID equipeId) {
-        // (Método inalterado)
         return encomendaRepository.findByEquipeId(equipeId).stream()
                 .map(EncomendaResponseDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -46,7 +44,6 @@ public class EncomendaService {
 
     @Transactional
     public EncomendaResponseDTO criarEncomenda(EncomendaRequestDTO dto, UUID equipeId) {
-        // 1. Validar Entidades Principais
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
 
@@ -57,19 +54,18 @@ public class EncomendaService {
             throw new RuntimeException("Acesso negado: Cliente não pertence à sua equipe.");
         }
 
-        // 2. Construir a Encomenda
         Encomenda encomenda = Encomenda.builder()
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                .status(STATUS_PENDENTE) // Define o status inicial
+                .status(STATUS_PENDENTE)
                 .valorTotal(BigDecimal.ZERO)
                 .build();
 
-        // 3. Processar e Validar Itens
         List<EncomendaItem> itens = new ArrayList<>();
         BigDecimal valorTotal = BigDecimal.ZERO;
 
+        // --- 3. LÓGICA DE CRIAÇÃO DE ITEM ATUALIZADA ---
         for (var itemDto : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDto.getProdutoId())
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.getProdutoId()));
@@ -78,24 +74,31 @@ public class EncomendaService {
                 throw new RuntimeException("Acesso negado: Produto " + produto.getNome() + " não pertence à sua equipe.");
             }
 
-            // 4. Calcular Subtotal e Total
-            BigDecimal preco = produto.getPreco();
+            Fornecedor fornecedor = fornecedorRepository.findById(itemDto.getFornecedorId())
+                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado: " + itemDto.getFornecedorId()));
+
+            if (!fornecedor.getEquipe().getId().equals(equipeId)) {
+                throw new RuntimeException("Acesso negado: Fornecedor " + fornecedor.getNome() + " não pertence à sua equipe.");
+            }
+
+            // Usa o preço cotado enviado pelo frontend
+            BigDecimal precoCotado = itemDto.getPrecoCotado();
             BigDecimal quantidade = new BigDecimal(itemDto.getQuantidade());
-            BigDecimal subtotal = preco.multiply(quantidade);
+            BigDecimal subtotal = precoCotado.multiply(quantidade);
 
             valorTotal = valorTotal.add(subtotal);
 
-            // 5. Construir o Item
             itens.add(EncomendaItem.builder()
                     .encomenda(encomenda)
                     .produto(produto)
+                    .fornecedor(fornecedor) // Adiciona o fornecedor
                     .quantidade(itemDto.getQuantidade())
-                    .precoUnitario(preco)
+                    .precoCotado(precoCotado) // Salva o preço cotado
                     .subtotal(subtotal)
                     .build());
         }
+        // --- FIM DA LÓGICA ATUALIZADA ---
 
-        // 6. Finalizar e Salvar
         encomenda.setValorTotal(valorTotal);
         encomenda.setItens(itens);
 
@@ -105,21 +108,17 @@ public class EncomendaService {
 
     @Transactional
     public void removerEncomenda(UUID id, UUID equipeId) {
-        // (Método inalterado)
-        Encomenda encomenda = encomendaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Encomenda não encontrada com ID: " + id));
-
-        if (!encomenda.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Esta encomenda não pertence à sua equipe.");
-        }
-
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         encomendaRepository.delete(encomenda);
     }
 
-    // --- NOVO MÉTODO ---
     @Transactional
     public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+
+        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda cancelada.");
+        }
 
         switch (encomenda.getStatus()) {
             case STATUS_PENDENTE:
@@ -129,7 +128,6 @@ public class EncomendaService {
                 encomenda.setStatus(STATUS_CONCLUIDO);
                 break;
             case STATUS_CONCLUIDO:
-                // Lança uma exceção que o frontend pode capturar
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda concluída.");
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
@@ -139,10 +137,13 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
-    // --- NOVO MÉTODO ---
     @Transactional
     public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+
+        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível retornar uma encomenda cancelada.");
+        }
 
         switch (encomenda.getStatus()) {
             case STATUS_CONCLUIDO:
@@ -161,10 +162,23 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
-    // --- NOVO MÉTODO (HELPER) ---
-    /**
-     * Busca uma encomenda e valida se ela pertence à equipe ativa.
-     */
+    @Transactional
+    public EncomendaResponseDTO cancelarEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+
+        if (encomenda.getStatus().equals(STATUS_CONCLUIDO)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível cancelar uma encomenda concluída.");
+        }
+
+        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Encomenda já está cancelada.");
+        }
+
+        encomenda.setStatus(STATUS_CANCELADO);
+        Encomenda salva = encomendaRepository.save(encomenda);
+        return EncomendaResponseDTO.fromEntity(salva);
+    }
+
     private Encomenda buscarEValidarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Encomenda não encontrada"));

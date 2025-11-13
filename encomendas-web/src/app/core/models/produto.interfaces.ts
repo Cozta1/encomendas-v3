@@ -1,20 +1,16 @@
-/**
- * DTO que recebemos da API (ProdutoResponseDTO)
- */
+// DTO que recebemos da API
 export interface ProdutoResponse {
   id: string;
   nome: string;
   codigo: string;
   descricao: string;
-  preco: number;
+  precoBase: number; // --- RENOMEADO ---
 }
 
-/**
- * DTO que enviamos para criar/atualizar (ProdutoRequestDTO)
- */
+// DTO que enviamos para criar/atualizar
 export interface ProdutoRequest {
   nome: string;
   codigo?: string;
   descricao?: string;
-  preco?: number;
+  preco?: number; // O service.ts do produto ainda espera 'preco', vamos manter por enquanto
 }
