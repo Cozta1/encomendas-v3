@@ -1,0 +1,59 @@
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.info-card {
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+
+  mat-icon {
+    margin-right: 12px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+.item-list-item {
+  height: auto !important; // Permite que o item tenha duas linhas
+  padding-bottom: 8px !important;
+  padding-top: 8px !important;
+}
+
+/* Alinha os detalhes do item (qtd, preço) à direita */
+.item-detalhes {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap; // Impede quebra de linha
+  color: rgba(0, 0, 0, 0.7);
+
+  strong {
+    color: #000;
+  }
+}
+
+.total-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  margin-top: 16px;
+}
+
+.total-valor {
+  font-weight: 500;
+  color: #3f51b5; /* Cor primária */
+}

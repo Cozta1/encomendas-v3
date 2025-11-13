@@ -1,0 +1,15 @@
+/*
+ * Garante que os campos do formulário no diálogo
+ * ocupem 100% da largura.
+ */
+mat-form-field {
+  width: 100%;
+}
+
+/*
+ * Adiciona um espaçamento entre os campos para
+ * que não fiquem colados.
+ */
+mat-form-field + mat-form-field {
+  margin-top: 8px;
+}

@@ -1,0 +1,23 @@
+/*
+ * Garante que o card principal ocupe toda a largura disponível.
+ */
+.mat-card {
+  width: 100%;
+}
+
+/*
+ * Remove a sombra padrão da tabela (mat-elevation-z0 já está no HTML,
+ * mas é uma boa prática garantir aqui também)
+ * e garante que a tabela ocupe 100% do card.
+ */
+.mat-mdc-table {
+  width: 100%;
+  box-shadow: none;
+}
+
+/*
+ * Centraliza o texto da célula "Sem dados"
+ */
+.mat-mdc-cell.mat-mdc-no-data-row {
+  text-align: center;
+}

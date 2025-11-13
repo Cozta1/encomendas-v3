@@ -1,0 +1,21 @@
+/* Estilização da página de listagem de encomendas */
+
+.mat-card {
+  width: 100%;
+}
+
+.mat-mdc-table {
+  width: 100%;
+  box-shadow: none;
+}
+
+/* Garante que o chip de status tenha um tamanho e cor adequados */
+.mat-mdc-chip {
+  height: 24px;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.mat-mdc-cell.mat-mdc-no-data-row {
+  text-align: center;
+}

@@ -1,0 +1,43 @@
+<form [formGroup]="form" (ngSubmit)="onSave()">
+
+  <h1 mat-dialog-title>{{ isEditMode ? 'Editar Produto' : 'Novo Produto' }}</h1>
+
+  <mat-dialog-content>
+    <p>Preencha os dados do produto.</p>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Nome do Produto</mat-label>
+      <input matInput formControlName="nome" required cdkFocusInitial>
+      <mat-error *ngIf="form.get('nome')?.hasError('required')">
+        O nome é obrigatório.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Código (SKU)</mat-label>
+      <input matInput formControlName="codigo">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Preço</mat-label>
+      <input matInput formControlName="preco" type="number" min="0" placeholder="0.00">
+      <mat-error *ngIf="form.get('preco')?.hasError('min')">
+        O preço não pode ser negativo.
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Descrição</mat-label>
+      <textarea matInput formControlName="descricao"></textarea>
+    </mat-form-field>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+      {{ isEditMode ? 'Atualizar' : 'Salvar' }}
+    </button>
+  </mat-dialog-actions>
+
+</form>

@@ -1,0 +1,65 @@
+<form [formGroup]="form" (ngSubmit)="onSave()">
+
+  <h1 mat-dialog-title>{{ isEditMode ? 'Editar Encomenda' : 'Nova Encomenda' }}</h1>
+
+  <mat-dialog-content>
+    <p>Preencha os dados da encomenda.</p>
+
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Cliente</mat-label>
+      <mat-select formControlName="clienteId" required>
+        <mat-option *ngFor="let cliente of (clientes$ | async)" [value]="cliente.id">
+          {{ cliente.nome }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.get('clienteId')?.hasError('required')">O cliente é obrigatório.</mat-error>
+    </mat-form-field>
+
+    <div formArrayName="itens">
+      <h3 style="margin-top: 16px;">Itens da Encomenda</h3>
+      <mat-error *ngIf="itens.invalid && (itens.dirty || itens.touched) && form.get('itens')?.hasError('required')">
+        A encomenda deve ter pelo menos 1 item.
+      </mat-error>
+
+      <div *ngFor="let item of itens.controls; let i=index" [formGroupName]="i" class="item-row">
+
+        <mat-form-field appearance="outline" class="item-produto">
+          <mat-label>Produto</mat-label>
+          <mat-select formControlName="produtoId" required>
+            <mat-option *ngFor="let produto of (produtos$ | async)" [value]="produto.id">
+              {{ produto.nome }} ({{ produto.preco | currency:'BRL' }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="item-quantidade">
+          <mat-label>Qtd.</mat-label>
+          <input matInput formControlName="quantidade" type="number" min="1" required>
+        </mat-form-field>
+
+        <button mat-icon-button color="warn" (click)="removerItem(i)" type="button" class="item-remover">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+
+      <button mat-stroked-button color="primary" type="button" (click)="adicionarItem()" style="width: 100%;">
+        <mat-icon>add</mat-icon>
+        Adicionar Item
+      </button>
+    </div>
+
+    <mat-form-field appearance="outline" style="width: 100%; margin-top: 16px;">
+      <mat-label>Observações</mat-label>
+      <textarea matInput formControlName="observacoes"></textarea>
+    </mat-form-field>
+
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Cancelar</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+      {{ isEditMode ? 'Atualizar' : 'Salvar' }}
+    </button>
+  </mat-dialog-actions>
+
+</form>

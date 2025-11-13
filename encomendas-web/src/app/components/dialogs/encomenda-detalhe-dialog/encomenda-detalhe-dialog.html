@@ -1,0 +1,59 @@
+<h1 mat-dialog-title>Detalhes da Encomenda</h1>
+<button mat-icon-button (click)="onClose()" class="close-button" aria-label="Fechar diálogo">
+  <mat-icon>close</mat-icon>
+</button>
+
+<mat-dialog-content>
+
+  <mat-card appearance="outlined" class="info-card">
+    <mat-card-content>
+      <div class="info-row">
+        <mat-icon>person</mat-icon>
+        <span><strong>Cliente:</strong> {{encomenda.cliente.nome}}</span>
+      </div>
+      <div class="info-row">
+        <mat-icon>calendar_today</mat-icon>
+        <span><strong>Data:</strong> {{encomenda.dataCriacao | date:'dd/MM/yyyy HH:mm'}}</span>
+      </div>
+      <div class="info-row">
+        <mat-icon>info</mat-icon>
+        <span><strong>Status:</strong>
+          <mat-chip [color]="getStatusColor(encomenda.status)" selected>{{encomenda.status}}</mat-chip>
+        </span>
+      </div>
+      <div class="info-row" *ngIf="encomenda.observacoes">
+        <mat-icon>notes</mat-icon>
+        <span><strong>Observações:</strong> {{encomenda.observacoes}}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-divider style="margin: 16px 0;"></mat-divider>
+
+  <h3>Itens da Encomenda</h3>
+  <mat-list role="list">
+    <mat-list-item *ngFor="let item of encomenda.itens" role="listitem" class="item-list-item">
+      <mat-icon matListItemIcon>inventory_2</mat-icon>
+      <div matListItemTitle>{{item.produto.nome}}</div>
+      <div matListItemLine>Código: {{item.produto.codigo || 'N/A'}}</div>
+
+      <span class="item-detalhes">
+        {{item.quantidade}}x
+        {{item.precoUnitario | currency:'BRL'}}
+        = <strong>{{item.subtotal | currency:'BRL'}}</strong>
+      </span>
+    </mat-list-item>
+  </mat-list>
+
+  <mat-divider style="margin: 16px 0;"></mat-divider>
+
+  <div class="total-summary">
+    <h2>Total da Encomenda:</h2>
+    <h2 class="total-valor">{{encomenda.valorTotal | currency:'BRL'}}</h2>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="onClose()">Fechar</button>
+</mat-dialog-actions>

@@ -1,0 +1,22 @@
+/* Linha de um item (Produto + Quantidade + Botão) */
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espaço entre os campos */
+  margin-bottom: 12px;
+}
+
+/* O select do produto ocupa a maior parte do espaço */
+.item-produto {
+  flex-grow: 1;
+}
+
+/* O campo de quantidade é fixo */
+.item-quantidade {
+  width: 80px;
+}
+
+/* Botão de remover */
+.item-remover {
+  flex-shrink: 0;
+}
