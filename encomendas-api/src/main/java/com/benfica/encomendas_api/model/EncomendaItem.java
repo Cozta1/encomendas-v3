@@ -37,10 +37,10 @@ public class EncomendaItem {
     @Column(nullable = false)
     private int quantidade;
 
-    // --- RENOMEADO ---
+    // --- RENOMEADO DE 'precoUnitario' ---
     @Column(name = "preco_cotado", nullable = false, precision = 10, scale = 2)
-    private BigDecimal precoCotado; // Preço final negociado no momento da encomenda
+    private BigDecimal precoCotado;
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal subtotal; // (quantidade * preco_cotado)
+    private BigDecimal subtotal;
 }

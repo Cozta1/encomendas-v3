@@ -7,8 +7,10 @@ import com.benfica.encomendas_api.model.Fornecedor;
 import com.benfica.encomendas_api.repository.EquipeRepository;
 import com.benfica.encomendas_api.repository.FornecedorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus; // Importar
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException; // Importar
 
 import java.util.List;
 import java.util.UUID;
@@ -20,19 +22,19 @@ public class FornecedorService {
     @Autowired
     private FornecedorRepository fornecedorRepository;
     @Autowired
-    private EquipeRepository equipeRepository; // Necessário para criar/atualizar
+    private EquipeRepository equipeRepository;
 
     @Transactional(readOnly = true)
     public List<FornecedorResponseDTO> listarFornecedoresPorEquipe(UUID equipeId) {
         return fornecedorRepository.findByEquipeId(equipeId).stream()
-                .map(this::paraResponseDTO)
+                .map(FornecedorResponseDTO::fromEntity) // <-- USA O MÉTODO DO DTO
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public FornecedorResponseDTO criarFornecedor(FornecedorRequestDTO dto, UUID equipeId) {
         Equipe equipe = equipeRepository.findById(equipeId)
-                .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
         Fornecedor fornecedor = Fornecedor.builder()
                 .nome(dto.getNome())
@@ -41,26 +43,18 @@ public class FornecedorService {
                 .telefone(dto.getTelefone())
                 .email(dto.getEmail())
                 .endereco(dto.getEndereco())
-                .equipe(equipe) // Associa a equipe
+                .equipe(equipe)
                 .build();
 
         Fornecedor salvo = fornecedorRepository.save(fornecedor);
-        return paraResponseDTO(salvo);
+        return FornecedorResponseDTO.fromEntity(salvo); // <-- USA O MÉTODO DO DTO
     }
 
-    // --- NOVO MÉTODO (UPDATE) ---
     @Transactional
     public FornecedorResponseDTO atualizarFornecedor(UUID id, FornecedorRequestDTO dto, UUID equipeId) {
-        // 1. Busca o fornecedor
-        Fornecedor fornecedor = fornecedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado com ID: " + id));
+        Fornecedor fornecedor = fornecedorRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fornecedor não encontrado ou não pertence à equipe"));
 
-        // 2. VERIFICA SEGURANÇA: Garante que o fornecedor pertence à equipe ativa
-        if (!fornecedor.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Este fornecedor não pertence à sua equipe.");
-        }
-
-        // 3. Atualiza os dados
         fornecedor.setNome(dto.getNome());
         fornecedor.setCnpj(dto.getCnpj());
         fornecedor.setContatoNome(dto.getContatoNome());
@@ -68,34 +62,17 @@ public class FornecedorService {
         fornecedor.setEmail(dto.getEmail());
         fornecedor.setEndereco(dto.getEndereco());
 
-        Fornecedor atualizado = fornecedorRepository.save(fornecedor); // Salva as alterações
-        return paraResponseDTO(atualizado);
+        Fornecedor atualizado = fornecedorRepository.save(fornecedor);
+        return FornecedorResponseDTO.fromEntity(atualizado); // <-- USA O MÉTODO DO DTO
     }
 
-    // --- NOVO MÉTODO (DELETE) ---
     @Transactional
     public void removerFornecedor(UUID id, UUID equipeId) {
-        Fornecedor fornecedor = fornecedorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado com ID: " + id));
-
-        // VERIFICA SEGURANÇA
-        if (!fornecedor.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Este fornecedor não pertence à sua equipe.");
-        }
+        Fornecedor fornecedor = fornecedorRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fornecedor não encontrado ou não pertence à equipe"));
 
         fornecedorRepository.delete(fornecedor);
     }
 
-    // Método helper para converter Entidade para DTO
-    private FornecedorResponseDTO paraResponseDTO(Fornecedor fornecedor) {
-        return FornecedorResponseDTO.builder()
-                .id(fornecedor.getId())
-                .nome(fornecedor.getNome())
-                .cnpj(fornecedor.getCnpj())
-                .contatoNome(fornecedor.getContatoNome())
-                .telefone(fornecedor.getTelefone())
-                .email(fornecedor.getEmail())
-                .endereco(fornecedor.getEndereco())
-                .build();
-    }
+    // Método 'paraResponseDTO' removido daqui
 }

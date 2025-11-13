@@ -5,13 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional; // <-- IMPORTAR
 import java.util.UUID;
 
 @Repository
 public interface FornecedorRepository extends JpaRepository<Fornecedor, UUID> {
 
-    /**
-     * Encontra todos os fornecedores associados a um ID de equipe específico.
-     */
     List<Fornecedor> findByEquipeId(UUID equipeId);
+
+    // --- NOVO MÉTODO ADICIONADO ---
+    Optional<Fornecedor> findByIdAndEquipeId(UUID id, UUID equipeId);
 }

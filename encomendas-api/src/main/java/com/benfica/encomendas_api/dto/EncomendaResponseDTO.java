@@ -14,19 +14,24 @@ import java.util.stream.Collectors;
 @Builder
 public class EncomendaResponseDTO {
     private UUID id;
-    private ClienteResponseDTO cliente; // DTO de Cliente aninhado
-    private List<EncomendaItemResponseDTO> itens; // Lista de DTOs de Itens
+    private ClienteResponseDTO cliente;
+    private List<EncomendaItemResponseDTO> itens;
     private String status;
     private String observacoes;
     private BigDecimal valorTotal;
     private LocalDateTime dataCriacao;
 
+    // --- MÉTODO ATUALIZADO (Null-Safe) ---
     public static EncomendaResponseDTO fromEntity(Encomenda encomenda) {
+        if (encomenda == null) {
+            return null;
+        }
+
         return EncomendaResponseDTO.builder()
                 .id(encomenda.getId())
-                .cliente(ClienteResponseDTO.fromEntity(encomenda.getCliente())) // Usa o helper do ClienteResponseDTO
+                .cliente(ClienteResponseDTO.fromEntity(encomenda.getCliente()))
                 .itens(encomenda.getItens().stream()
-                        .map(EncomendaItemResponseDTO::fromEntity) // Usa o helper do ItemResponseDTO
+                        .map(EncomendaItemResponseDTO::fromEntity)
                         .collect(Collectors.toList()))
                 .status(encomenda.getStatus())
                 .observacoes(encomenda.getObservacoes())

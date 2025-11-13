@@ -17,7 +17,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "clientes", uniqueConstraints = {
-        // Garante que não há CPFs/CNPJs duplicados NA MESMA EQUIPE
         @UniqueConstraint(columnNames = {"equipe_id", "cpfCnpj"})
 })
 public class Cliente {
@@ -34,14 +33,13 @@ public class Cliente {
     private String nome;
 
     // --- CAMPOS ADICIONADOS ---
+    @Column(length = 20)
+    private String telefone;
 
     @Column(length = 100)
     private String email;
 
-    @Column(length = 20)
-    private String telefone;
-
-    @Column(length = 18)
+    @Column(name = "cpf_cnpj", length = 18)
     private String cpfCnpj;
 
     @Column(columnDefinition = "TEXT")
@@ -54,6 +52,5 @@ public class Cliente {
     @UpdateTimestamp
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
-
     // --- FIM DOS CAMPOS ADICIONADOS ---
 }

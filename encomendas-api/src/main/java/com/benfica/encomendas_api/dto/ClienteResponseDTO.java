@@ -25,6 +25,10 @@ public class ClienteResponseDTO {
      * Método helper para converter a Entidade Cliente em um DTO de Resposta.
      */
     public static ClienteResponseDTO fromEntity(Cliente cliente) {
+        // --- ADICIONADA VERIFICAÇÃO DE NULO ---
+        if (cliente == null) {
+            return null;
+        }
         return ClienteResponseDTO.builder()
                 .id(cliente.getId())
                 .nome(cliente.getNome())

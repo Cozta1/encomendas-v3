@@ -16,7 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "fornecedores")
+@Table(name = "fornecedores", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"equipe_id", "cnpj"})
+})
 public class Fornecedor {
 
     @Id
@@ -30,6 +32,7 @@ public class Fornecedor {
     @Column(nullable = false)
     private String nome;
 
+    // --- CAMPOS ADICIONADOS ---
     @Column(unique = true, length = 18)
     private String cnpj;
 
@@ -39,6 +42,7 @@ public class Fornecedor {
     @Column(length = 20)
     private String telefone;
 
+    @Column(length = 100)
     private String email;
 
     @Column(columnDefinition = "TEXT")
@@ -51,4 +55,5 @@ public class Fornecedor {
     @UpdateTimestamp
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
+    // --- FIM DOS CAMPOS ADICIONADOS ---
 }

@@ -7,8 +7,10 @@ import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.repository.ClienteRepository;
 import com.benfica.encomendas_api.repository.EquipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus; // Importar
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException; // Importar
 
 import java.util.List;
 import java.util.UUID;
@@ -25,14 +27,14 @@ public class ClienteService {
     @Transactional(readOnly = true)
     public List<ClienteResponseDTO> listarClientesPorEquipe(UUID equipeId) {
         return clienteRepository.findByEquipeId(equipeId).stream()
-                .map(this::paraResponseDTO)
+                .map(ClienteResponseDTO::fromEntity) // <-- USA O MÉTODO DO DTO
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public ClienteResponseDTO criarCliente(ClienteRequestDTO dto, UUID equipeId) {
         Equipe equipe = equipeRepository.findById(equipeId)
-                .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
         Cliente cliente = Cliente.builder()
                 .nome(dto.getNome())
@@ -44,55 +46,31 @@ public class ClienteService {
                 .build();
 
         Cliente salvo = clienteRepository.save(cliente);
-        return paraResponseDTO(salvo);
+        return ClienteResponseDTO.fromEntity(salvo); // <-- USA O MÉTODO DO DTO
     }
 
-    // --- NOVO MÉTODO (UPDATE) ---
     @Transactional
     public ClienteResponseDTO atualizarCliente(UUID id, ClienteRequestDTO dto, UUID equipeId) {
-        // 1. Busca o cliente
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + id));
+        Cliente cliente = clienteRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado ou não pertence à equipe"));
 
-        // 2. VERIFICA SEGURANÇA: Garante que o cliente pertence à equipe ativa
-        if (!cliente.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Este cliente não pertence à sua equipe.");
-        }
-
-        // 3. Atualiza os dados
         cliente.setNome(dto.getNome());
         cliente.setTelefone(dto.getTelefone());
         cliente.setEmail(dto.getEmail());
         cliente.setCpfCnpj(dto.getCpfCnpj());
         cliente.setEndereco(dto.getEndereco());
 
-        Cliente atualizado = clienteRepository.save(cliente); // Salva as alterações
-        return paraResponseDTO(atualizado);
+        Cliente atualizado = clienteRepository.save(cliente);
+        return ClienteResponseDTO.fromEntity(atualizado); // <-- USA O MÉTODO DO DTO
     }
 
-    // --- NOVO MÉTODO (DELETE) ---
     @Transactional
     public void removerCliente(UUID id, UUID equipeId) {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + id));
-
-        // VERIFICA SEGURANÇA
-        if (!cliente.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Este cliente não pertence à sua equipe.");
-        }
+        Cliente cliente = clienteRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado ou não pertence à equipe"));
 
         clienteRepository.delete(cliente);
     }
 
-    // Método helper para converter Entidade para DTO
-    private ClienteResponseDTO paraResponseDTO(Cliente cliente) {
-        return ClienteResponseDTO.builder()
-                .id(cliente.getId())
-                .nome(cliente.getNome())
-                .telefone(cliente.getTelefone())
-                .email(cliente.getEmail())
-                .cpfCnpj(cliente.getCpfCnpj())
-                .endereco(cliente.getEndereco())
-                .build();
-    }
+    // Método 'paraResponseDTO' removido daqui
 }

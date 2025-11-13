@@ -12,26 +12,24 @@ import java.util.UUID;
 public class EncomendaItemResponseDTO {
     private UUID id;
     private ProdutoResponseDTO produto;
-    private FornecedorResponseDTO fornecedor; // --- NOVO CAMPO ---
+    private FornecedorResponseDTO fornecedor;
     private int quantidade;
-    private BigDecimal precoCotado; // --- RENOMEADO ---
+    private BigDecimal precoCotado;
     private BigDecimal subtotal;
 
+    // --- MÉTODO ATUALIZADO (Null-Safe) ---
     public static EncomendaItemResponseDTO fromEntity(EncomendaItem item) {
+        if (item == null) {
+            return null;
+        }
+
         return EncomendaItemResponseDTO.builder()
                 .id(item.getId())
-                .produto(ProdutoResponseDTO.builder()
-                        .id(item.getProduto().getId())
-                        .nome(item.getProduto().getNome())
-                        .codigo(item.getProduto().getCodigo())
-                        .precoBase(item.getProduto().getPrecoBase()) // --- ATUALIZADO ---
-                        .build())
-                .fornecedor(FornecedorResponseDTO.builder() // --- NOVO BLOCO ---
-                        .id(item.getFornecedor().getId())
-                        .nome(item.getFornecedor().getNome())
-                        .build())
+                // Estes métodos agora são null-safe
+                .produto(ProdutoResponseDTO.fromEntity(item.getProduto()))
+                .fornecedor(FornecedorResponseDTO.fromEntity(item.getFornecedor()))
                 .quantidade(item.getQuantidade())
-                .precoCotado(item.getPrecoCotado()) // --- ATUALIZADO ---
+                .precoCotado(item.getPrecoCotado())
                 .subtotal(item.getSubtotal())
                 .build();
     }

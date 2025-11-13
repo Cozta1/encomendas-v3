@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal; // Importar
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -31,15 +31,16 @@ public class Produto {
     @Column(nullable = false)
     private String nome;
 
+    // --- CAMPOS ADICIONADOS ---
     @Column(length = 100)
     private String codigo; // SKU
 
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
-    // --- RENOMEADO ---
+    // --- RENOMEADO DE 'preco' ---
     @Column(name = "preco_base", precision = 10, scale = 2)
-    private BigDecimal precoBase; // Preço padrão/sugerido
+    private BigDecimal precoBase;
 
     @CreationTimestamp
     @Column(name = "criado_em", nullable = false, updatable = false)
