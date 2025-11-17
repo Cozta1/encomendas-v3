@@ -7,10 +7,8 @@ import com.benfica.encomendas_api.model.Fornecedor;
 import com.benfica.encomendas_api.repository.EquipeRepository;
 import com.benfica.encomendas_api.repository.FornecedorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; // Importar
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException; // Importar
 
 import java.util.List;
 import java.util.UUID;
@@ -27,14 +25,23 @@ public class FornecedorService {
     @Transactional(readOnly = true)
     public List<FornecedorResponseDTO> listarFornecedoresPorEquipe(UUID equipeId) {
         return fornecedorRepository.findByEquipeId(equipeId).stream()
-                .map(FornecedorResponseDTO::fromEntity) // <-- USA O MÉTODO DO DTO
+                .map(this::paraResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // --- NOVO MÉTODO (SEARCH) ---
+    @Transactional(readOnly = true)
+    public List<FornecedorResponseDTO> searchFornecedoresPorNome(String nome, UUID equipeId) {
+        return fornecedorRepository.findByEquipeIdAndNomeContainingIgnoreCase(equipeId, nome)
+                .stream()
+                .map(this::paraResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public FornecedorResponseDTO criarFornecedor(FornecedorRequestDTO dto, UUID equipeId) {
         Equipe equipe = equipeRepository.findById(equipeId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
 
         Fornecedor fornecedor = Fornecedor.builder()
                 .nome(dto.getNome())
@@ -47,13 +54,17 @@ public class FornecedorService {
                 .build();
 
         Fornecedor salvo = fornecedorRepository.save(fornecedor);
-        return FornecedorResponseDTO.fromEntity(salvo); // <-- USA O MÉTODO DO DTO
+        return paraResponseDTO(salvo);
     }
 
     @Transactional
     public FornecedorResponseDTO atualizarFornecedor(UUID id, FornecedorRequestDTO dto, UUID equipeId) {
-        Fornecedor fornecedor = fornecedorRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fornecedor não encontrado ou não pertence à equipe"));
+        Fornecedor fornecedor = fornecedorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado com ID: " + id));
+
+        if (!fornecedor.getEquipe().getId().equals(equipeId)) {
+            throw new RuntimeException("Acesso negado: Este fornecedor não pertence à sua equipe.");
+        }
 
         fornecedor.setNome(dto.getNome());
         fornecedor.setCnpj(dto.getCnpj());
@@ -63,16 +74,30 @@ public class FornecedorService {
         fornecedor.setEndereco(dto.getEndereco());
 
         Fornecedor atualizado = fornecedorRepository.save(fornecedor);
-        return FornecedorResponseDTO.fromEntity(atualizado); // <-- USA O MÉTODO DO DTO
+        return paraResponseDTO(atualizado);
     }
 
     @Transactional
     public void removerFornecedor(UUID id, UUID equipeId) {
-        Fornecedor fornecedor = fornecedorRepository.findByIdAndEquipeId(id, equipeId) // Usa o método correto
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fornecedor não encontrado ou não pertence à equipe"));
+        Fornecedor fornecedor = fornecedorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado com ID: " + id));
+
+        if (!fornecedor.getEquipe().getId().equals(equipeId)) {
+            throw new RuntimeException("Acesso negado: Este fornecedor não pertence à sua equipe.");
+        }
 
         fornecedorRepository.delete(fornecedor);
     }
 
-    // Método 'paraResponseDTO' removido daqui
+    private FornecedorResponseDTO paraResponseDTO(Fornecedor fornecedor) {
+        return FornecedorResponseDTO.builder()
+                .id(fornecedor.getId())
+                .nome(fornecedor.getNome())
+                .cnpj(fornecedor.getCnpj())
+                .contatoNome(fornecedor.getContatoNome())
+                .telefone(fornecedor.getTelefone())
+                .email(fornecedor.getEmail())
+                .endereco(fornecedor.getEndereco())
+                .build();
+    }
 }

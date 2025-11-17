@@ -1,36 +1,40 @@
-/* Linha de um item */
-.item-row {
+// Layout para os campos de Cliente e botão
+.cliente-section {
   display: flex;
-  align-items: center;
-  gap: 8px; /* Espaço entre os campos */
-  margin-bottom: 12px;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-/* O select do produto ocupa a maior parte do espaço */
-.item-produto {
-  flex: 2; /* 2x o espaço */
-  min-width: 150px;
+// Layout para o formulário de adicionar item
+.item-form {
+  display: flex;
+  flex-wrap: wrap; // Permite que os campos quebrem a linha
+  gap: 10px;
+  align-items: flex-start;
+
+  mat-form-field {
+    flex: 1 1 200px; // Cresce, mas tem base de 200px
+  }
+
+  .small-field {
+    flex-basis: 100px; // Campos de número são menores
+  }
+
+  button {
+    margin-top: 8px; // Alinha o botão com os campos
+  }
 }
 
-/* Select do fornecedor */
-.item-fornecedor {
-  flex: 2; /* 2x o espaço */
-  min-width: 150px;
+.full-width {
+  width: 100%;
 }
 
-/* O campo de preço */
-.item-preco {
-  flex: 1; /* 1x o espaço */
-  width: 100px;
+// Garante que o conteúdo do diálogo pode rolar se for muito grande
+mat-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-/* O campo de quantidade */
-.item-quantidade {
-  flex: 1; /* 1x o espaço */
-  width: 80px;
-}
-
-/* Botão de remover */
-.item-remover {
-  flex-shrink: 0;
+mat-dialog-actions {
+  padding: 16px 24px;
 }

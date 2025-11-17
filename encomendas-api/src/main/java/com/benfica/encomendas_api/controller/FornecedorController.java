@@ -22,8 +22,21 @@ public class FornecedorController {
 
     @GetMapping
     public ResponseEntity<List<FornecedorResponseDTO>> listarFornecedoresPorEquipe() {
-        UUID equipeId = TeamContextHolder.getTeamId(); // Pega a equipe ativa
+        UUID equipeId = TeamContextHolder.getTeamId();
         List<FornecedorResponseDTO> dtos = fornecedorService.listarFornecedoresPorEquipe(equipeId);
+        return ResponseEntity.ok(dtos);
+    }
+
+    // --- NOVO ENDPOINT (SEARCH) ---
+    @GetMapping("/search")
+    public ResponseEntity<List<FornecedorResponseDTO>> searchFornecedores(
+            @RequestParam("nome") String nome) {
+
+        UUID equipeId = TeamContextHolder.getTeamId();
+        if (nome == null || nome.trim().isEmpty()) {
+            return listarFornecedoresPorEquipe();
+        }
+        List<FornecedorResponseDTO> dtos = fornecedorService.searchFornecedoresPorNome(nome, equipeId);
         return ResponseEntity.ok(dtos);
     }
 
@@ -34,7 +47,6 @@ public class FornecedorController {
         return new ResponseEntity<>(novoDTO, HttpStatus.CREATED);
     }
 
-    // --- NOVO ENDPOINT (UPDATE) ---
     @PutMapping("/{id}")
     public ResponseEntity<FornecedorResponseDTO> atualizarFornecedor(
             @PathVariable UUID id,
@@ -45,11 +57,10 @@ public class FornecedorController {
         return ResponseEntity.ok(dtoAtualizado);
     }
 
-    // --- NOVO ENDPOINT (DELETE) ---
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removerFornecedor(@PathVariable UUID id) {
         UUID equipeId = TeamContextHolder.getTeamId();
         fornecedorService.removerFornecedor(id, equipeId);
-        return ResponseEntity.noContent().build(); // Retorna 204 No Content
+        return ResponseEntity.noContent().build();
     }
 }

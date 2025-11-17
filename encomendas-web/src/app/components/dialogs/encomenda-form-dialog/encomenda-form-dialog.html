@@ -1,80 +1,127 @@
-<form [formGroup]="form" (ngSubmit)="onSave()">
+<h2 mat-dialog-title>Nova Encomenda</h2>
 
-  <h1 mat-dialog-title>{{ isEditMode ? 'Editar Encomenda' : 'Nova Encomenda' }}</h1>
+<mat-dialog-content>
+  <form [formGroup]="encomendaForm">
+    <div class="cliente-section">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Buscar Cliente</mat-label>
+        <input type="text"
+               placeholder="Digite o nome do cliente..."
+               matInput
+               formControlName="cliente"
+               [matAutocomplete]="autoCliente">
+        <mat-autocomplete #autoCliente="matAutocomplete" [displayWith]="displayClienteFn">
+          <mat-option *ngFor="let cliente of filteredClientes$ | async" [value]="cliente">
+            {{cliente.nome}}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
 
-  <mat-dialog-content>
-    <p>Preencha os dados da encomenda.</p>
-
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Cliente</mat-label>
-      <mat-select formControlName="clienteId" required>
-        <mat-option *ngFor="let cliente of (clientes$ | async)" [value]="cliente.id">
-          {{ cliente.nome }}
-        </mat-option>
-      </mat-select>
-      <mat-error *ngIf="form.get('clienteId')?.hasError('required')">O cliente é obrigatório.</mat-error>
-    </mat-form-field>
-
-    <div formArrayName="itens">
-      <h3 style="margin-top: 16px;">Itens da Encomenda</h3>
-      <mat-error *ngIf="itens.length === 0 && form.get('itens')?.hasError('required') && (form.dirty || form.touched)">
-        A encomenda deve ter pelo menos 1 item.
-      </mat-error>
-
-      <div *ngFor="let item of itens.controls; let i=index" [formGroupName]="i" class="item-row">
-
-        <mat-form-field appearance="outline" class="item-produto">
-          <mat-label>Produto</mat-label>
-          <mat-select formControlName="produtoId" required (selectionChange)="onProdutoSelecionado($event.value, i)">
-            <mat-option *ngFor="let produto of (produtos$ | async)" [value]="produto.id">
-              {{ produto.nome }} (Base: {{ produto.precoBase | currency:'BRL' }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="item-fornecedor">
-          <mat-label>Fornecedor</mat-label>
-          <mat-select formControlName="fornecedorId" required>
-            <mat-option *ngFor="let f of (fornecedores$ | async)" [value]="f.id">
-              {{ f.nome }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="item-preco">
-          <mat-label>Preço Cotado</mat-label>
-          <input matInput formControlName="precoCotado" type="number" min="0.01" required>
-          <mat-error *ngIf="item.get('precoCotado')?.hasError('min')">Inválido</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="item-quantidade">
-          <mat-label>Qtd.</mat-label>
-          <input matInput formControlName="quantidade" type="number" min="1" required>
-        </mat-form-field>
-
-        <button mat-icon-button color="warn" (click)="removerItem(i)" type="button" class="item-remover" matTooltip="Remover item">
-          <mat-icon>delete</mat-icon>
-        </button>
-      </div>
-
-      <button mat-stroked-button color="primary" type="button" (click)="adicionarItem()" style="width: 100%;">
-        <mat-icon>add</mat-icon>
-        Adicionar Item
+      <button mat-icon-button color="primary"
+              (click)="abrirModalNovoCliente($event)"
+              matTooltip="Criar novo cliente"
+              [disabled]="!encomendaForm.get('cliente')?.value || typeof encomendaForm.get('cliente')?.value !== 'string'">
+        <mat-icon>person_add</mat-icon>
       </button>
     </div>
 
-    <mat-form-field appearance="outline" style="width: 100%; margin-top: 16px;">
-      <mat-label>Observações</mat-label>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Observações (Opcional)</mat-label>
       <textarea matInput formControlName="observacoes"></textarea>
     </mat-form-field>
+  </form>
 
-  </mat-dialog-content>
+  <mat-divider style="margin: 20px 0;"></mat-divider>
 
-  <mat-dialog-actions align="end">
-    <button mat-button type="button" (click)="onCancel()">Cancelar</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
-      {{ isEditMode ? 'Atualizar' : 'Salvar' }}
+  <h3>Adicionar Itens</h3>
+  <form [formGroup]="itemForm" class="item-form">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar Produto</mat-label>
+      <input type="text" matInput formControlName="produto" [matAutocomplete]="autoProduto">
+      <mat-autocomplete #autoProduto="matAutocomplete" [displayWith]="displayProdutoFn">
+        <mat-option *ngFor="let p of filteredProdutos$ | async" [value]="p">
+          {{p.nome}} ({{p.precoBase | currency:'BRL'}})
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar Fornecedor</mat-label>
+      <input type="text" matInput formControlName="fornecedor" [matAutocomplete]="autoFornecedor">
+      <mat-autocomplete #autoFornecedor="matAutocomplete" [displayWith]="displayFornecedorFn">
+        <mat-option *ngFor="let f of filteredFornecedores$ | async" [value]="f">
+          {{f.nome}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="small-field">
+      <mat-label>Qtd.</mat-label>
+      <input matInput type="number" formControlName="quantidade" min="1">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="small-field">
+      <mat-label>Preço Cotado (R$)</mat-label>
+      <input matInput type="number" formControlName="precoCotado" min="0">
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="adicionarItem()" [disabled]="itemForm.invalid">
+      <mat-icon>add</mat-icon> Adicionar
     </button>
-  </mat-dialog-actions>
+  </form>
 
-</form>
+  <table mat-table [dataSource]="itensDataSource.controls" class="mat-elevation-z8" style="width: 100%; margin-top: 16px;">
+
+    <ng-container matColumnDef="produto">
+      <th mat-header-cell *matHeaderCellDef> Produto </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.produto.nome}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="fornecedor">
+      <th mat-header-cell *matHeaderCellDef> Fornecedor </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.fornecedor.nome}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="quantidade">
+      <th mat-header-cell *matHeaderCellDef> Qtd </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.quantidade}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="precoCotado">
+      <th mat-header-cell *matHeaderCellDef> Preço </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.precoCotado | currency:'BRL'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="subtotal">
+      <th mat-header-cell *matHeaderCellDef> Subtotal </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.subtotal | currency:'BRL'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let i = index" style="text-align: right;">
+        <button mat-icon-button color="warn" (click)="removerItem(i)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <h3 style="text-align: right; margin-top: 16px;">
+    Total: {{ getValorTotalEncomenda() | currency:'BRL' }}
+  </h3>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button mat-flat-button color="primary"
+          (click)="onSave()"
+          [disabled]="encomendaForm.invalid || itensDataSource.length === 0">
+    Salvar Encomenda
+  </button>
+</mat-dialog-actions>

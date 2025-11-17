@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface FornecedorRepository extends JpaRepository<Fornecedor, UUID> {
 
     List<Fornecedor> findByEquipeId(UUID equipeId);
+    List<Fornecedor> findByEquipeIdAndNomeContainingIgnoreCase(UUID equipeId, String nome);
 
     // --- NOVO MÉTODO ADICIONADO ---
     Optional<Fornecedor> findByIdAndEquipeId(UUID id, UUID equipeId);

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ProdutoResponse, ProdutoRequest } from '../models/produto.interfaces';
 
@@ -11,30 +11,24 @@ export class ProdutoService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Busca os produtos da equipe ativa.
-   */
   getProdutos(): Observable<ProdutoResponse[]> {
     return this.http.get<ProdutoResponse[]>(this.API_URL);
   }
 
-  /**
-   * Cria um novo produto.
-   */
+  // --- NOVO MÉTODO (SEARCH) ---
+  searchProdutos(nome: string): Observable<ProdutoResponse[]> {
+    const params = new HttpParams().set('nome', nome);
+    return this.http.get<ProdutoResponse[]>(`${this.API_URL}/search`, { params });
+  }
+
   criarProduto(produto: ProdutoRequest): Observable<ProdutoResponse> {
     return this.http.post<ProdutoResponse>(this.API_URL, produto);
   }
 
-  /**
-   * Atualiza um produto existente.
-   */
   atualizarProduto(id: string, produto: ProdutoRequest): Observable<ProdutoResponse> {
     return this.http.put<ProdutoResponse>(`${this.API_URL}/${id}`, produto);
   }
 
-  /**
-   * Remove um produto pelo ID.
-   */
   removerProduto(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/${id}`);
   }

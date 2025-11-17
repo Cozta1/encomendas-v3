@@ -27,6 +27,20 @@ public class ClienteController {
         return ResponseEntity.ok(dtos);
     }
 
+    // --- NOVO ENDPOINT (SEARCH) ---
+    @GetMapping("/search")
+    public ResponseEntity<List<ClienteResponseDTO>> searchClientes(
+            @RequestParam("nome") String nome) {
+
+        UUID equipeId = TeamContextHolder.getTeamId();
+        // Se a busca for vazia, retorna todos (ou pode mudar a lógica)
+        if (nome == null || nome.trim().isEmpty()) {
+            return listarClientesPorEquipe();
+        }
+        List<ClienteResponseDTO> dtos = clienteService.searchClientesPorNome(nome, equipeId);
+        return ResponseEntity.ok(dtos);
+    }
+
     @PostMapping
     public ResponseEntity<ClienteResponseDTO> criarCliente(@Valid @RequestBody ClienteRequestDTO dto) {
         UUID equipeId = TeamContextHolder.getTeamId();
@@ -34,7 +48,6 @@ public class ClienteController {
         return new ResponseEntity<>(novoDTO, HttpStatus.CREATED);
     }
 
-    // --- NOVO ENDPOINT (UPDATE) ---
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> atualizarCliente(
             @PathVariable UUID id,
@@ -45,11 +58,10 @@ public class ClienteController {
         return ResponseEntity.ok(dtoAtualizado);
     }
 
-    // --- NOVO ENDPOINT (DELETE) ---
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removerCliente(@PathVariable UUID id) {
         UUID equipeId = TeamContextHolder.getTeamId();
         clienteService.removerCliente(id, equipeId);
-        return ResponseEntity.noContent().build(); // Retorna 204 No Content
+        return ResponseEntity.noContent().build();
     }
 }

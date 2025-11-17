@@ -27,6 +27,19 @@ public class ProdutoController {
         return ResponseEntity.ok(dtos);
     }
 
+    // --- NOVO ENDPOINT (SEARCH) ---
+    @GetMapping("/search")
+    public ResponseEntity<List<ProdutoResponseDTO>> searchProdutos(
+            @RequestParam("nome") String nome) {
+
+        UUID equipeId = TeamContextHolder.getTeamId();
+        if (nome == null || nome.trim().isEmpty()) {
+            return listarProdutosPorEquipe();
+        }
+        List<ProdutoResponseDTO> dtos = produtoService.searchProdutosPorNome(nome, equipeId);
+        return ResponseEntity.ok(dtos);
+    }
+
     @PostMapping
     public ResponseEntity<ProdutoResponseDTO> criarProduto(@Valid @RequestBody ProdutoRequestDTO dto) {
         UUID equipeId = TeamContextHolder.getTeamId();

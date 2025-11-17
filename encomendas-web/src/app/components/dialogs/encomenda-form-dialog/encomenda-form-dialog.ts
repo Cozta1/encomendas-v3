@@ -1,131 +1,224 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable } from 'rxjs';
+import { MatTableModule } from '@angular/material/table';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Observable, of } from 'rxjs';
+import { startWith, switchMap, debounceTime, catchError } from 'rxjs/operators';
 
-// Interfaces
-import { EncomendaRequest } from '../../../core/models/encomenda.interfaces';
-import { ClienteResponse } from '../../../core/models/cliente.interfaces';
-import { ProdutoResponse } from '../../../core/models/produto.interfaces';
-import { FornecedorResponse } from '../../../core/models/fornecedor.interfaces'; // 1. Importar
-
-// Serviços
+// Nossos Serviços e Modais
 import { ClienteService } from '../../../core/services/cliente.service';
 import { ProdutoService } from '../../../core/services/produto.service';
-import { FornecedorService } from '../../../core/services/fornecedor.service'; // 2. Importar
+import { FornecedorService } from '../../../core/services/fornecedor.service';
+import { ClienteResponse } from '../../../core/models/cliente.interfaces';
+import { ProdutoResponse } from '../../../core/models/produto.interfaces';
+import { FornecedorResponse } from '../../../core/models/fornecedor.interfaces';
+import { EncomendaItemRequest, EncomendaRequest } from '../../../core/models/encomenda.interfaces';
+import { ClienteFormDialog } from '../cliente-form-dialog/cliente-form-dialog';
 
 @Component({
   selector: 'app-encomenda-form-dialog',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatSelectModule,
-    MatAutocompleteModule,
-    MatIconModule
+    CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule,
+    MatInputModule, MatButtonModule, MatAutocompleteModule, MatIconModule,
+    MatTableModule, MatSnackBarModule
   ],
   templateUrl: './encomenda-form-dialog.html',
-  styleUrls: ['./encomenda-form-dialog.scss']
+  styleUrl: './encomenda-form-dialog.scss'
 })
 export class EncomendaFormDialog implements OnInit {
 
-  public form: FormGroup;
-  public isEditMode: boolean = false;
+  // Formulário principal
+  encomendaForm: FormGroup;
 
-  // Observables para carregar dados
-  public clientes$!: Observable<ClienteResponse[]>;
-  public produtos$!: Observable<ProdutoResponse[]>;
-  public fornecedores$!: Observable<FornecedorResponse[]>; // 3. Adicionar
+  // Formulário para adicionar um item
+  itemForm: FormGroup;
 
-  // Armazena a lista de produtos para auto-preenchimento
-  private produtosList: ProdutoResponse[] = [];
+  // Lista de itens adicionados
+  itensDataSource = new FormArray<FormGroup>([]);
+  displayedColumns: string[] = ['produto', 'fornecedor', 'quantidade', 'precoCotado', 'subtotal', 'acoes'];
+
+  // Observables para os autocompletes
+  filteredClientes$!: Observable<ClienteResponse[]>;
+  filteredProdutos$!: Observable<ProdutoResponse[]>;
+  filteredFornecedores$!: Observable<FornecedorResponse[]>;
 
   constructor(
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<EncomendaFormDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: EncomendaRequest | null,
+    private dialog: MatDialog, // Para abrir o modal de criar cliente
+    private snackBar: MatSnackBar,
     private clienteService: ClienteService,
     private produtoService: ProdutoService,
-    private fornecedorService: FornecedorService // 4. Injetar
+    private fornecedorService: FornecedorService
   ) {
-    this.form = this.fb.group({
-      clienteId: ['', Validators.required],
-      observacoes: [''],
-      itens: this.fb.array([], Validators.required)
+    // Formulário principal da encomenda
+    this.encomendaForm = this.fb.group({
+      cliente: [null, Validators.required], // Armazena o *objeto* Cliente
+      observacoes: ['']
+    });
+
+    // Formulário para um novo item
+    this.itemForm = this.fb.group({
+      produto: [null, Validators.required],
+      fornecedor: [null, Validators.required],
+      quantidade: [1, [Validators.required, Validators.min(1)]],
+      precoCotado: [0, [Validators.required, Validators.min(0)]]
     });
   }
 
   ngOnInit(): void {
-    this.carregarDadosSelect();
+    this.setupAutocompletes();
   }
 
-  carregarDadosSelect(): void {
-    this.clientes$ = this.clienteService.getClientes();
-    this.fornecedores$ = this.fornecedorService.getFornecedores(); // 5. Carregar fornecedores
+  // Configura os autocompletes para pesquisar
+  setupAutocompletes(): void {
+    // Autocomplete de Cliente
+    this.filteredClientes$ = this.encomendaForm.get('cliente')!.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300), // Espera 300ms após o usuário parar de digitar
+      switchMap(value => {
+        const nome = typeof value === 'string' ? value : value?.nome || '';
+        if (nome.length < 2) return of([]); // Só pesquisa com 2+ letras
+        return this.clienteService.searchClientes(nome).pipe(
+          catchError(() => of([])) // Em caso de erro, retorna lista vazia
+        );
+      })
+    );
 
-    // 6. Carregar produtos e guardar a lista para consulta
-    this.produtos$ = this.produtoService.getProdutos();
-    this.produtos$.subscribe(produtos => {
-      this.produtosList = produtos;
+    // Autocomplete de Produto
+    this.filteredProdutos$ = this.itemForm.get('produto')!.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      switchMap(value => {
+        const nome = typeof value === 'string' ? value : value?.nome || '';
+        if (nome.length < 2) return of([]);
+        return this.produtoService.searchProdutos(nome).pipe(
+          catchError(() => of([]))
+        );
+      })
+    );
+
+    // Autocomplete de Fornecedor
+    this.filteredFornecedores$ = this.itemForm.get('fornecedor')!.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      switchMap(value => {
+        const nome = typeof value === 'string' ? value : value?.nome || '';
+        if (nome.length < 2) return of([]);
+        return this.fornecedorService.searchFornecedores(nome).pipe(
+          catchError(() => of([]))
+        );
+      })
+    );
+  }
+
+  // Funções 'displayWith' para os autocompletes mostrarem o nome
+  displayClienteFn(cliente: ClienteResponse): string {
+    return cliente && cliente.nome ? cliente.nome : '';
+  }
+  displayProdutoFn(produto: ProdutoResponse): string {
+    return produto && produto.nome ? produto.nome : '';
+  }
+  displayFornecedorFn(fornecedor: FornecedorResponse): string {
+    return fornecedor && fornecedor.nome ? fornecedor.nome : '';
+  }
+
+  // --- SEU REQUISITO: Abrir modal de novo cliente ---
+  abrirModalNovoCliente(event: MouseEvent): void {
+    event.stopPropagation(); // Impede o autocomplete de fechar
+    const dialogRef = this.dialog.open(ClienteFormDialog, {
+      width: '500px',
+      data: null // Modo de criação
+    });
+
+    dialogRef.afterClosed().subscribe(novoClienteRequest => {
+      if (novoClienteRequest) {
+        // Se o cliente foi criado, chamamos o serviço
+        this.clienteService.criarCliente(novoClienteRequest).subscribe(clienteCriado => {
+          this.snackBar.open('Cliente criado e selecionado!', 'OK', { duration: 3000 });
+          // Preenche o campo de autocomplete com o novo cliente
+          this.encomendaForm.get('cliente')?.setValue(clienteCriado);
+        });
+      }
     });
   }
 
-  // --- Métodos para gerir o FormArray 'itens' ---
-
-  get itens(): FormArray {
-    return this.form.get('itens') as FormArray;
-  }
-
-  // 7. Atualizar a criação do item
-  novoItem(): FormGroup {
-    return this.fb.group({
-      produtoId: ['', Validators.required],
-      fornecedorId: ['', Validators.required],
-      precoCotado: [null, [Validators.required, Validators.min(0.01)]], // Começa nulo
-      quantidade: [1, [Validators.required, Validators.min(1)]]
-    });
-  }
-
+  // Adiciona o item do itemForm para a tabela (FormArray)
   adicionarItem(): void {
-    this.itens.push(this.novoItem());
+    if (this.itemForm.invalid) return;
+
+    const item = this.itemForm.value;
+    const subtotal = item.quantidade * item.precoCotado;
+
+    // Adiciona o item formatado ao FormArray
+    this.itensDataSource.push(this.fb.group({
+      produto: [item.produto, Validators.required],
+      fornecedor: [item.fornecedor, Validators.required],
+      quantidade: [item.quantidade, Validators.required],
+      precoCotado: [item.precoCotado, Validators.required],
+      subtotal: [subtotal] // Campo calculado
+    }));
+
+    // Reseta o formulário de adicionar item
+    this.itemForm.reset({
+      produto: null,
+      fornecedor: null,
+      quantidade: 1,
+      precoCotado: 0
+    });
   }
 
+  // Remove um item da tabela (FormArray)
   removerItem(index: number): void {
-    this.itens.removeAt(index);
+    this.itensDataSource.removeAt(index);
   }
 
-  // 8. NOVO MÉTODO: Auto-preenche o preço cotado
-  onProdutoSelecionado(produtoId: string, itemIndex: number): void {
-    const produto = this.produtosList.find(p => p.id === produtoId);
-    if (produto) {
-      // Pega o 'FormGroup' do item específico
-      const itemFormGroup = this.itens.at(itemIndex);
-      // Define o 'precoCotado' como o 'precoBase' do produto
-      itemFormGroup.get('precoCotado')?.setValue(produto.precoBase);
-    }
+  // Função helper para recalcular o total (pode ser chamada no adicionar/remover)
+  getValorTotalEncomenda(): number {
+    return this.itensDataSource.controls
+      .reduce((acc, itemForm) => acc + (itemForm.get('subtotal')?.value || 0), 0);
   }
 
-  // --- Fim dos métodos do FormArray ---
-
+  // Fecha o modal e retorna os dados
   onSave(): void {
-    if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
-    } else {
-      // Marca todos os campos como "tocados" para exibir os erros
-      this.form.markAllAsTouched();
-      this.itens.markAllAsTouched();
+    if (this.encomendaForm.invalid || this.itensDataSource.length === 0) {
+      this.snackBar.open('Selecione um cliente e adicione pelo menos um item.', 'Fechar', { duration: 3000 });
+      return;
     }
+
+    // Pega os dados brutos dos formulários
+    const clienteSelecionado: ClienteResponse = this.encomendaForm.get('cliente')?.value;
+    const observacoes: string = this.encomendaForm.get('observacoes')?.value;
+
+    // Mapeia os itens do FormArray para o DTO de Request
+    const itensRequest: EncomendaItemRequest[] = this.itensDataSource.controls.map(itemGroup => {
+      const produto: ProdutoResponse = itemGroup.get('produto')?.value;
+      const fornecedor: FornecedorResponse = itemGroup.get('fornecedor')?.value;
+
+      return {
+        produtoId: produto.id,
+        fornecedorId: fornecedor.id,
+        quantidade: itemGroup.get('quantidade')?.value,
+        precoCotado: itemGroup.get('precoCotado')?.value
+      };
+    });
+
+    // Monta o DTO final
+    const encomendaRequest: EncomendaRequest = {
+      clienteId: clienteSelecionado.id,
+      observacoes: observacoes,
+      itens: itensRequest
+    };
+
+    this.dialogRef.close(encomendaRequest);
   }
 
   onCancel(): void {
