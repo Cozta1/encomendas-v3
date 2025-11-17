@@ -17,14 +17,13 @@ public interface EncomendaRepository extends JpaRepository<Encomenda, UUID> {
      * Busca encomendas da equipe, já carregando (JOIN FETCH) as relações
      * para evitar N+1 queries e erros de LazyInitialization ou NullPointer.
      */
-    @Query("SELECT e FROM Encomenda e " +
+    @Query("SELECT DISTINCT e FROM Encomenda e " + // <-- MODIFIED
             "LEFT JOIN FETCH e.cliente c " +
             "LEFT JOIN FETCH e.itens i " +
             "LEFT JOIN FETCH i.produto p " +
             "LEFT JOIN FETCH i.fornecedor f " +
             "WHERE e.equipe.id = :equipeId " +
-            // Adiciona "DISTINCT" para evitar duplicatas causadas pelos joins
-            "GROUP BY e.id, c.id " +
+            // "GROUP BY e.id, c.id " + // <-- REMOVED
             "ORDER BY e.dataCriacao DESC")
     List<Encomenda> findByEquipeId(@Param("equipeId") UUID equipeId);
 }

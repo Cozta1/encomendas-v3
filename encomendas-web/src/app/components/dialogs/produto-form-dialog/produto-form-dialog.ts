@@ -5,7 +5,7 @@ import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { ProdutoRequest } from '../../../core/models/produto.interfaces';
+import { ProdutoRequest, ProdutoResponse } from '../../../core/models/produto.interfaces';
 
 @Component({
   selector: 'app-produto-form-dialog',
@@ -29,7 +29,7 @@ export class ProdutoFormDialog implements OnInit {
   constructor(
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<ProdutoFormDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: ProdutoRequest | null
+    @Inject(MAT_DIALOG_DATA) public data: ProdutoResponse | null
   ) {
     // Inicializa o formulário
     this.form = this.fb.group({
@@ -44,7 +44,11 @@ export class ProdutoFormDialog implements OnInit {
     // Se recebemos dados (modo de edição), preenche o formulário
     if (this.data) {
       this.isEditMode = true;
-      this.form.patchValue(this.data);
+      // Mapeia o precoBase (do Response) para o campo 'preco' (do Form)
+      this.form.patchValue({
+        ...this.data,
+        preco: this.data.precoBase
+      });
     }
   }
 
