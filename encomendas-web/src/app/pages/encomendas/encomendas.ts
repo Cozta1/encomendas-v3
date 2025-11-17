@@ -74,7 +74,8 @@ export class Encomendas implements OnInit, OnDestroy {
   novaEncomenda(): void {
     const dialogRef = this.dialog.open(EncomendaFormDialog, {
       width: '700px',
-      data: null
+      data: null,
+      autoFocus: false // <-- ESTA É A CORREÇÃO
     });
 
     dialogRef.afterClosed().subscribe(resultado => {

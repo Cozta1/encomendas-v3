@@ -1,17 +1,10 @@
-<!--
-  Usamos (ngSubmit) no form para permitir salvar com "Enter",
-  mas o botão Salvar ainda faz a verificação final.
--->
 <form [formGroup]="form" (ngSubmit)="onSave()">
 
-  <!-- Título do Diálogo -->
   <h1 mat-dialog-title>{{ isEditMode ? 'Editar Cliente' : 'Novo Cliente' }}</h1>
 
-  <!-- Conteúdo (Formulário) -->
   <mat-dialog-content>
     <p>Preencha os dados do cliente.</p>
 
-    <!-- Campo Nome (Obrigatório) -->
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>Nome Completo</mat-label>
       <input matInput formControlName="nome" required cdkFocusInitial>
@@ -20,7 +13,6 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Campo Email (Validação de Email) -->
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>Email</mat-label>
       <input matInput formControlName="email" placeholder="exemplo@email.com">
@@ -29,19 +21,16 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Campo Telefone -->
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>Telefone</mat-label>
       <input matInput formControlName="telefone" placeholder="(XX) 9XXXX-XXXX">
     </mat-form-field>
 
-    <!-- Campo CPF/CNPJ -->
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>CPF ou CNPJ</mat-label>
       <input matInput formControlName="cpfCnpj">
     </mat-form-field>
 
-    <!-- Campo Endereço -->
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>Endereço</mat-label>
       <textarea matInput formControlName="endereco" placeholder="Rua, Número, Bairro..."></textarea>
@@ -49,7 +38,6 @@
 
   </mat-dialog-content>
 
-  <!-- Ações (Botões) -->
   <mat-dialog-actions align="end">
     <button mat-button type="button" (click)="onCancel()">Cancelar</button>
     <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">

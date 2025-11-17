@@ -46,7 +46,7 @@ public class ProdutoService {
                 .nome(dto.getNome())
                 .descricao(dto.getDescricao())
                 .codigo(dto.getCodigo())
-                .precoBase(dto.getPrecoBase())
+                .precoBase(dto.getPreco()) // <--- CORRIGIDO
                 .equipe(equipe)
                 .build();
 
@@ -66,7 +66,7 @@ public class ProdutoService {
         produto.setNome(dto.getNome());
         produto.setDescricao(dto.getDescricao());
         produto.setCodigo(dto.getCodigo());
-        produto.setPrecoBase(dto.getPrecoBase());
+        produto.setPrecoBase(dto.getPreco()); // <--- CORRIGIDO
 
         Produto atualizado = produtoRepository.save(produto);
         return paraResponseDTO(atualizado);

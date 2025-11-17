@@ -18,6 +18,7 @@ export class FornecedorService {
   // --- NOVO MÉTODO (SEARCH) ---
   searchFornecedores(nome: string): Observable<FornecedorResponse[]> {
     const params = new HttpParams().set('nome', nome);
+    // CORRIGIDO: O tipo de retorno estava errado
     return this.http.get<FornecedorResponse[]>(`${this.API_URL}/search`, { params });
   }
 

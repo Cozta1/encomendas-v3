@@ -71,7 +71,7 @@
     </button>
   </form>
 
-  <table mat-table [dataSource]="itensDataSource.controls" class="mat-elevation-z8" style="width: 100%; margin-top: 16px;">
+  <table mat-table [dataSource]="itensDataSource.controls" #itensTable class="mat-elevation-z8" style="width: 100%; margin-top: 16px;">
 
     <ng-container matColumnDef="produto">
       <th mat-header-cell *matHeaderCellDef> Produto </th>
