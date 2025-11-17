@@ -45,6 +45,8 @@ export class EncomendaDetalheDialog {
     switch (status) {
       case 'CONCLUIDO':
         return 'primary';
+      case 'ENTREGA':
+        return 'accent';
       case 'EM_PREPARO':
         return 'accent';
       case 'PENDENTE':

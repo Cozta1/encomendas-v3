@@ -19,10 +19,12 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    private static final String STATUS_PENDENTE = "PENDENTE";
-    private static final String STATUS_EM_PREPARO = "EM_PREPARO";
-    private static final String STATUS_CONCLUIDO = "CONCLUIDO";
-    private static final String STATUS_CANCELADO = "CANCELADO";
+    private static final String STATUS_PENDENTE = "Pendente";
+    private static final String STATUS_EM_PREPARO = "Em preparo";
+    private static final String STATUS_ENTREGA = "Aguardando entrega";
+    private static final String STATUS_CONCLUIDO = "Concluido";
+
+    private static final String STATUS_CANCELADO = "Cancelado";
 
     @Autowired
     private EncomendaRepository encomendaRepository;
@@ -125,6 +127,9 @@ public class EncomendaService {
                 encomenda.setStatus(STATUS_EM_PREPARO);
                 break;
             case STATUS_EM_PREPARO:
+                encomenda.setStatus(STATUS_ENTREGA);
+                break;
+            case STATUS_ENTREGA:
                 encomenda.setStatus(STATUS_CONCLUIDO);
                 break;
             case STATUS_CONCLUIDO:
