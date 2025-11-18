@@ -23,9 +23,9 @@ public class EncomendaService {
     // === 1. FAÇA SUAS MUDANÇAS AQUI ===
     // ======================================
     // (Presumindo que você já mudou os outros textos como pedi antes)
-    private static final String STATUS_PENDENTE = "Aguardando";
+    private static final String STATUS_PENDENTE = "Pendente"; // <-- ATUALIZADO
     private static final String STATUS_EM_PREPARO = "Em Preparo";
-    private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega"; // <-- NOVO
+    private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega";
     private static final String STATUS_CONCLUIDO = "Concluído";
     private static final String STATUS_CANCELADO = "Cancelado";
     // ======================================
@@ -65,7 +65,7 @@ public class EncomendaService {
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                .status(STATUS_PENDENTE) // Começa como Pendente/Aguardando
+                .status(STATUS_PENDENTE) // Começa como Pendente
                 .valorTotal(BigDecimal.ZERO)
                 .build();
 
@@ -132,9 +132,9 @@ public class EncomendaService {
                 encomenda.setStatus(STATUS_EM_PREPARO);
                 break;
             case STATUS_EM_PREPARO:
-                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); // <-- ATUALIZADO
+                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA);
                 break;
-            case STATUS_AGUARDANDO_ENTREGA: // <-- NOVO
+            case STATUS_AGUARDANDO_ENTREGA:
                 encomenda.setStatus(STATUS_CONCLUIDO);
                 break;
             case STATUS_CONCLUIDO:
@@ -161,9 +161,9 @@ public class EncomendaService {
         // ======================================
         switch (encomenda.getStatus()) {
             case STATUS_CONCLUIDO:
-                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); // <-- ATUALIZADO
+                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA);
                 break;
-            case STATUS_AGUARDANDO_ENTREGA: // <-- NOVO
+            case STATUS_AGUARDANDO_ENTREGA:
                 encomenda.setStatus(STATUS_EM_PREPARO);
                 break;
             case STATUS_EM_PREPARO:

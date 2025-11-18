@@ -28,11 +28,11 @@
                   color="accent"
                   matTooltip="Retornar Etapa"
                   (click)="retornarEtapa(e)"
-                  [disabled]="e.status === 'Aguardando' || e.status === 'Cancelado'">
+                  [disabled]="e.status === 'Pendente' || e.status === 'Cancelado'">
             <mat-icon>chevron_left</mat-icon>
           </button>
 
-          <mat-chip [color]="e.status === 'Aguardando' ? 'warn' : (e.status === 'Concluído' ? 'primary' : (e.status === 'Cancelado' ? 'default' : 'accent'))"
+          <mat-chip [color]="e.status === 'Pendente' ? 'warn' : (e.status === 'Concluído' ? 'primary' : (e.status === 'Cancelado' ? 'default' : 'accent'))"
                     [ngClass]="{'chip-cancelado': e.status === 'Cancelado'}"
                     selected>
             {{e.status}}
@@ -89,8 +89,8 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
-      <tr class.mat-row *matNoDataRow>
-        <td class.mat-cell [attr.colspan]="displayedColumns.length" style="text-align: center; padding: 20px;">
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" [attr.colspan]="displayedColumns.length" style="text-align: center; padding: 20px;">
           Nenhuma encomenda encontrada para esta equipe.
         </td>
       </tr>

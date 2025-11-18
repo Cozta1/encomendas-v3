@@ -50,9 +50,9 @@ export class EncomendaDetalheDialog {
         return 'primary';
       case 'Em Preparo':
         return 'accent';
-      case 'Aguardando Entrega': // <-- NOVO
+      case 'Aguardando Entrega':
         return 'accent';
-      case 'Aguardando':
+      case 'Pendente': // <-- ATUALIZADO
         return 'warn';
       default:
         return 'primary';

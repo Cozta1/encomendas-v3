@@ -111,7 +111,7 @@ public class DataSeeder {
             Encomenda encomenda1 = Encomenda.builder()
                     .cliente(clienteA)
                     .equipe(equipeCentro)
-                    .status("PENDENTE")
+                    .status("Pendente") // <--- ATUALIZADO
                     .valorTotal(new BigDecimal("0.00")) // Será calculado
                     .build();
             encomendaRepository.save(encomenda1);
@@ -122,7 +122,7 @@ public class DataSeeder {
                     .produto(prodA)
                     .fornecedor(fornA)
                     .quantidade(2)
-                    .precoCotado(new BigDecimal("10.00")) // O campo que causava o erro
+                    .precoCotado(new BigDecimal("10.00"))
                     .subtotal(new BigDecimal("20.00"))
                     .build();
 
@@ -131,7 +131,7 @@ public class DataSeeder {
                     .produto(prodB)
                     .fornecedor(fornA)
                     .quantidade(1)
-                    .precoCotado(new BigDecimal("11.50")) // O campo que causava o erro
+                    .precoCotado(new BigDecimal("11.50"))
                     .subtotal(new BigDecimal("11.50"))
                     .build();
 

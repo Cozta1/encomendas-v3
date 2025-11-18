@@ -93,9 +93,6 @@ export class Dashboard implements OnInit, OnDestroy {
     let countSemana = 0;
     let countMes = 0;
 
-    // ======================================
-    // === LÓGICA ATUALIZADA AQUI ===
-    // ======================================
     const encomendasConcluidas = encomendas.filter(e => e.status === 'Concluído');
 
     for (const enc of encomendasConcluidas) {
@@ -122,11 +119,8 @@ export class Dashboard implements OnInit, OnDestroy {
    */
   private processarEncomendasAbertas(encomendas: EncomendaResponse[]): void {
 
-    // ======================================
-    // === LÓGICA ATUALIZADA AQUI ===
-    // ======================================
     const encomendasAbertas = encomendas
-      .filter(e => e.status !== 'Concluído' && e.status !== 'Cancelado') // (Esta lógica já está correta)
+      .filter(e => e.status !== 'Concluído' && e.status !== 'Cancelado')
       .sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime()) // Mais recentes primeiro
       .slice(0, 5); // Pega apenas as 5 primeiras
 
@@ -141,9 +135,9 @@ export class Dashboard implements OnInit, OnDestroy {
     switch (status) {
       case 'Concluído': return 'primary';
       case 'Em Preparo': return 'accent';
-      case 'Aguardando Entrega': return 'accent'; // <-- NOVO (usando 'accent' também)
-      case 'Aguardando': return 'warn';
-      default: return 'primary'; // 'Cancelado' usará 'primary' mas com CSS cinza
+      case 'Aguardando Entrega': return 'accent';
+      case 'Pendente': return 'warn'; // <-- ATUALIZADO
+      default: return 'primary';
     }
   }
   // ======================================

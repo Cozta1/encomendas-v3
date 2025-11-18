@@ -75,7 +75,7 @@ export class Encomendas implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(EncomendaFormDialog, {
       width: '700px',
       data: null,
-      autoFocus: false // <-- ESTA É A CORREÇÃO
+      autoFocus: false
     });
 
     dialogRef.afterClosed().subscribe(resultado => {
@@ -120,9 +120,7 @@ export class Encomendas implements OnInit, OnDestroy {
     });
   }
 
-  // --- NOVO MÉTODO ---
   cancelarEncomenda(encomenda: EncomendaResponse): void {
-    // Como é uma mudança de estado, removemos o confirm()
     this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
       next: (encomendaAtualizada) => {
         this.snackBar.open(`Encomenda #${encomenda.id.substring(0, 4)}... CANCELADA`, 'OK', { duration: 2000 });

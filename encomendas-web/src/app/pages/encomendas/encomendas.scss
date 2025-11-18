@@ -24,12 +24,10 @@
 .status-cell {
   display: flex;
   align-items: center;
-  gap: 4px; // Espaço pequeno entre os botões e o chip
+  gap: 4px;
+  padding-bottom: 3px;
 }
 
-// --- NOVO ESTILO ---
-/* Estilo para o chip cancelado (cinzento) */
-.chip-cancelado {
-  background-color: #e0e0e0 !important; // cinza
-  color: #616161 !important; // texto cinza escuro
-}
+/* O estilo .chip-cancelado foi movido para o styles.scss global
+  para que funcione em todo o app e responda ao modo escuro.
+*/

@@ -2,9 +2,8 @@
 @include mat.core();
 
 // 1. Define a paleta de cores do TEMA CLARO (Padrão)
-// Usando o seu novo padrão m2-
 $light-primary: mat.m2-define-palette(mat.$m2-indigo-palette, A400, A100, A700);
-$light-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400); // Mantive pink como no original
+$light-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
 $light-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 $light-theme: mat.m2-define-light-theme((
@@ -16,10 +15,9 @@ $light-theme: mat.m2-define-light-theme((
 ));
 
 // 2. Define a paleta de cores do TEMA ESCURO
-// Usando o seu novo padrão m2-
-$dark-primary: mat.m2-define-palette(mat.$m2-blue-grey-palette);
-$dark-accent: mat.m2-define-palette(mat.$m2-amber-palette, A200, A100, A400);
-$dark-warn: mat.m2-define-palette(mat.$m2-deep-orange-palette);
+$dark-primary: mat.m2-define-palette(mat.$m2-indigo-palette, A200, A100, A400); // Trocado para Indigo no dark
+$dark-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
+$dark-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 $dark-theme: mat.m2-define-dark-theme((
   color: (
@@ -29,14 +27,75 @@ $dark-theme: mat.m2-define-dark-theme((
   )
 ));
 
-// 3. APLICA O TEMA CLARO como padrão
+// 3. APLICA O TEMA CLARO como padrão (componentes Material)
 @include mat.all-component-themes($light-theme);
 
-// 4. APLICA O TEMA ESCURO apenas quando a classe .dark-theme estiver presente
+// 4. APLICA O TEMA ESCURO (componentes Material)
 .dark-theme {
   @include mat.all-component-colors($dark-theme);
 }
 
-// Resets globais
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// 5. DEFINIÇÃO DAS VARIÁVEIS DE CSS GLOBAIS
+
+// Variáveis para o TEMA CLARO (Padrão)
+:root {
+  // Cores da Paleta
+  --app-primary-color: #{mat.m2-get-color-from-palette($light-primary, 'A400')};
+  --app-accent-color: #{mat.m2-get-color-from-palette($light-accent, 'A200')};
+  --app-warn-color: #{mat.m2-get-color-from-palette($light-warn, 'default')};
+
+  // Cores de Fundo
+  --app-background-color: #f5f5f5; // Cinza bem claro (para a página)
+  --app-card-background-color: #ffffff; // Branco (para cartões, diálogos, etc.)
+  --app-sidebar-background-color: #fafafa; // Um pouco mais escuro que o card
+  --app-border-color: rgba(0, 0, 0, 0.12); // Cor padrão de divisor do Material
+
+  // Cores de Texto
+  --app-text-color: rgba(0, 0, 0, 0.87); // Texto principal
+  --app-text-color-secondary: rgba(0, 0, 0, 0.6); // Texto secundário (ícones)
+
+  // Cores do Chip Cancelado
+  --app-chip-cancelado-bg: #e0e0e0;
+  --app-chip-cancelado-text: #616161;
+}
+
+// Variáveis para o TEMA ESCURO
+.dark-theme {
+  // Cores da Paleta
+  --app-primary-color: #{mat.m2-get-color-from-palette($dark-primary, 'A200')};
+  --app-accent-color: #{mat.m2-get-color-from-palette($dark-accent, 'A200')};
+  --app-warn-color: #{mat.m2-get-color-from-palette($dark-warn, 'default')};
+
+  // Cores de Fundo (Estética "Clean Dark")
+  --app-background-color: #212121; // Fundo principal (Grey 900)
+  --app-card-background-color: #303030; // Fundo de cartões (Grey 850)
+  --app-sidebar-background-color: #2a2a2a; // Fundo da sidebar (um pouco diferente)
+  --app-border-color: rgba(255, 255, 255, 0.12); // Divisor claro
+
+  // Cores de Texto
+  --app-text-color: rgba(255, 255, 255, 0.87);
+  --app-text-color-secondary: rgba(255, 255, 255, 0.7);
+
+  // Cores do Chip Cancelado
+  --app-chip-cancelado-bg: #4f4f4f; // Cinza escuro para o chip
+  --app-chip-cancelado-text: rgba(255, 255, 255, 0.7);
+}
+
+// Resets globais e aplicação das variáveis
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  // Aplica as variáveis de fundo e texto ao body
+  background-color: var(--app-background-color);
+  color: var(--app-text-color);
+}
+
+// Estilo global do chip cancelado
+.chip-cancelado {
+  background-color: var(--app-chip-cancelado-bg) !important;
+  color: var(--app-chip-cancelado-text) !important;
+}
