@@ -19,12 +19,17 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    private static final String STATUS_PENDENTE = "Pendente";
-    private static final String STATUS_EM_PREPARO = "Em preparo";
-    private static final String STATUS_ENTREGA = "Aguardando entrega";
-    private static final String STATUS_CONCLUIDO = "Concluido";
-
+    // ======================================
+    // === 1. FAÇA SUAS MUDANÇAS AQUI ===
+    // ======================================
+    // (Presumindo que você já mudou os outros textos como pedi antes)
+    private static final String STATUS_PENDENTE = "Aguardando";
+    private static final String STATUS_EM_PREPARO = "Em Preparo";
+    private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega"; // <-- NOVO
+    private static final String STATUS_CONCLUIDO = "Concluído";
     private static final String STATUS_CANCELADO = "Cancelado";
+    // ======================================
+
 
     @Autowired
     private EncomendaRepository encomendaRepository;
@@ -35,7 +40,7 @@ public class EncomendaService {
     @Autowired
     private ProdutoRepository produtoRepository;
     @Autowired
-    private FornecedorRepository fornecedorRepository; // 2. Injetar FornecedorRepository
+    private FornecedorRepository fornecedorRepository;
 
     @Transactional(readOnly = true)
     public List<EncomendaResponseDTO> listarEncomendasPorEquipe(UUID equipeId) {
@@ -60,14 +65,13 @@ public class EncomendaService {
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                .status(STATUS_PENDENTE)
+                .status(STATUS_PENDENTE) // Começa como Pendente/Aguardando
                 .valorTotal(BigDecimal.ZERO)
                 .build();
 
         List<EncomendaItem> itens = new ArrayList<>();
         BigDecimal valorTotal = BigDecimal.ZERO;
 
-        // --- 3. LÓGICA DE CRIAÇÃO DE ITEM ATUALIZADA ---
         for (var itemDto : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDto.getProdutoId())
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.getProdutoId()));
@@ -83,7 +87,6 @@ public class EncomendaService {
                 throw new RuntimeException("Acesso negado: Fornecedor " + fornecedor.getNome() + " não pertence à sua equipe.");
             }
 
-            // Usa o preço cotado enviado pelo frontend
             BigDecimal precoCotado = itemDto.getPrecoCotado();
             BigDecimal quantidade = new BigDecimal(itemDto.getQuantidade());
             BigDecimal subtotal = precoCotado.multiply(quantidade);
@@ -93,13 +96,12 @@ public class EncomendaService {
             itens.add(EncomendaItem.builder()
                     .encomenda(encomenda)
                     .produto(produto)
-                    .fornecedor(fornecedor) // Adiciona o fornecedor
+                    .fornecedor(fornecedor)
                     .quantidade(itemDto.getQuantidade())
-                    .precoCotado(precoCotado) // Salva o preço cotado
+                    .precoCotado(precoCotado)
                     .subtotal(subtotal)
                     .build());
         }
-        // --- FIM DA LÓGICA ATUALIZADA ---
 
         encomenda.setValorTotal(valorTotal);
         encomenda.setItens(itens);
@@ -122,14 +124,17 @@ public class EncomendaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda cancelada.");
         }
 
+        // ======================================
+        // === 2. LÓGICA ATUALIZADA AQUI ===
+        // ======================================
         switch (encomenda.getStatus()) {
             case STATUS_PENDENTE:
                 encomenda.setStatus(STATUS_EM_PREPARO);
                 break;
             case STATUS_EM_PREPARO:
-                encomenda.setStatus(STATUS_ENTREGA);
+                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); // <-- ATUALIZADO
                 break;
-            case STATUS_ENTREGA:
+            case STATUS_AGUARDANDO_ENTREGA: // <-- NOVO
                 encomenda.setStatus(STATUS_CONCLUIDO);
                 break;
             case STATUS_CONCLUIDO:
@@ -137,6 +142,7 @@ public class EncomendaService {
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
         }
+        // ======================================
 
         Encomenda salva = encomendaRepository.save(encomenda);
         return EncomendaResponseDTO.fromEntity(salva);
@@ -150,8 +156,14 @@ public class EncomendaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível retornar uma encomenda cancelada.");
         }
 
+        // ======================================
+        // === 3. LÓGICA ATUALIZADA AQUI ===
+        // ======================================
         switch (encomenda.getStatus()) {
             case STATUS_CONCLUIDO:
+                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); // <-- ATUALIZADO
+                break;
+            case STATUS_AGUARDANDO_ENTREGA: // <-- NOVO
                 encomenda.setStatus(STATUS_EM_PREPARO);
                 break;
             case STATUS_EM_PREPARO:
@@ -162,6 +174,7 @@ public class EncomendaService {
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
         }
+        // ======================================
 
         Encomenda salva = encomendaRepository.save(encomenda);
         return EncomendaResponseDTO.fromEntity(salva);

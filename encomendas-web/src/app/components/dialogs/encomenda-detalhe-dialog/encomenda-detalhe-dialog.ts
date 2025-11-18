@@ -40,16 +40,19 @@ export class EncomendaDetalheDialog {
     this.dialogRef.close();
   }
 
+  // ======================================
+  // === LÓGICA ATUALIZADA AQUI ===
+  // ======================================
   // Helper para definir a cor do chip com base no status
   getStatusColor(status: string): 'primary' | 'accent' | 'warn' {
     switch (status) {
-      case 'CONCLUIDO':
+      case 'Concluído':
         return 'primary';
-      case 'ENTREGA':
+      case 'Em Preparo':
         return 'accent';
-      case 'EM_PREPARO':
+      case 'Aguardando Entrega': // <-- NOVO
         return 'accent';
-      case 'PENDENTE':
+      case 'Aguardando':
         return 'warn';
       default:
         return 'primary';

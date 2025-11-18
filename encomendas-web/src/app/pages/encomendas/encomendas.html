@@ -21,30 +21,28 @@
       </ng-container>
 
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef> Status </th>
+        <th mat-header-cell *matHeaderCellDef class="status-header-cell"> Status </th>
         <td mat-cell *matCellDef="let e" class="status-cell">
 
           <button mat-icon-button
                   color="accent"
                   matTooltip="Retornar Etapa"
                   (click)="retornarEtapa(e)"
-                  [disabled]="e.status === 'PENDENTE' || e.status === 'CANCELADO'">
+                  [disabled]="e.status === 'Aguardando' || e.status === 'Cancelado'">
             <mat-icon>chevron_left</mat-icon>
           </button>
 
-          <mat-chip-listbox>
-            <mat-chip [color]="e.status === 'PENDENTE' ? 'warn' : (e.status === 'CONCLUIDO' ? 'primary' : (e.status === 'CANCELADO' ? 'default' : 'accent'))"
-                      [ngClass]="{'chip-cancelado': e.status === 'CANCELADO'}"
-                      selected>
-              {{e.status}}
-            </mat-chip>
-          </mat-chip-listbox>
+          <mat-chip [color]="e.status === 'Aguardando' ? 'warn' : (e.status === 'Concluído' ? 'primary' : (e.status === 'Cancelado' ? 'default' : 'accent'))"
+                    [ngClass]="{'chip-cancelado': e.status === 'Cancelado'}"
+                    selected>
+            {{e.status}}
+          </mat-chip>
 
           <button mat-icon-button
                   color="primary"
                   matTooltip="Avançar Etapa"
                   (click)="avancarEtapa(e)"
-                  [disabled]="e.status === 'CONCLUIDO' || e.status === 'CANCELADO'">
+                  [disabled]="e.status === 'Concluído' || e.status === 'Cancelado'">
             <mat-icon>chevron_right</mat-icon>
           </button>
 
@@ -75,7 +73,7 @@
                   color="warn"
                   matTooltip="Cancelar Encomenda"
                   (click)="cancelarEncomenda(e)"
-                  [disabled]="e.status === 'CONCLUIDO' || e.status === 'CANCELADO'">
+                  [disabled]="e.status === 'Concluído' || e.status === 'Cancelado'">
             <mat-icon>block</mat-icon>
           </button>
 
@@ -91,8 +89,8 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" [attr.colspan]="displayedColumns.length" style="text-align: center; padding: 20px;">
+      <tr class.mat-row *matNoDataRow>
+        <td class.mat-cell [attr.colspan]="displayedColumns.length" style="text-align: center; padding: 20px;">
           Nenhuma encomenda encontrada para esta equipe.
         </td>
       </tr>
