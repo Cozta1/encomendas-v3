@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router'; // Importar RouterModule
 import { AuthService } from '../core/auth/auth.service';
 
-// Importações do Angular Material
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,13 +16,13 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterModule, // Necessário para os links funcionarem
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatSnackBarModule
   ],
-  // ATENÇÃO: Nomes dos ficheiros ajustados aqui
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -55,13 +54,11 @@ export class Login {
       next: () => {
         this.isLoading = false;
         this.snackBar.open('Login realizado com sucesso!', 'OK', { duration: 3000 });
-        // Navegar para a dashboard após o login (implementaremos a rota depois)
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isLoading = false;
         console.error('Erro de login:', err);
-        // Mensagem de erro genérica para segurança, ou específica se o backend enviar
         this.snackBar.open('Falha no login. Verifique email e senha.', 'Fechar', {
           duration: 5000,
           panelClass: ['error-snackbar']

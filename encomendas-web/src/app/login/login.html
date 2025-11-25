@@ -27,14 +27,16 @@
           </mat-error>
         </mat-form-field>
 
+        <!-- Links de Ajuda -->
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+          <a routerLink="/forgot-password" style="text-decoration: none; font-size: 0.85rem; color: var(--app-primary-color);">Esqueci a senha</a>
+          <a routerLink="/register" style="text-decoration: none; font-size: 0.85rem; color: var(--app-primary-color);">Criar conta</a>
+        </div>
+
         <div class="actions">
-          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading">
+          <button mat-raised-button color="primary" type="submit" [disabled]="loginForm.invalid || isLoading" style="width: 100%;">
             {{ isLoading ? 'A entrar...' : 'Entrar' }}
           </button>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-          <a routerLink="/forgot-password" style="text-decoration: none; font-size: 0.9em;">Esqueci a senha</a>
-          <a routerLink="/register" style="text-decoration: none; font-size: 0.9em;">Criar conta</a>
         </div>
 
       </form>
