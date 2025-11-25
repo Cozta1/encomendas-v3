@@ -29,9 +29,11 @@ public class AuthController {
     @Autowired JwtTokenProvider tokenProvider;
     @Autowired EmailService emailService;
 
-    // Lê a chave do application.properties
     @Value("${app.registrationKey}")
-    private String appRegistrationKey;
+    private String userRegistrationKey;
+
+    @Value("${app.adminRegistrationKey:FARMACIA_ADMIN_MASTER}")
+    private String adminRegistrationKey;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -40,14 +42,25 @@ public class AuthController {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+
+        // --- CORREÇÃO DO ERRO ANTERIOR ---
+        // Pega o usuário autenticado para extrair role e nome
+        Usuario user = (Usuario) authentication.getPrincipal();
+
+        // Passa os 3 argumentos requeridos: token, role, nome
+        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, user.getRole(), user.getNomeCompleto()));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDTO dto) {
-        // 1. Verifica a chave de registro
-        if (!appRegistrationKey.equals(dto.getRegistrationKey())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Chave de registro inválida!");
+        String roleDefinida;
+
+        if (adminRegistrationKey.equals(dto.getRegistrationKey())) {
+            roleDefinida = "ROLE_ADMIN";
+        } else if (userRegistrationKey.equals(dto.getRegistrationKey())) {
+            roleDefinida = "ROLE_USER";
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Chave de registo inválida!");
         }
 
         if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
@@ -61,36 +74,27 @@ public class AuthController {
                 .identificacao(dto.getIdentificacao())
                 .telefone(dto.getTelefone())
                 .cargo("Usuário")
+                .role(roleDefinida)
                 .ativo(true)
                 .build();
 
         usuarioRepository.save(usuario);
-        return ResponseEntity.ok("Usuário registrado com sucesso!");
+        return ResponseEntity.ok("Usuário registado com sucesso! Permissão: " + roleDefinida);
     }
-
-    // --- RECUPERAÇÃO DE SENHA ---
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDTO dto) {
         Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email não encontrado."));
 
-        // Gera código de 6 dígitos
         String codigo = String.format("%06d", new Random().nextInt(999999));
-
-        // Salva no banco com validade de 15 minutos
         usuario.setTokenResetSenha(codigo);
         usuario.setDataExpiracaoToken(LocalDateTime.now().plusMinutes(15));
         usuarioRepository.save(usuario);
 
-        // Envia Email
-        emailService.enviarEmail(
-                usuario.getEmail(),
-                "Recuperação de Senha - Encomendas",
-                "Seu código de recuperação é: " + codigo + "\n\nEste código expira em 15 minutos."
-        );
+        emailService.enviarEmail(usuario.getEmail(), "Recuperação de Senha", "Código: " + codigo);
 
-        return ResponseEntity.ok("Código de recuperação enviado para o email.");
+        return ResponseEntity.ok("Código enviado.");
     }
 
     @PostMapping("/reset-password")
@@ -101,12 +105,10 @@ public class AuthController {
         if (usuario.getTokenResetSenha() == null || !usuario.getTokenResetSenha().equals(dto.getToken())) {
             return ResponseEntity.badRequest().body("Código inválido.");
         }
-
         if (usuario.getDataExpiracaoToken().isBefore(LocalDateTime.now())) {
             return ResponseEntity.badRequest().body("Código expirado.");
         }
 
-        // Atualiza senha e limpa o token
         usuario.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         usuario.setTokenResetSenha(null);
         usuario.setDataExpiracaoToken(null);

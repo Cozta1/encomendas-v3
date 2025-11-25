@@ -40,7 +40,7 @@ public class Usuario implements UserDetails {
     @Column(nullable = false, length = 100)
     private String cargo;
 
-    // --- NOVO CAMPO DE ROLE ---
+    // --- NOVO CAMPO ROLE ---
     @Column(nullable = false)
     private String role; // Ex: ROLE_ADMIN, ROLE_USER
 
@@ -78,19 +78,14 @@ public class Usuario implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Retorna a role salva no banco (deve começar com "ROLE_")
         return Collections.singletonList(new SimpleGrantedAuthority(this.role));
     }
 
     @Override
-    public String getUsername() {
-        return this.email;
-    }
+    public String getUsername() { return this.email; }
 
     @Override
-    public String getPassword() {
-        return this.password;
-    }
+    public String getPassword() { return this.password; }
 
     @Override
     public boolean isAccountNonExpired() { return true; }

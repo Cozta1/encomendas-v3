@@ -6,9 +6,10 @@ import lombok.Data;
 public class JwtAuthenticationResponse {
     private String accessToken;
     private String tokenType = "Bearer";
-    private String role; // Adicionado
-    private String nome; // Adicionado
+    private String role;
+    private String nome;
 
+    // Construtor com 3 argumentos (Causa do seu erro anterior se faltar)
     public JwtAuthenticationResponse(String accessToken, String role, String nome) {
         this.accessToken = accessToken;
         this.role = role;

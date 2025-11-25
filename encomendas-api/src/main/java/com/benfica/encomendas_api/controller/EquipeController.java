@@ -9,7 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize; // Importar
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +28,7 @@ public class EquipeController {
         return ResponseEntity.ok(equipesDTO);
     }
 
-    // --- PROTEGIDO: APENAS ADMIN PODE CRIAR EQUIPES ---
+    // --- PROTEGIDO: Apenas ADMIN pode criar ---
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Equipe> criarEquipe(@Valid @RequestBody EquipeDTO dto,
