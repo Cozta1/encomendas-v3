@@ -43,5 +43,18 @@ export class AuthService {
     // Verificação simples: se tem token, assume que está logado.
     // Em uma aplicação real, você verificaria se o token não expirou (usando jwt-decode, por exemplo).
     return !!this.getToken();
+
+
+  register(data: any): Observable<any> {
+    return this.http.post(`${this.API_URL}/register`, data, { responseType: 'text' });
+  }
+
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/forgot-password`, { email }, { responseType: 'text' });
+  }
+
+  resetPassword(data: any): Observable<any> {
+    return this.http.post(`${this.API_URL}/reset-password`, data, { responseType: 'text' });
+  }
   }
 }

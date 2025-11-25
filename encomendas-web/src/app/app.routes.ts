@@ -10,8 +10,13 @@ import { Produtos } from './pages/produtos/produtos';
 import { Encomendas } from './pages/encomendas/encomendas';
 import { Fornecedores } from './pages/fornecedores/fornecedores';
 
+import { Register } from './login/register'; // Importar
+import { ForgotPassword } from './login/forgot-password'; // Importar
+
 export const routes: Routes = [
   { path: 'login', component: Login },
+  { path: 'register', component: Register }, // Nova rota
+  { path: 'forgot-password', component: ForgotPassword }, // Nova rota
   {
     path: '',
     component: Main,
