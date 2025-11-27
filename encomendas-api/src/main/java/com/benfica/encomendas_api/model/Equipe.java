@@ -10,6 +10,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList; // Importar
+import java.util.List;      // Importar
 import java.util.UUID;
 
 @Data
@@ -34,6 +36,17 @@ public class Equipe {
     @JoinColumn(name = "administrador_id", nullable = false)
     private Usuario administrador;
 
+    // --- NOVO RELACIONAMENTO: MEMBROS ---
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "equipe_membros",
+            joinColumns = @JoinColumn(name = "equipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "usuario_id")
+    )
+    private List<Usuario> membros = new ArrayList<>();
+    // ------------------------------------
+
     @CreationTimestamp
     @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
@@ -45,7 +58,4 @@ public class Equipe {
     @Builder.Default
     @Column(nullable = false)
     private Boolean ativa = true;
-
-    // Relacionamento com membros postergado conforme solicitado.
-    // Será implementado via entidade intermediária MembroEquipe futuramente.
 }

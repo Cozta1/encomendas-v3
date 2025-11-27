@@ -7,6 +7,15 @@ export interface Equipe {
   id: string;
   nome: string;
   descricao?: string;
+  nomeAdministrador?: string;
+  isAdmin?: boolean;
+}
+
+export interface Convite {
+  id: string;
+  emailDestino: string;
+  status: string;
+  equipe: Equipe;
 }
 
 @Injectable({
@@ -31,10 +40,45 @@ export class TeamService {
     return this.http.get<Equipe[]>(this.API_URL);
   }
 
-  // --- NOVO MÉTODO ---
   public criarEquipe(dados: { nome: string, descricao: string }): Observable<Equipe> {
     return this.http.post<Equipe>(this.API_URL, dados);
   }
+
+  // --- MÉTODOS DE CONVITE ---
+
+  /**
+   * Envia um convite por email.
+   * Usa responseType: 'text' porque o backend retorna uma String simples.
+   */
+  public enviarConvite(equipeId: string, email: string): Observable<any> {
+    return this.http.post(
+      `${this.API_URL}/${equipeId}/convidar`,
+      { email },
+      { responseType: 'text' as 'json' }
+    );
+  }
+
+  public listarConvitesEnviados(equipeId: string): Observable<Convite[]> {
+    return this.http.get<Convite[]>(`${this.API_URL}/${equipeId}/convites`);
+  }
+
+  public listarMeusConvitesPendentes(): Observable<Convite[]> {
+    return this.http.get<Convite[]>(`${this.API_URL}/meus-convites`);
+  }
+
+  /**
+   * Aceita um convite pendente.
+   * Usa responseType: 'text' porque o backend retorna uma String simples.
+   */
+  public aceitarConvite(conviteId: string): Observable<any> {
+    return this.http.post(
+      `${this.API_URL}/convites/${conviteId}/aceitar`,
+      {},
+      { responseType: 'text' as 'json' }
+    );
+  }
+
+  // --- GESTÃO DE ESTADO (EQUIPE ATIVA) ---
 
   public selecionarEquipe(equipe: Equipe): void {
     localStorage.setItem(this.STORAGE_KEY, equipe.id);
