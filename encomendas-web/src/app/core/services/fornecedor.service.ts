@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { FornecedorResponse, FornecedorRequest } from '../models/fornecedor.interfaces';
+import { environment } from '../../../environments/environment'; // IMPORTAR
 
 @Injectable({
   providedIn: 'root'
 })
 export class FornecedorService {
-  private readonly API_URL = 'http://localhost:8080/api/fornecedores';
+  // Alterado para usar o environment
+  private readonly API_URL = `${environment.apiUrl}/fornecedores`;
 
   constructor(private http: HttpClient) {}
 
@@ -15,10 +17,8 @@ export class FornecedorService {
     return this.http.get<FornecedorResponse[]>(this.API_URL);
   }
 
-  // --- NOVO MÉTODO (SEARCH) ---
   searchFornecedores(nome: string): Observable<FornecedorResponse[]> {
     const params = new HttpParams().set('nome', nome);
-    // CORRIGIDO: O tipo de retorno estava errado
     return this.http.get<FornecedorResponse[]>(`${this.API_URL}/search`, { params });
   }
 

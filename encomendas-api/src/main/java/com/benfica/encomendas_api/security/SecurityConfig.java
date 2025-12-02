@@ -1,10 +1,11 @@
-package com.benfica.encomendas_api.config;
+package com.benfica.encomendas_api.security; // Note que o package pode ser security ou config dependendo da sua estrutura, mantive config conforme seu upload anterior
 
 import com.benfica.encomendas_api.security.CustomUserDetailsService;
 import com.benfica.encomendas_api.security.JwtAuthenticationEntryPoint;
 import com.benfica.encomendas_api.security.JwtAuthenticationFilter;
-import com.benfica.encomendas_api.security.TeamContextFilter; // <-- IMPORT ADICIONADO
+import com.benfica.encomendas_api.security.TeamContextFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +22,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -35,7 +37,12 @@ public class SecurityConfig {
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Autowired
-    private TeamContextFilter teamContextFilter; // <-- INJEÇÃO ADICIONADA
+    private TeamContextFilter teamContextFilter;
+
+    // Lê a origem permitida do ambiente (Ex: https://sua-app.vercel.app)
+    // Se não houver, permite tudo ("*")
+    @Value("${cors.allowed-origin:*}")
+    private String allowedOrigin;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -65,12 +72,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
 
-        // 1. Adiciona o filtro de autenticação JWT
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-
-        // 2. Adiciona o filtro de contexto de Equipe DEPOIS do filtro JWT
-        // (Garante que a autenticação já ocorreu antes de tentarmos ler o header da equipe)
-        http.addFilterAfter(teamContextFilter, JwtAuthenticationFilter.class); // <-- LINHA ADICIONADA
+        http.addFilterAfter(teamContextFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -78,11 +81,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+
+        // Configuração dinâmica de origem
+        if ("*".equals(allowedOrigin)) {
+            configuration.setAllowedOrigins(List.of("*"));
+        } else {
+            configuration.setAllowedOrigins(Arrays.asList(allowedOrigin, "http://localhost:4200")); // Permite prod e local
+        }
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
-        // Permite que o frontend leia o header X-Team-ID (se você precisar)
-        // configuration.setExposedHeaders(List.of("X-Team-ID"));
+        configuration.setAllowCredentials(true); // Importante para alguns casos de front-end
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

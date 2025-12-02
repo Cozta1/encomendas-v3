@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment'; // IMPORTAR
 
 export interface Equipe {
   id: string;
@@ -22,7 +23,9 @@ export interface Convite {
   providedIn: 'root'
 })
 export class TeamService {
-  private readonly API_URL = 'http://localhost:8080/api/equipes';
+  // Alterado para usar o environment
+  private readonly API_URL = `${environment.apiUrl}/equipes`;
+
   private readonly STORAGE_KEY = 'active_team_id';
 
   private equipeAtivaSubject = new BehaviorSubject<Equipe | null>(null);
@@ -44,12 +47,6 @@ export class TeamService {
     return this.http.post<Equipe>(this.API_URL, dados);
   }
 
-  // --- MÉTODOS DE CONVITE ---
-
-  /**
-   * Envia um convite por email.
-   * Usa responseType: 'text' porque o backend retorna uma String simples.
-   */
   public enviarConvite(equipeId: string, email: string): Observable<any> {
     return this.http.post(
       `${this.API_URL}/${equipeId}/convidar`,
@@ -66,10 +63,6 @@ export class TeamService {
     return this.http.get<Convite[]>(`${this.API_URL}/meus-convites`);
   }
 
-  /**
-   * Aceita um convite pendente.
-   * Usa responseType: 'text' porque o backend retorna uma String simples.
-   */
   public aceitarConvite(conviteId: string): Observable<any> {
     return this.http.post(
       `${this.API_URL}/convites/${conviteId}/aceitar`,
@@ -77,8 +70,6 @@ export class TeamService {
       { responseType: 'text' as 'json' }
     );
   }
-
-  // --- GESTÃO DE ESTADO (EQUIPE ATIVA) ---
 
   public selecionarEquipe(equipe: Equipe): void {
     localStorage.setItem(this.STORAGE_KEY, equipe.id);

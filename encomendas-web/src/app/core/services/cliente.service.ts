@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ClienteResponse, ClienteRequest } from '../models/cliente.interfaces';
+import { environment } from '../../../environments/environment'; // IMPORTAR
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClienteService {
-  private readonly API_URL = 'http://localhost:8080/api/clientes';
+  // Alterado para usar o environment
+  private readonly API_URL = `${environment.apiUrl}/clientes`;
 
   constructor(private http: HttpClient) {}
 
@@ -15,7 +17,6 @@ export class ClienteService {
     return this.http.get<ClienteResponse[]>(this.API_URL);
   }
 
-  // --- NOVO MÉTODO (SEARCH) ---
   searchClientes(nome: string): Observable<ClienteResponse[]> {
     const params = new HttpParams().set('nome', nome);
     return this.http.get<ClienteResponse[]>(`${this.API_URL}/search`, { params });
