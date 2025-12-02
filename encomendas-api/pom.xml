@@ -6,8 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.7</version>
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
+        <relativePath/> </parent>
     <groupId>com.benfica</groupId>
     <artifactId>encomendas-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -50,7 +49,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- DEPENDÊNCIA DE EMAIL ADICIONADA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
@@ -80,18 +78,18 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.12.6</version>
+            <version>${jjwt.version}</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.12.6</version>
+            <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.6</version>
+            <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
