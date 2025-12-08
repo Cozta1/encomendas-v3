@@ -1,6 +1,5 @@
 export const environment = {
   production: false,
-  // Pode deixar a URL do Railway aqui também para facilitar,
-  // ou usar localhost se for rodar na sua máquina.
-  apiUrl: 'encomendas-v3-production.up.railway.app'
+  // A URL deve terminar com /api pois seus serviços (AuthService, etc) esperam isso.
+  apiUrl: 'https://encomendas-api-969073157004.us-central1.run.app/api'
 };
