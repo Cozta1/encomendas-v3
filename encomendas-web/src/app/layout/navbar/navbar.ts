@@ -1,15 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core'; // Adicionar Output, EventEmitter
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
-
-// Módulos necessários para o HTML
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-
-// Caminhos corretos dos serviços
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { TeamService, Equipe } from '../../core/team/team.service';
@@ -29,12 +25,14 @@ import { TeamService, Equipe } from '../../core/team/team.service';
 })
 export class Navbar implements OnInit {
 
+  // Evento para avisar ao Main que o botão foi clicado
+  @Output() menuToggle = new EventEmitter<void>();
+
   public equipes$!: Observable<Equipe[]>;
   public isDark$!: Observable<boolean>;
 
   constructor(
     private authService: AuthService,
-    // Deixamos público para o HTML acessar o equipeAtiva$
     public teamService: TeamService,
     private themeService: ThemeService,
     private router: Router
@@ -45,11 +43,13 @@ export class Navbar implements OnInit {
     this.isDark$ = this.themeService.isDark$;
   }
 
-  // *** ESTA É A CORREÇÃO ***
+  // Emite o evento
+  onMenuClick(): void {
+    this.menuToggle.emit();
+  }
+
   selecionarEquipe(equipe: Equipe): void {
     this.teamService.selecionarEquipe(equipe);
-    // REMOVEMOS O window.location.reload()
-    // O BehaviorSubject no serviço vai atualizar o nome no botão instantaneamente.
   }
 
   toggleTheme(): void {

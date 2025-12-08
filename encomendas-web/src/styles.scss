@@ -99,3 +99,38 @@ body {
   background-color: var(--app-chip-cancelado-bg) !important;
   color: var(--app-chip-cancelado-text) !important;
 }
+
+
+/* --- Estilos Responsivos Globais --- */
+
+/* 1. Responsividade para Tabelas
+   Faz com que o container da tabela tenha scroll horizontal em telas pequenas.
+   Pode ser aplicado no 'mat-card-content' das páginas.
+*/
+.mat-mdc-card-content {
+  overflow-x: auto;
+}
+
+/* 2. Ajuste para Diálogos em Mobile
+   Sobrescreve a largura fixa se a tela for pequena.
+*/
+.cdk-overlay-pane {
+  max-width: 95vw !important; /* Margem de segurança */
+}
+
+/* Em telas muito pequenas, o diálogo ocupa quase tudo */
+@media (max-width: 600px) {
+  .mat-mdc-dialog-container {
+    padding: 12px !important;
+  }
+}
+
+/* 3. Ajuste de Layout Principal */
+.app-content {
+  /* Em mobile, reduz o padding para ganhar espaço */
+  @media (max-width: 600px) {
+    .page-content {
+      padding: 12px;
+    }
+  }
+}

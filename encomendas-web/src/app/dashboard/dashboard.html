@@ -1,5 +1,5 @@
 <div class="dashboard-grid">
-  <mat-grid-list cols="4" rowHeight="160px">
+  <mat-grid-list [cols]="gridCols" rowHeight="160px" gutterSize="16px">
 
     <mat-grid-tile colspan="1" rowspan="1">
       <mat-card class="stat-card">
@@ -62,7 +62,7 @@
       </mat-card>
     </mat-grid-tile>
 
-    <mat-grid-tile colspan="4" rowspan="2" class="table-tile">
+    <mat-grid-tile [colspan]="tableColspan" rowspan="2" class="table-tile">
       <mat-card class="table-card">
         <mat-card-header>
           <mat-card-title>Últimas Encomendas Abertas</mat-card-title>
@@ -71,7 +71,8 @@
             <mat-icon>arrow_forward</mat-icon>
           </button>
         </mat-card-header>
-        <mat-card-content>
+
+        <mat-card-content class="table-responsive-container">
 
           <table mat-table [dataSource]="(ultimasEncomendasAbertas$ | async) || []" class="mat-elevation-z0" style="width: 100%;">
 
