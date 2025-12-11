@@ -1,16 +1,20 @@
 <mat-toolbar color="primary">
-  <button mat-icon-button (click)="onMenuClick()" aria-label="Menu" style="margin-right: 8px;">
+  <button mat-icon-button (click)="onMenuClick()" style="margin-right: 8px;">
     <mat-icon>menu</mat-icon>
   </button>
 
-  <span>Sistema de Encomendas</span>
+  <span class="navbar-brand">Encomendas</span>
 
   <span class="spacer"></span>
-  <button mat-button [matMenuTriggerFor]="menuEquipes"> <mat-icon>groups</mat-icon>
-    <span *ngIf="teamService.equipeAtiva$ | async as equipeAtiva; else semEquipe"> {{ equipeAtiva.nome }} </span>
-    <ng-template #semEquipe> Selecionar Equipe </ng-template>
+
+  <button mat-button [matMenuTriggerFor]="menuEquipes" class="team-selector-btn">
+    <mat-icon>groups</mat-icon>
+    <span class="team-name" *ngIf="teamService.equipeAtiva$ | async as equipeAtiva">
+       {{ equipeAtiva.nome | slice:0:15 }}{{ equipeAtiva.nome.length > 15 ? '...' : '' }}
+    </span>
     <mat-icon>arrow_drop_down</mat-icon>
   </button>
+
   <mat-menu #menuEquipes="matMenu">
     <button *ngFor="let equipe of equipes$ | async" mat-menu-item (click)="selecionarEquipe(equipe)">
       <span>{{ equipe.nome }}</span>

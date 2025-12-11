@@ -1,18 +1,25 @@
 .spacer {
-  /* Este é o "truque" padrão do Material para empurrar itens para a direita */
   flex: 1 1 auto;
 }
 
 .navbar-brand {
   font-weight: 500;
+  font-size: 1.1rem;
 }
 
-.team-selector {
-  /* Adiciona um espaço entre o nome da equipe e o seletor */
-  margin-left: 24px;
+.team-selector-btn {
+  margin-left: 8px;
+
+  /* No celular, esconde o texto da equipe */
+  @media (max-width: 600px) {
+    .team-name {
+      display: none;
+    }
+    min-width: 0;
+    padding: 0 8px;
+  }
 }
 
-/* Garante que os ícones fiquem alinhados com o texto nos botões */
 mat-icon {
   vertical-align: middle;
 }

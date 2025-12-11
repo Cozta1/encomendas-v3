@@ -5,7 +5,7 @@ import { BehaviorSubject, Subscription, skip } from 'rxjs';
 import { EncomendaResponse } from '../core/models/encomenda.interfaces';
 import { EncomendaService } from '../core/services/encomenda.service';
 import { TeamService } from '../core/team/team.service';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout'; // Importar
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatCardModule } from '@angular/material/card';
@@ -29,46 +29,42 @@ export class Dashboard implements OnInit, OnDestroy {
   private teamSubscription: Subscription | undefined;
   private breakpointSub: Subscription | undefined;
 
-  // Controle da Grid
-  public gridCols = 4;
-  public tableColspan = 4; // Tabela ocupa tudo
+  // Variável principal para controlar o layout
+  public isMobile = false;
 
-  // Dados (igual ao original)
+  // Dados
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
   public totalVendidoMes$ = new BehaviorSubject<number>(0);
   public totalVendidoSemana$ = new BehaviorSubject<number>(0);
   public contagemPedidosMes$ = new BehaviorSubject<number>(0);
   public contagemPedidosSemana$ = new BehaviorSubject<number>(0);
   public ultimasEncomendasAbertas$ = new BehaviorSubject<EncomendaResponse[]>([]);
+
+  // Colunas da tabela: no celular mostramos menos colunas para não poluir
   public displayedColumns: string[] = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
 
   constructor(
     private encomendaService: EncomendaService,
     private teamService: TeamService,
     private router: Router,
-    private breakpointObserver: BreakpointObserver // Injetar
+    private breakpointObserver: BreakpointObserver
   ) {}
 
   ngOnInit(): void {
     this.carregarDadosDashboard();
 
-    // Responsividade da Grid
+    // Detecta mudança de tela
     this.breakpointSub = this.breakpointObserver.observe([
       Breakpoints.Handset,
-      Breakpoints.Tablet
+      Breakpoints.TabletPortrait
     ]).subscribe(result => {
-      if (result.breakpoints[Breakpoints.Handset]) {
-        // Celular: 1 coluna, tabela ocupa 1
-        this.gridCols = 1;
-        this.tableColspan = 1;
-      } else if (result.breakpoints[Breakpoints.Tablet]) {
-        // Tablet: 2 colunas, tabela ocupa 2
-        this.gridCols = 2;
-        this.tableColspan = 2;
+      this.isMobile = result.matches;
+
+      // Simplifica as colunas da tabela no mobile
+      if (this.isMobile) {
+        this.displayedColumns = ['cliente', 'status', 'acoes']; // Remove data e total para caber
       } else {
-        // Desktop: 4 colunas, tabela ocupa 4
-        this.gridCols = 4;
-        this.tableColspan = 4;
+        this.displayedColumns = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
       }
     });
 
@@ -82,7 +78,6 @@ export class Dashboard implements OnInit, OnDestroy {
     this.breakpointSub?.unsubscribe();
   }
 
-  // ... (manter restante dos métodos: carregarDadosDashboard, processarMetricas, etc.) ...
   carregarDadosDashboard(): void {
     this.encomendaService.getEncomendas().subscribe(data => {
       this.encomendasSubject.next(data);
@@ -92,19 +87,22 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   private processarMetricas(encomendas: EncomendaResponse[]): void {
-     // (Código original de métricas)
      const agora = new Date();
      const inicioSemana = new Date(agora);
      inicioSemana.setDate(agora.getDate() - 7);
      const inicioMes = new Date(agora);
      inicioMes.setDate(agora.getDate() - 30);
+
      let totalSemana = 0; let totalMes = 0; let countSemana = 0; let countMes = 0;
+
      const encomendasConcluidas = encomendas.filter(e => e.status === 'Concluído');
+
      for (const enc of encomendasConcluidas) {
        const dataEncomenda = new Date(enc.dataCriacao);
        if (dataEncomenda >= inicioMes) { totalMes += enc.valorTotal; countMes++; }
        if (dataEncomenda >= inicioSemana) { totalSemana += enc.valorTotal; countSemana++; }
      }
+
      this.totalVendidoMes$.next(totalMes);
      this.totalVendidoSemana$.next(totalSemana);
      this.contagemPedidosMes$.next(countMes);
@@ -116,6 +114,7 @@ export class Dashboard implements OnInit, OnDestroy {
       .filter(e => e.status !== 'Concluído' && e.status !== 'Cancelado')
       .sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime())
       .slice(0, 5);
+
     this.ultimasEncomendasAbertas$.next(encomendasAbertas);
   }
 
