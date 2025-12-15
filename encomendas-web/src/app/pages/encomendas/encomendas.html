@@ -12,12 +12,20 @@
 
       <ng-container matColumnDef="data">
         <th mat-header-cell *matHeaderCellDef> Data </th>
-        <td mat-cell *matCellDef="let e"> {{e.dataCriacao | date:'dd/MM/yyyy HH:mm'}} </td>
+        <td mat-cell *matCellDef="let e"> {{e.dataCriacao | date:'dd/MM/yy HH:mm'}} </td>
       </ng-container>
 
       <ng-container matColumnDef="cliente">
         <th mat-header-cell *matHeaderCellDef> Cliente </th>
         <td mat-cell *matCellDef="let e"> {{e.cliente.nome}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="endereco">
+        <th mat-header-cell *matHeaderCellDef> Endereço </th>
+        <td mat-cell *matCellDef="let e" style="font-size: 0.85rem; color: #555;">
+          {{e.enderecoRua}}, {{e.enderecoNumero}}<br>
+          <span style="font-size: 0.75rem; color: #888;">{{e.enderecoBairro}}</span>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="status">
@@ -71,7 +79,7 @@
 
           <button mat-icon-button
                   [color]="e.status === 'Cancelado' ? 'accent' : 'warn'"
-                  [matTooltip]="e.status === 'Cancelado' ? 'Reativar Encomenda (Descancelar)' : 'Cancelar Encomenda'"
+                  [matTooltip]="e.status === 'Cancelado' ? 'Reativar Encomenda' : 'Cancelar Encomenda'"
                   (click)="alternarCancelamento(e)"
                   [disabled]="e.status === 'Concluído'">
             <mat-icon>{{ e.status === 'Cancelado' ? 'restore' : 'block' }}</mat-icon>

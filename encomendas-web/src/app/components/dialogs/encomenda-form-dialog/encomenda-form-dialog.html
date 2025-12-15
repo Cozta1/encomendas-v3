@@ -2,11 +2,12 @@
 
 <mat-dialog-content>
   <form [formGroup]="encomendaForm">
+
     <div class="cliente-section">
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Buscar Cliente</mat-label>
         <input type="text"
-               placeholder="Digite o nome do cliente..."
+               placeholder="Digite o nome..."
                matInput
                formControlName="cliente"
                [matAutocomplete]="autoCliente">
@@ -25,19 +26,58 @@
       </button>
     </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Observações (Opcional)</mat-label>
-      <textarea matInput formControlName="observacoes"></textarea>
-    </mat-form-field>
+    <mat-divider style="margin: 10px 0"></mat-divider>
+    <h4 style="margin-top: 0; color: #555;">Dados de Entrega & Pagamento</h4>
+
+    <div style="display: flex; gap: 16px;">
+      <mat-form-field appearance="outline" style="flex: 1;">
+        <mat-label>CEP</mat-label>
+        <input matInput formControlName="enderecoCep" placeholder="00000-000" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 2;">
+        <mat-label>Bairro</mat-label>
+        <input matInput formControlName="enderecoBairro" required>
+      </mat-form-field>
+    </div>
+
+    <div style="display: flex; gap: 16px;">
+      <mat-form-field appearance="outline" style="flex: 3;">
+        <mat-label>Rua</mat-label>
+        <input matInput formControlName="enderecoRua" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 1;">
+        <mat-label>Número</mat-label>
+        <input matInput formControlName="enderecoNumero" required>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 2;">
+        <mat-label>Complemento</mat-label>
+        <input matInput formControlName="enderecoComplemento">
+      </mat-form-field>
+    </div>
+
+    <div style="display: flex; gap: 16px;">
+      <mat-form-field appearance="outline" style="flex: 1;">
+        <mat-label>Adiantamento (R$)</mat-label>
+        <input matInput type="number" formControlName="valorAdiantamento" placeholder="0,00" min="0">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 3;">
+        <mat-label>Observações</mat-label>
+        <input matInput formControlName="observacoes">
+      </mat-form-field>
+    </div>
+
   </form>
 
   <mat-divider style="margin: 20px 0;"></mat-divider>
 
   <h3>Adicionar Itens</h3>
   <form [formGroup]="itemForm" class="item-form">
-
     <mat-form-field appearance="outline">
-      <mat-label>Buscar Produto</mat-label>
+      <mat-label>Produto</mat-label>
       <input type="text" matInput formControlName="produto" [matAutocomplete]="autoProduto">
       <mat-autocomplete #autoProduto="matAutocomplete" [displayWith]="displayProdutoFn">
         <mat-option *ngFor="let p of filteredProdutos$ | async" [value]="p">
@@ -47,7 +87,7 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Buscar Fornecedor</mat-label>
+      <mat-label>Fornecedor</mat-label>
       <input type="text" matInput formControlName="fornecedor" [matAutocomplete]="autoFornecedor">
       <mat-autocomplete #autoFornecedor="matAutocomplete" [displayWith]="displayFornecedorFn">
         <mat-option *ngFor="let f of filteredFornecedores$ | async" [value]="f">
@@ -62,51 +102,22 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="small-field">
-      <mat-label>Preço Cotado (R$)</mat-label>
+      <mat-label>Valor (R$)</mat-label>
       <input matInput type="number" formControlName="precoCotado" min="0">
     </mat-form-field>
 
     <button mat-flat-button color="primary" (click)="adicionarItem()" [disabled]="itemForm.invalid">
-      <mat-icon>add</mat-icon> Adicionar
+      <mat-icon>add</mat-icon>
     </button>
   </form>
 
   <table mat-table [dataSource]="itensDataSource.controls" #itensTable class="mat-elevation-z8" style="width: 100%; margin-top: 16px;">
-
-    <ng-container matColumnDef="produto">
-      <th mat-header-cell *matHeaderCellDef> Produto </th>
-      <td mat-cell *matCellDef="let item"> {{item.value.produto.nome}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="fornecedor">
-      <th mat-header-cell *matHeaderCellDef> Fornecedor </th>
-      <td mat-cell *matCellDef="let item"> {{item.value.fornecedor.nome}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="quantidade">
-      <th mat-header-cell *matHeaderCellDef> Qtd </th>
-      <td mat-cell *matCellDef="let item"> {{item.value.quantidade}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="precoCotado">
-      <th mat-header-cell *matHeaderCellDef> Preço </th>
-      <td mat-cell *matCellDef="let item"> {{item.value.precoCotado | currency:'BRL'}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="subtotal">
-      <th mat-header-cell *matHeaderCellDef> Subtotal </th>
-      <td mat-cell *matCellDef="let item"> {{item.value.subtotal | currency:'BRL'}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="acoes">
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let i = index" style="text-align: right;">
-        <button mat-icon-button color="warn" (click)="removerItem(i)">
-          <mat-icon>delete</mat-icon>
-        </button>
-      </td>
-    </ng-container>
-
+    <ng-container matColumnDef="produto"><th mat-header-cell *matHeaderCellDef> Produto </th><td mat-cell *matCellDef="let item"> {{item.value.produto.nome}} </td></ng-container>
+    <ng-container matColumnDef="fornecedor"><th mat-header-cell *matHeaderCellDef> Fornecedor </th><td mat-cell *matCellDef="let item"> {{item.value.fornecedor.nome}} </td></ng-container>
+    <ng-container matColumnDef="quantidade"><th mat-header-cell *matHeaderCellDef> Qtd </th><td mat-cell *matCellDef="let item"> {{item.value.quantidade}} </td></ng-container>
+    <ng-container matColumnDef="precoCotado"><th mat-header-cell *matHeaderCellDef> Preço </th><td mat-cell *matCellDef="let item"> {{item.value.precoCotado | currency:'BRL'}} </td></ng-container>
+    <ng-container matColumnDef="subtotal"><th mat-header-cell *matHeaderCellDef> Subtotal </th><td mat-cell *matCellDef="let item"> {{item.value.subtotal | currency:'BRL'}} </td></ng-container>
+    <ng-container matColumnDef="acoes"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let i = index" style="text-align: right;"><button mat-icon-button color="warn" (click)="removerItem(i)"><mat-icon>delete</mat-icon></button></td></ng-container>
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>

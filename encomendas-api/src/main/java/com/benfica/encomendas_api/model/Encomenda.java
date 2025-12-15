@@ -33,15 +33,32 @@ public class Encomenda {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    // Relação OneToMany: Uma encomenda tem muitos itens.
-    // "cascade = CascadeType.ALL" significa: Salvar/Atualizar/Remover os itens JUNTAMENTE com a encomenda.
-    // "orphanRemoval = true" garante que se um item for removido da lista, ele é apagado do banco.
     @Builder.Default
     @OneToMany(mappedBy = "encomenda", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<EncomendaItem> itens = new ArrayList<>();
 
     @Column(nullable = false, length = 50)
-    private String status; // Ex: PENDENTE, CONCLUIDO, CANCELADO
+    private String status;
+
+    // --- ENDEREÇO MULTIVALORADO ---
+    @Column(name = "endereco_cep", length = 20, nullable = false)
+    private String enderecoCep;
+
+    @Column(name = "endereco_bairro", length = 100, nullable = false)
+    private String enderecoBairro;
+
+    @Column(name = "endereco_rua", nullable = false)
+    private String enderecoRua;
+
+    @Column(name = "endereco_numero", length = 20, nullable = false)
+    private String enderecoNumero;
+
+    @Column(name = "endereco_complemento")
+    private String enderecoComplemento; // Opcional
+    // ------------------------------
+
+    @Column(name = "valor_adiantamento", precision = 10, scale = 2)
+    private BigDecimal valorAdiantamento;
 
     @Column(columnDefinition = "TEXT")
     private String observacoes;
@@ -53,13 +70,12 @@ public class Encomenda {
     @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 
-    // Método helper para adicionar itens de forma síncrona
     public void setItens(List<EncomendaItem> itens) {
         this.itens.clear();
         if (itens != null) {
             itens.forEach(item -> {
                 this.itens.add(item);
-                item.setEncomenda(this); // Sincroniza o lado "ManyToOne"
+                item.setEncomenda(this);
             });
         }
     }

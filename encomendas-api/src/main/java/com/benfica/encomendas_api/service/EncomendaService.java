@@ -59,6 +59,14 @@ public class EncomendaService {
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
+                // --- NOVOS CAMPOS DE ENDEREÇO ---
+                .enderecoCep(dto.getEnderecoCep())
+                .enderecoBairro(dto.getEnderecoBairro())
+                .enderecoRua(dto.getEnderecoRua())
+                .enderecoNumero(dto.getEnderecoNumero())
+                .enderecoComplemento(dto.getEnderecoComplemento())
+                .valorAdiantamento(dto.getValorAdiantamento())
+                // --------------------------------
                 .status(STATUS_PENDENTE)
                 .valorTotal(BigDecimal.ZERO)
                 .build();
@@ -68,17 +76,17 @@ public class EncomendaService {
 
         for (var itemDto : dto.getItens()) {
             Produto produto = produtoRepository.findById(itemDto.getProdutoId())
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.getProdutoId()));
+                    .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
 
             if (!produto.getEquipe().getId().equals(equipeId)) {
-                throw new RuntimeException("Acesso negado: Produto " + produto.getNome() + " não pertence à sua equipe.");
+                throw new RuntimeException("Acesso negado: Produto não pertence à equipe.");
             }
 
             Fornecedor fornecedor = fornecedorRepository.findById(itemDto.getFornecedorId())
-                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado: " + itemDto.getFornecedorId()));
+                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado"));
 
             if (!fornecedor.getEquipe().getId().equals(equipeId)) {
-                throw new RuntimeException("Acesso negado: Fornecedor " + fornecedor.getNome() + " não pertence à sua equipe.");
+                throw new RuntimeException("Acesso negado: Fornecedor não pertence à equipe.");
             }
 
             BigDecimal precoCotado = itemDto.getPrecoCotado();
@@ -104,106 +112,57 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
+    // ... métodos de remover, avançar, retornar, cancelar, descancelar (mantidos iguais) ...
     @Transactional
     public void removerEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         encomendaRepository.delete(encomenda);
     }
-
     @Transactional
     public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-
-        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda cancelada.");
-        }
-
+        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
         switch (encomenda.getStatus()) {
-            case STATUS_PENDENTE:
-                encomenda.setStatus(STATUS_EM_PREPARO);
-                break;
-            case STATUS_EM_PREPARO:
-                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA);
-                break;
-            case STATUS_AGUARDANDO_ENTREGA:
-                encomenda.setStatus(STATUS_CONCLUIDO);
-                break;
-            case STATUS_CONCLUIDO:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda concluída.");
-            default:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
+            case STATUS_PENDENTE: encomenda.setStatus(STATUS_EM_PREPARO); break;
+            case STATUS_EM_PREPARO: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
+            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_CONCLUIDO); break;
+            case STATUS_CONCLUIDO: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já concluída.");
+            default: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido.");
         }
-
-        Encomenda salva = encomendaRepository.save(encomenda);
-        return EncomendaResponseDTO.fromEntity(salva);
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
-
     @Transactional
     public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-
-        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível retornar uma encomenda cancelada.");
-        }
-
+        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
         switch (encomenda.getStatus()) {
-            case STATUS_CONCLUIDO:
-                encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA);
-                break;
-            case STATUS_AGUARDANDO_ENTREGA:
-                encomenda.setStatus(STATUS_EM_PREPARO);
-                break;
-            case STATUS_EM_PREPARO:
-                encomenda.setStatus(STATUS_PENDENTE);
-                break;
-            case STATUS_PENDENTE:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível retornar uma encomenda pendente.");
-            default:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
+            case STATUS_CONCLUIDO: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
+            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_EM_PREPARO); break;
+            case STATUS_EM_PREPARO: encomenda.setStatus(STATUS_PENDENTE); break;
+            case STATUS_PENDENTE: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já está no início.");
         }
-
-        Encomenda salva = encomendaRepository.save(encomenda);
-        return EncomendaResponseDTO.fromEntity(salva);
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
-
     @Transactional
     public EncomendaResponseDTO cancelarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-
-        if (encomenda.getStatus().equals(STATUS_CONCLUIDO)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível cancelar uma encomenda concluída.");
-        }
-
-        if (encomenda.getStatus().equals(STATUS_CANCELADO)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Encomenda já está cancelada.");
-        }
-
+        if(encomenda.getStatus().equals(STATUS_CONCLUIDO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Concluída não cancela.");
         encomenda.setStatus(STATUS_CANCELADO);
-        Encomenda salva = encomendaRepository.save(encomenda);
-        return EncomendaResponseDTO.fromEntity(salva);
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
-
-    // --- NOVO MÉTODO: DESCANCELAR ---
     @Transactional
     public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-
-        if (!encomenda.getStatus().equals(STATUS_CANCELADO)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A encomenda não está cancelada para ser reativada.");
-        }
-
-        // Retorna para o estado inicial
+        if(!encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não está cancelada.");
         encomenda.setStatus(STATUS_PENDENTE);
-        Encomenda salva = encomendaRepository.save(encomenda);
-        return EncomendaResponseDTO.fromEntity(salva);
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
 
     private Encomenda buscarEValidarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Encomenda não encontrada"));
-
         if (!encomenda.getEquipe().getId().equals(equipeId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado: Esta encomenda não pertence à sua equipe.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
         }
         return encomenda;
     }

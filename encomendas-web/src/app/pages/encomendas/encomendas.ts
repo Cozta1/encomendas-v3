@@ -40,7 +40,7 @@ export class Encomendas implements OnInit, OnDestroy {
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
   public encomendas$ = this.encomendasSubject.asObservable();
 
-  public displayedColumns: string[] = ['data', 'cliente', 'status', 'itens', 'total', 'acoes'];
+  public displayedColumns: string[] = ['data', 'cliente', 'endereco', 'status', 'itens', 'total', 'acoes'];
 
   private teamSubscription: Subscription | undefined;
 
@@ -79,9 +79,12 @@ export class Encomendas implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
         this.encomendaService.criarEncomenda(resultado).subscribe({
-          next: () => {
+          next: (novaEncomenda) => { // <-- Recebe a encomenda criada
             this.snackBar.open('Encomenda criada com sucesso!', 'OK', { duration: 3000 });
             this.carregarEncomendas();
+
+            // --- NOVO: Abre o resumo automaticamente ---
+            this.verDetalhes(novaEncomenda);
           },
           error: (err) => {
             console.error('Erro ao criar encomenda', err);
@@ -118,10 +121,8 @@ export class Encomendas implements OnInit, OnDestroy {
     });
   }
 
-  // --- LÓGICA DE TOGGLE: Cancelar / Descancelar ---
   alternarCancelamento(encomenda: EncomendaResponse): void {
     if (encomenda.status === 'Cancelado') {
-      // Descancelar
       this.encomendaService.descancelarEncomenda(encomenda.id).subscribe({
         next: (encomendaAtualizada) => {
           this.snackBar.open('Encomenda REATIVADA (Pendente)', 'OK', { duration: 2000 });
@@ -130,7 +131,6 @@ export class Encomendas implements OnInit, OnDestroy {
         error: (err) => this.snackBar.open('Erro ao reativar encomenda.', 'Fechar', { duration: 5000 })
       });
     } else {
-      // Cancelar
       if (confirm('Tem certeza que deseja CANCELAR esta encomenda?')) {
         this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
           next: (encomendaAtualizada) => {

@@ -1,42 +1,40 @@
 import { ClienteResponse } from './cliente.interfaces';
-import { FornecedorResponse } from './fornecedor.interfaces'; // 1. Importar
+import { FornecedorResponse } from './fornecedor.interfaces';
 import { ProdutoResponse } from './produto.interfaces';
 
-/**
- * Interface para um item dentro da encomenda (DTO de Request).
- */
 export interface EncomendaItemRequest {
   produtoId: string;
-  fornecedorId: string; // 2. Adicionar
-  precoCotado: number; // 3. Adicionar
+  fornecedorId: string;
+  precoCotado: number;
   quantidade: number;
 }
 
-/**
- * Interface para um item que recebemos da API (DTO de Response).
- */
 export interface EncomendaItemResponse {
   id: string;
   produto: ProdutoResponse;
-  fornecedor: FornecedorResponse; // 4. Adicionar
+  fornecedor: FornecedorResponse;
   quantidade: number;
-  precoCotado: number; // 5. Renomear de precoUnitario
+  precoCotado: number;
   subtotal: number;
 }
 
-/**
- * DTO que enviamos para criar/atualizar uma Encomenda.
- */
 export interface EncomendaRequest {
   clienteId: string;
   itens: EncomendaItemRequest[];
   status?: string;
   observacoes?: string;
+
+  // --- ENDEREÇO MULTIVALORADO ---
+  enderecoCep: string;
+  enderecoBairro: string;
+  enderecoRua: string;
+  enderecoNumero: string;
+  enderecoComplemento?: string; // Opcional
+  // -----------------------------
+
+  valorAdiantamento?: number;
 }
 
-/**
- * DTO que recebemos da API (lista/detalhe).
- */
 export interface EncomendaResponse {
   id: string;
   cliente: ClienteResponse;
@@ -44,5 +42,15 @@ export interface EncomendaResponse {
   status: string;
   observacoes: string;
   valorTotal: number;
-  dataCriacao: string; // ou Date
+  dataCriacao: string;
+
+  // --- ENDEREÇO MULTIVALORADO ---
+  enderecoCep: string;
+  enderecoBairro: string;
+  enderecoRua: string;
+  enderecoNumero: string;
+  enderecoComplemento?: string;
+  // -----------------------------
+
+  valorAdiantamento?: number;
 }

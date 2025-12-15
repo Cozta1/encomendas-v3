@@ -2,10 +2,17 @@ import { HttpInterceptorFn } from '@angular/common/http';
 
 /**
  * Este interceptor funcional captura TODAS as requisições HTTP.
- * Ele lê o token e o ID da equipe DIRETAMENTE do localStorage
- * para evitar dependência circular com o AuthService ou o TeamService.
+ * Ele lê o token e o ID da equipe DIRETAMENTE do localStorage.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+
+  // --- CORREÇÃO CORS ---
+  // Verifica se a requisição é para o ViaCEP (ou outra API externa).
+  // Se for, NÃO adiciona os headers da nossa API (Authorization, X-Team-ID),
+  // pois isso causa erro de CORS (preflight response error).
+  if (req.url.includes('viacep.com.br')) {
+    return next(req);
+  }
 
   // 1. Pega os valores direto do localStorage
   const token = localStorage.getItem('auth_token');

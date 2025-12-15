@@ -29,7 +29,7 @@ public class DataSeeder {
                                    ProdutoRepository produtoRepository,
                                    EncomendaRepository encomendaRepository,
                                    EncomendaItemRepository encomendaItemRepository,
-                                   ConviteRepository conviteRepository, // <--- 1. INJETAR AQUI
+                                   ConviteRepository conviteRepository,
                                    PasswordEncoder passwordEncoder) {
 
         return args -> {
@@ -42,9 +42,7 @@ public class DataSeeder {
             produtoRepository.deleteAll();
             fornecedorRepository.deleteAll();
             clienteRepository.deleteAll();
-
-            conviteRepository.deleteAll(); // <--- 2. APAGAR CONVITES ANTES DAS EQUIPES
-
+            conviteRepository.deleteAll();
             equipeRepository.deleteAll();
             usuarioRepository.deleteAll();
 
@@ -115,11 +113,19 @@ public class DataSeeder {
             produtoRepository.saveAll(List.of(prodA, prodB, prodC));
             log.info("Criados {} produtos.", produtoRepository.count());
 
-            // 7. CRIAR ENCOMENDA
+            // 7. CRIAR ENCOMENDA (ATUALIZADO COM ENDEREÇO)
             Encomenda encomenda1 = Encomenda.builder()
                     .cliente(clienteA)
                     .equipe(equipeCentro)
                     .status("Pendente")
+                    // --- NOVOS CAMPOS OBRIGATÓRIOS ---
+                    .enderecoCep("36000-000")
+                    .enderecoBairro("Centro")
+                    .enderecoRua("Av. Rio Branco")
+                    .enderecoNumero("100")
+                    .enderecoComplemento("Apto 101") // Opcional
+                    .valorAdiantamento(new BigDecimal("5.00")) // Opcional
+                    // ---------------------------------
                     .valorTotal(new BigDecimal("0.00"))
                     .build();
             encomendaRepository.save(encomenda1);

@@ -18,10 +18,19 @@ public class EncomendaResponseDTO {
     private List<EncomendaItemResponseDTO> itens;
     private String status;
     private String observacoes;
+
+    // --- ENDEREÇO ---
+    private String enderecoCep;
+    private String enderecoBairro;
+    private String enderecoRua;
+    private String enderecoNumero;
+    private String enderecoComplemento;
+    // ----------------
+
+    private BigDecimal valorAdiantamento;
     private BigDecimal valorTotal;
     private LocalDateTime dataCriacao;
 
-    // --- MÉTODO ATUALIZADO (Null-Safe) ---
     public static EncomendaResponseDTO fromEntity(Encomenda encomenda) {
         if (encomenda == null) {
             return null;
@@ -35,6 +44,13 @@ public class EncomendaResponseDTO {
                         .collect(Collectors.toList()))
                 .status(encomenda.getStatus())
                 .observacoes(encomenda.getObservacoes())
+                // Mapeamento dos novos campos
+                .enderecoCep(encomenda.getEnderecoCep())
+                .enderecoBairro(encomenda.getEnderecoBairro())
+                .enderecoRua(encomenda.getEnderecoRua())
+                .enderecoNumero(encomenda.getEnderecoNumero())
+                .enderecoComplemento(encomenda.getEnderecoComplemento())
+                .valorAdiantamento(encomenda.getValorAdiantamento())
                 .valorTotal(encomenda.getValorTotal())
                 .dataCriacao(encomenda.getDataCriacao())
                 .build();
