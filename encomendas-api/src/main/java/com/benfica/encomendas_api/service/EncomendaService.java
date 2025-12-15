@@ -3,7 +3,7 @@ package com.benfica.encomendas_api.service;
 import com.benfica.encomendas_api.dto.EncomendaRequestDTO;
 import com.benfica.encomendas_api.dto.EncomendaResponseDTO;
 import com.benfica.encomendas_api.model.*;
-import com.benfica.encomendas_api.repository.*; // 1. Importar todos os repositórios
+import com.benfica.encomendas_api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,17 +19,11 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    // ======================================
-    // === 1. FAÇA SUAS MUDANÇAS AQUI ===
-    // ======================================
-    // (Presumindo que você já mudou os outros textos como pedi antes)
-    private static final String STATUS_PENDENTE = "Pendente"; // <-- ATUALIZADO
+    private static final String STATUS_PENDENTE = "Pendente";
     private static final String STATUS_EM_PREPARO = "Em Preparo";
     private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega";
     private static final String STATUS_CONCLUIDO = "Concluído";
     private static final String STATUS_CANCELADO = "Cancelado";
-    // ======================================
-
 
     @Autowired
     private EncomendaRepository encomendaRepository;
@@ -65,7 +59,7 @@ public class EncomendaService {
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                .status(STATUS_PENDENTE) // Começa como Pendente
+                .status(STATUS_PENDENTE)
                 .valorTotal(BigDecimal.ZERO)
                 .build();
 
@@ -124,9 +118,6 @@ public class EncomendaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível avançar uma encomenda cancelada.");
         }
 
-        // ======================================
-        // === 2. LÓGICA ATUALIZADA AQUI ===
-        // ======================================
         switch (encomenda.getStatus()) {
             case STATUS_PENDENTE:
                 encomenda.setStatus(STATUS_EM_PREPARO);
@@ -142,7 +133,6 @@ public class EncomendaService {
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
         }
-        // ======================================
 
         Encomenda salva = encomendaRepository.save(encomenda);
         return EncomendaResponseDTO.fromEntity(salva);
@@ -156,9 +146,6 @@ public class EncomendaService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível retornar uma encomenda cancelada.");
         }
 
-        // ======================================
-        // === 3. LÓGICA ATUALIZADA AQUI ===
-        // ======================================
         switch (encomenda.getStatus()) {
             case STATUS_CONCLUIDO:
                 encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA);
@@ -174,7 +161,6 @@ public class EncomendaService {
             default:
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status desconhecido.");
         }
-        // ======================================
 
         Encomenda salva = encomendaRepository.save(encomenda);
         return EncomendaResponseDTO.fromEntity(salva);
@@ -193,6 +179,21 @@ public class EncomendaService {
         }
 
         encomenda.setStatus(STATUS_CANCELADO);
+        Encomenda salva = encomendaRepository.save(encomenda);
+        return EncomendaResponseDTO.fromEntity(salva);
+    }
+
+    // --- NOVO MÉTODO: DESCANCELAR ---
+    @Transactional
+    public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+
+        if (!encomenda.getStatus().equals(STATUS_CANCELADO)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A encomenda não está cancelada para ser reativada.");
+        }
+
+        // Retorna para o estado inicial
+        encomenda.setStatus(STATUS_PENDENTE);
         Encomenda salva = encomendaRepository.save(encomenda);
         return EncomendaResponseDTO.fromEntity(salva);
     }

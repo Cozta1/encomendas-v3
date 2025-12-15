@@ -17,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "fornecedores", uniqueConstraints = {
+        // Garante que o CNPJ seja único APENAS DENTRO da mesma equipe
         @UniqueConstraint(columnNames = {"equipe_id", "cnpj"})
 })
 public class Fornecedor {
@@ -32,8 +33,9 @@ public class Fornecedor {
     @Column(nullable = false)
     private String nome;
 
-    // --- CAMPOS ADICIONADOS ---
-    @Column(unique = true, length = 18)
+    // --- CORREÇÃO: Removido 'unique = true' daqui ---
+    // A unicidade agora é controlada apenas pela @UniqueConstraint da tabela (Equipe + CNPJ)
+    @Column(length = 18)
     private String cnpj;
 
     @Column(name = "contato_nome", length = 100)
@@ -55,5 +57,4 @@ public class Fornecedor {
     @UpdateTimestamp
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
-    // --- FIM DOS CAMPOS ADICIONADOS ---
 }

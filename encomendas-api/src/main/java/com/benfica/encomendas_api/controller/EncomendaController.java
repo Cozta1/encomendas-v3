@@ -55,11 +55,18 @@ public class EncomendaController {
         return ResponseEntity.ok(dtoAtualizado);
     }
 
-    // --- NOVO ENDPOINT ---
     @PatchMapping("/{id}/cancelar")
     public ResponseEntity<EncomendaResponseDTO> cancelarEncomenda(@PathVariable UUID id) {
         UUID equipeId = TeamContextHolder.getTeamId();
         EncomendaResponseDTO dtoAtualizado = encomendaService.cancelarEncomenda(id, equipeId);
+        return ResponseEntity.ok(dtoAtualizado);
+    }
+
+    // --- NOVO ENDPOINT ---
+    @PatchMapping("/{id}/descancelar")
+    public ResponseEntity<EncomendaResponseDTO> descancelarEncomenda(@PathVariable UUID id) {
+        UUID equipeId = TeamContextHolder.getTeamId();
+        EncomendaResponseDTO dtoAtualizado = encomendaService.descancelarEncomenda(id, equipeId);
         return ResponseEntity.ok(dtoAtualizado);
     }
 }

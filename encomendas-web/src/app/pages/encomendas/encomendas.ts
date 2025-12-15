@@ -5,7 +5,6 @@ import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
 import { TeamService } from '../../core/team/team.service';
 
-// Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +14,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-// Importar Diálogos
 import { EncomendaFormDialog } from '../../components/dialogs/encomenda-form-dialog/encomenda-form-dialog';
 import { EncomendaDetalheDialog } from '../../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
 
@@ -120,17 +118,29 @@ export class Encomendas implements OnInit, OnDestroy {
     });
   }
 
-  cancelarEncomenda(encomenda: EncomendaResponse): void {
-    this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
-      next: (encomendaAtualizada) => {
-        this.snackBar.open(`Encomenda #${encomenda.id.substring(0, 4)}... CANCELADA`, 'OK', { duration: 2000 });
-        this.atualizarEncomendaNaLista(encomendaAtualizada);
-      },
-      error: (err) => {
-        console.error('Erro ao cancelar encomenda', err);
-        this.snackBar.open(err.error?.message || 'Erro ao cancelar encomenda.', 'Fechar', { duration: 5000 });
+  // --- LÓGICA DE TOGGLE: Cancelar / Descancelar ---
+  alternarCancelamento(encomenda: EncomendaResponse): void {
+    if (encomenda.status === 'Cancelado') {
+      // Descancelar
+      this.encomendaService.descancelarEncomenda(encomenda.id).subscribe({
+        next: (encomendaAtualizada) => {
+          this.snackBar.open('Encomenda REATIVADA (Pendente)', 'OK', { duration: 2000 });
+          this.atualizarEncomendaNaLista(encomendaAtualizada);
+        },
+        error: (err) => this.snackBar.open('Erro ao reativar encomenda.', 'Fechar', { duration: 5000 })
+      });
+    } else {
+      // Cancelar
+      if (confirm('Tem certeza que deseja CANCELAR esta encomenda?')) {
+        this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
+          next: (encomendaAtualizada) => {
+            this.snackBar.open('Encomenda CANCELADA', 'OK', { duration: 2000 });
+            this.atualizarEncomendaNaLista(encomendaAtualizada);
+          },
+          error: (err) => this.snackBar.open('Erro ao cancelar encomenda.', 'Fechar', { duration: 5000 })
+        });
       }
-    });
+    }
   }
 
   private atualizarEncomendaNaLista(encomendaAtualizada: EncomendaResponse): void {
@@ -151,7 +161,7 @@ export class Encomendas implements OnInit, OnDestroy {
   }
 
   removerEncomenda(encomenda: EncomendaResponse): void {
-    if (confirm(`Tem certeza que deseja REMOVER a encomenda de "${encomenda.cliente.nome}"?`)) {
+    if (confirm(`Tem certeza que deseja REMOVER DEFINITIVAMENTE a encomenda de "${encomenda.cliente.nome}"?`)) {
       this.encomendaService.removerEncomenda(encomenda.id).subscribe({
         next: () => {
           this.snackBar.open('Encomenda removida com sucesso!', 'OK', { duration: 3000 });

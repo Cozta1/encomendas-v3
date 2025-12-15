@@ -32,15 +32,18 @@ export class Dashboard implements OnInit, OnDestroy {
   // Variável principal para controlar o layout
   public isMobile = false;
 
-  // Dados
+  // Dados da Lista
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
-  public totalVendidoMes$ = new BehaviorSubject<number>(0);
-  public totalVendidoSemana$ = new BehaviorSubject<number>(0);
+
+  // NOVAS MÉTRICAS
+  public totalBrutoMes$ = new BehaviorSubject<number>(0);   // Pendentes + Concluídos (não cancelados)
+  public totalLiquidoMes$ = new BehaviorSubject<number>(0); // Apenas Concluídos
   public contagemPedidosMes$ = new BehaviorSubject<number>(0);
-  public contagemPedidosSemana$ = new BehaviorSubject<number>(0);
+
+  // Mantemos a lista de últimas abertas
   public ultimasEncomendasAbertas$ = new BehaviorSubject<EncomendaResponse[]>([]);
 
-  // Colunas da tabela: no celular mostramos menos colunas para não poluir
+  // Colunas da tabela
   public displayedColumns: string[] = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
 
   constructor(
@@ -60,9 +63,8 @@ export class Dashboard implements OnInit, OnDestroy {
     ]).subscribe(result => {
       this.isMobile = result.matches;
 
-      // Simplifica as colunas da tabela no mobile
       if (this.isMobile) {
-        this.displayedColumns = ['cliente', 'status', 'acoes']; // Remove data e total para caber
+        this.displayedColumns = ['cliente', 'status', 'acoes'];
       } else {
         this.displayedColumns = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
       }
@@ -88,25 +90,35 @@ export class Dashboard implements OnInit, OnDestroy {
 
   private processarMetricas(encomendas: EncomendaResponse[]): void {
      const agora = new Date();
-     const inicioSemana = new Date(agora);
-     inicioSemana.setDate(agora.getDate() - 7);
      const inicioMes = new Date(agora);
-     inicioMes.setDate(agora.getDate() - 30);
+     inicioMes.setDate(agora.getDate() - 30); // Últimos 30 dias
 
-     let totalSemana = 0; let totalMes = 0; let countSemana = 0; let countMes = 0;
+     let somaBruto = 0;
+     let somaLiquido = 0;
+     let countMes = 0;
 
-     const encomendasConcluidas = encomendas.filter(e => e.status === 'Concluído');
-
-     for (const enc of encomendasConcluidas) {
+     for (const enc of encomendas) {
        const dataEncomenda = new Date(enc.dataCriacao);
-       if (dataEncomenda >= inicioMes) { totalMes += enc.valorTotal; countMes++; }
-       if (dataEncomenda >= inicioSemana) { totalSemana += enc.valorTotal; countSemana++; }
+
+       // Filtra apenas os últimos 30 dias
+       if (dataEncomenda >= inicioMes) {
+
+         // Se não estiver cancelado, entra no Total Bruto (Potencial de venda)
+         if (enc.status !== 'Cancelado') {
+            somaBruto += enc.valorTotal;
+            countMes++; // Contamos quantos pedidos ativos houve no mês
+         }
+
+         // Apenas Concluídos entram no Total Líquido (Dinheiro em caixa)
+         if (enc.status === 'Concluído') {
+            somaLiquido += enc.valorTotal;
+         }
+       }
      }
 
-     this.totalVendidoMes$.next(totalMes);
-     this.totalVendidoSemana$.next(totalSemana);
+     this.totalBrutoMes$.next(somaBruto);
+     this.totalLiquidoMes$.next(somaLiquido);
      this.contagemPedidosMes$.next(countMes);
-     this.contagemPedidosSemana$.next(countSemana);
   }
 
   private processarEncomendasAbertas(encomendas: EncomendaResponse[]): void {

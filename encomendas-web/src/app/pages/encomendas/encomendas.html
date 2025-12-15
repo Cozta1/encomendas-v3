@@ -70,11 +70,11 @@
           </button>
 
           <button mat-icon-button
-                  color="warn"
-                  matTooltip="Cancelar Encomenda"
-                  (click)="cancelarEncomenda(e)"
-                  [disabled]="e.status === 'Concluído' || e.status === 'Cancelado'">
-            <mat-icon>block</mat-icon>
+                  [color]="e.status === 'Cancelado' ? 'accent' : 'warn'"
+                  [matTooltip]="e.status === 'Cancelado' ? 'Reativar Encomenda (Descancelar)' : 'Cancelar Encomenda'"
+                  (click)="alternarCancelamento(e)"
+                  [disabled]="e.status === 'Concluído'">
+            <mat-icon>{{ e.status === 'Cancelado' ? 'restore' : 'block' }}</mat-icon>
           </button>
 
           <button mat-icon-button

@@ -5,13 +5,26 @@
     <mat-card class="stat-card">
       <mat-card-header>
         <mat-card-title>
-          <mat-icon>monetization_on</mat-icon>
-          Vendas (30d)
+          <mat-icon>attach_money</mat-icon>
+          Total Bruto (30d)
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <h2>{{ (totalVendidoMes$ | async) | currency:'BRL' }}</h2>
-        <p>{{ (contagemPedidosMes$ | async) }} pedidos concluídos</p>
+        <h2>{{ (totalBrutoMes$ | async) | currency:'BRL' }}</h2>
+        <p>{{ (contagemPedidosMes$ | async) }} pedidos ativos</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>savings</mat-icon>
+          Total Líquido (30d)
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <h2 style="color: var(--app-primary-color)">{{ (totalLiquidoMes$ | async) | currency:'BRL' }}</h2>
+        <p>Confirmados/Concluídos</p>
       </mat-card-content>
     </mat-card>
 
@@ -81,22 +94,31 @@
 
   <div class="desktop-grid" *ngIf="!isMobile">
     <mat-grid-list cols="4" rowHeight="160px" gutterSize="16px">
+
       <mat-grid-tile colspan="1" rowspan="1">
         <mat-card class="stat-card">
-          <mat-card-header><mat-card-title><mat-icon>monetization_on</mat-icon> Vendas (30d)</mat-card-title></mat-card-header>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>attach_money</mat-icon> Total Bruto (30d)
+            </mat-card-title>
+          </mat-card-header>
           <mat-card-content>
-            <h2>{{ (totalVendidoMes$ | async) | currency:'BRL' }}</h2>
-            <p>em {{ (contagemPedidosMes$ | async) }} pedidos concluídos</p>
+            <h2>{{ (totalBrutoMes$ | async) | currency:'BRL' }}</h2>
+            <p>em {{ (contagemPedidosMes$ | async) }} pedidos ativos</p>
           </mat-card-content>
         </mat-card>
       </mat-grid-tile>
 
       <mat-grid-tile colspan="1" rowspan="1">
         <mat-card class="stat-card">
-          <mat-card-header><mat-card-title><mat-icon>calendar_view_week</mat-icon> Vendas (7d)</mat-card-title></mat-card-header>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>savings</mat-icon> Total Líquido (30d)
+            </mat-card-title>
+          </mat-card-header>
           <mat-card-content>
-            <h2>{{ (totalVendidoSemana$ | async) | currency:'BRL' }}</h2>
-            <p>em {{ (contagemPedidosSemana$ | async) }} pedidos concluídos</p>
+            <h2 style="color: var(--app-primary-color)">{{ (totalLiquidoMes$ | async) | currency:'BRL' }}</h2>
+            <p>apenas vendas concluídas</p>
           </mat-card-content>
         </mat-card>
       </mat-grid-tile>

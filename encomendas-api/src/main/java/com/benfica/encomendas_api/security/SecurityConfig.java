@@ -82,16 +82,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Configuração dinâmica de origem
+        // --- CORREÇÃO CORS ---
+        // Usar setAllowedOriginPatterns permite "*" com credenciais (allowCredentials=true)
         if ("*".equals(allowedOrigin)) {
-            configuration.setAllowedOrigins(List.of("*"));
+            configuration.setAllowedOriginPatterns(List.of("*"));
         } else {
-            configuration.setAllowedOrigins(Arrays.asList(allowedOrigin, "http://localhost:4200")); // Permite prod e local
+            configuration.setAllowedOrigins(Arrays.asList(allowedOrigin, "http://localhost:4200"));
         }
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Importante para alguns casos de front-end
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

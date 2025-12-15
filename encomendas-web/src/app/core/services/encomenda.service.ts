@@ -2,13 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { EncomendaRequest, EncomendaResponse } from '../models/encomenda.interfaces';
-import { environment } from '../../../environments/environment'; // IMPORTAR
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EncomendaService {
-  // Alterado para usar o environment
   private readonly API_URL = `${environment.apiUrl}/encomendas`;
 
   constructor(private http: HttpClient) {}
@@ -35,5 +34,10 @@ export class EncomendaService {
 
   cancelarEncomenda(id: string): Observable<EncomendaResponse> {
     return this.http.patch<EncomendaResponse>(`${this.API_URL}/${id}/cancelar`, {});
+  }
+
+  // --- NOVO MÉTODO ---
+  descancelarEncomenda(id: string): Observable<EncomendaResponse> {
+    return this.http.patch<EncomendaResponse>(`${this.API_URL}/${id}/descancelar`, {});
   }
 }
