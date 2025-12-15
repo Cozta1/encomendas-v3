@@ -1,48 +1,98 @@
-<form [formGroup]="form" (ngSubmit)="onSave()">
+<h2 mat-dialog-title>{{ isEditMode ? 'Editar Cliente' : 'Novo Cliente' }}</h2>
 
-  <h1 mat-dialog-title>{{ isEditMode ? 'Editar Cliente' : 'Novo Cliente' }}</h1>
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-container">
 
-  <mat-dialog-content>
-    <p>Preencha os dados do cliente.</p>
-
-    <mat-form-field appearance="outline" style="width: 100%;">
+    <mat-form-field appearance="outline" class="full-width">
       <mat-label>Nome Completo</mat-label>
-      <input matInput formControlName="nome" required cdkFocusInitial>
-      <mat-error *ngIf="form.get('nome')?.hasError('required')">
-        O nome é obrigatório.
-      </mat-error>
+      <input matInput formControlName="nome" placeholder="Ex: João Silva" required>
+      <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Email</mat-label>
-      <input matInput formControlName="email" placeholder="exemplo@email.com">
-      <mat-error *ngIf="form.get('email')?.hasError('email')">
-        O formato do email é inválido.
-      </mat-error>
+    <div class="row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>CPF</mat-label>
+        <input matInput formControlName="cpf" placeholder="000.000.000-00">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Telefone</mat-label>
+        <input matInput formControlName="telefone" placeholder="(00) 00000-0000">
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>E-mail</mat-label>
+      <input matInput formControlName="email" type="email" placeholder="joao@email.com" required>
+      <mat-error *ngIf="form.get('email')?.hasError('email')">E-mail inválido</mat-error>
+      <mat-error *ngIf="form.get('email')?.hasError('required')">E-mail é obrigatório</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Telefone</mat-label>
-      <input matInput formControlName="telefone" placeholder="(XX) 9XXXX-XXXX">
-    </mat-form-field>
+    <div class="enderecos-header" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 8px;">
+      <h3 style="margin: 0;">Endereços</h3>
+      <button mat-stroked-button color="primary" type="button" (click)="adicionarEndereco()">
+        <mat-icon>add_location</mat-icon> Adicionar Endereço
+      </button>
+    </div>
 
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>CPF ou CNPJ</mat-label>
-      <input matInput formControlName="cpfCnpj">
-    </mat-form-field>
+    <div formArrayName="enderecos">
+      <mat-accordion multi>
+        <mat-expansion-panel *ngFor="let endGroup of enderecosFormArray.controls; let i = index" [formGroupName]="i" expanded="true">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon style="margin-right: 8px;">home</mat-icon>
+              Endereço {{i + 1}}
+            </mat-panel-title>
+            <mat-panel-description>
+              {{ endGroup.get('rua')?.value || 'Novo Endereço' }}
+            </mat-panel-description>
+          </mat-expansion-panel-header>
 
-    <mat-form-field appearance="outline" style="width: 100%;">
-      <mat-label>Endereço</mat-label>
-      <textarea matInput formControlName="endereco" placeholder="Rua, Número, Bairro..."></textarea>
-    </mat-form-field>
+          <div class="endereco-form-row" style="display: flex; gap: 10px;">
+            <mat-form-field appearance="outline" style="flex: 1;">
+              <mat-label>CEP</mat-label>
+              <input matInput formControlName="cep" placeholder="00000-000" required>
+            </mat-form-field>
 
-  </mat-dialog-content>
+            <mat-form-field appearance="outline" style="flex: 2;">
+              <mat-label>Bairro</mat-label>
+              <input matInput formControlName="bairro" required>
+            </mat-form-field>
+          </div>
 
-  <mat-dialog-actions align="end">
-    <button mat-button type="button" (click)="onCancel()">Cancelar</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
-      {{ isEditMode ? 'Atualizar' : 'Salvar' }}
-    </button>
-  </mat-dialog-actions>
+          <div class="endereco-form-row" style="display: flex; gap: 10px;">
+            <mat-form-field appearance="outline" style="flex: 3;">
+              <mat-label>Rua</mat-label>
+              <input matInput formControlName="rua" required>
+            </mat-form-field>
 
-</form>
+            <mat-form-field appearance="outline" style="flex: 1;">
+              <mat-label>Número</mat-label>
+              <input matInput formControlName="numero" required>
+            </mat-form-field>
+          </div>
+
+          <div class="endereco-form-row" style="display: flex; gap: 10px;">
+            <mat-form-field appearance="outline" style="flex: 2;">
+              <mat-label>Complemento</mat-label>
+              <input matInput formControlName="complemento">
+            </mat-form-field>
+
+            <div style="display: flex; align-items: center;">
+              <button mat-icon-button color="warn" type="button" matTooltip="Remover este endereço" (click)="removerEndereco(i)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+        </mat-expansion-panel>
+      </mat-accordion>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="form.invalid">Salvar</button>
+</mat-dialog-actions>

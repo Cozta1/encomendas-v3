@@ -9,6 +9,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -16,9 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "clientes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"equipe_id", "cpfCnpj"})
-})
+@Table(name = "clientes")
 public class Cliente {
 
     @Id
@@ -32,18 +32,20 @@ public class Cliente {
     @Column(nullable = false)
     private String nome;
 
-    // --- CAMPOS ADICIONADOS ---
+    // --- NOVO CAMPO ---
+    @Column(length = 14) // Ex: 000.000.000-00
+    private String cpf;
+    // ------------------
+
+    @Column(nullable = false, length = 100)
+    private String email;
+
     @Column(length = 20)
     private String telefone;
 
-    @Column(length = 100)
-    private String email;
-
-    @Column(name = "cpf_cnpj", length = 18)
-    private String cpfCnpj;
-
-    @Column(columnDefinition = "TEXT")
-    private String endereco;
+    @Builder.Default
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Endereco> enderecos = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "criado_em", nullable = false, updatable = false)
@@ -52,5 +54,9 @@ public class Cliente {
     @UpdateTimestamp
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
-    // --- FIM DOS CAMPOS ADICIONADOS ---
+
+    public void addEndereco(Endereco endereco) {
+        enderecos.add(endereco);
+        endereco.setCliente(this);
+    }
 }

@@ -1,17 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core'; // 1. Adicionar OnDestroy
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs'; // 2. Adicionar Subscription e skip
+import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs';
 import { ClienteService } from '../../core/services/cliente.service';
 import { ClienteResponse } from '../../core/models/cliente.interfaces';
-import { TeamService } from '../../core/team/team.service'; // 3. Importar TeamService
+import { TeamService } from '../../core/team/team.service';
 
-// Imports do Angular Material
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar'; // Para notificações
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/cliente-form-dialog';
 
 @Component({
@@ -29,34 +28,33 @@ import { ClienteFormDialog } from '../../components/dialogs/cliente-form-dialog/
   templateUrl: './clientes.html',
   styleUrl: './clientes.scss'
 })
-export class Clientes implements OnInit, OnDestroy { // 4. Implementar OnDestroy
+export class Clientes implements OnInit, OnDestroy {
 
-  // REFAKTOR: Usar BehaviorSubject
   private clientesSubject = new BehaviorSubject<ClienteResponse[]>([]);
   public clientes$ = this.clientesSubject.asObservable();
 
-  public displayedColumns: string[] = ['nome', 'email', 'telefone', 'cpfCnpj', 'acoes'];
+  // ATUALIZADO: 'cpf' em vez de 'cpfCnpj'
+  public displayedColumns: string[] = ['nome', 'email', 'telefone', 'cpf', 'acoes'];
 
-  private teamSubscription: Subscription | undefined; // 5. Para guardar a subscrição
+  private teamSubscription: Subscription | undefined;
 
   constructor(
     private clienteService: ClienteService,
-    private teamService: TeamService, // 6. Injetar o TeamService
+    private teamService: TeamService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
-    this.carregarClientes(); // Carrega os dados na primeira vez
+    this.carregarClientes();
 
-    // 7. Ouve mudanças na equipe (ignora a primeira, pois 'carregarClientes' já foi chamado)
     this.teamSubscription = this.teamService.equipeAtiva$.pipe(skip(1)).subscribe(() => {
       this.carregarClientes();
     });
   }
 
   ngOnDestroy(): void {
-    this.teamSubscription?.unsubscribe(); // 8. Limpa a subscrição
+    this.teamSubscription?.unsubscribe();
   }
 
   carregarClientes(): void {
@@ -67,8 +65,10 @@ export class Clientes implements OnInit, OnDestroy { // 4. Implementar OnDestroy
 
   adicionarCliente(): void {
     const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '500px',
-      data: null // Modo de criação
+      width: '800px',        // Aumentado
+      maxWidth: '95vw',      // Responsivo
+      maxHeight: '90vh',     // Altura máxima quase total
+      data: null
     });
 
     dialogRef.afterClosed().subscribe(resultado => {
@@ -76,7 +76,7 @@ export class Clientes implements OnInit, OnDestroy { // 4. Implementar OnDestroy
         this.clienteService.criarCliente(resultado).subscribe({
           next: () => {
             this.snackBar.open('Cliente criado com sucesso!', 'OK', { duration: 3000 });
-            this.carregarClientes(); // Atualiza a tabela!
+            this.carregarClientes();
           },
           error: (err) => {
             console.error('Erro ao criar cliente', err);
@@ -89,7 +89,9 @@ export class Clientes implements OnInit, OnDestroy { // 4. Implementar OnDestroy
 
   editarCliente(cliente: ClienteResponse): void {
     const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '500px',
+      width: '800px',        // Aumentado
+      maxWidth: '95vw',
+      maxHeight: '90vh',
       data: cliente
     });
 

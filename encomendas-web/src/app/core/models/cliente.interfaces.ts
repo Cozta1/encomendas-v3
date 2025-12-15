@@ -1,18 +1,27 @@
-// DTO que recebemos da API
+export interface Endereco {
+  id?: string;
+  cep: string;
+  rua: string;
+  bairro: string;
+  numero: string;
+  complemento?: string;
+  cidade?: string;
+  uf?: string;
+}
+
+export interface ClienteRequest {
+  nome: string;
+  cpf: string; // Novo
+  email: string;
+  telefone: string;
+  enderecos: Endereco[];
+}
+
 export interface ClienteResponse {
   id: string;
   nome: string;
-  telefone: string;
+  cpf: string; // Novo
   email: string;
-  cpfCnpj: string;
-  endereco: string;
-}
-
-// DTO que enviamos para criar/atualizar
-export interface ClienteRequest {
-  nome: string;
-  telefone?: string;
-  email?: string;
-  cpfCnpj?: string;
-  endereco?: string;
+  telefone: string;
+  enderecos: Endereco[];
 }

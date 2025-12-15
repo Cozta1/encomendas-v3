@@ -1,41 +1,33 @@
 package com.benfica.encomendas_api.dto;
 
 import com.benfica.encomendas_api.model.Cliente;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ClienteResponseDTO {
-
     private UUID id;
     private String nome;
-    private String telefone;
+    private String cpf; // Novo campo
     private String email;
-    private String cpfCnpj;
-    private String endereco;
+    private String telefone;
+    private List<EnderecoDTO> enderecos;
 
-    /**
-     * Método helper para converter a Entidade Cliente em um DTO de Resposta.
-     */
     public static ClienteResponseDTO fromEntity(Cliente cliente) {
-        // --- ADICIONADA VERIFICAÇÃO DE NULO ---
-        if (cliente == null) {
-            return null;
-        }
         return ClienteResponseDTO.builder()
                 .id(cliente.getId())
                 .nome(cliente.getNome())
-                .telefone(cliente.getTelefone())
+                .cpf(cliente.getCpf()) // Mapeia
                 .email(cliente.getEmail())
-                .cpfCnpj(cliente.getCpfCnpj())
-                .endereco(cliente.getEndereco())
+                .telefone(cliente.getTelefone())
+                .enderecos(cliente.getEnderecos().stream()
+                        .map(EnderecoDTO::fromEntity)
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

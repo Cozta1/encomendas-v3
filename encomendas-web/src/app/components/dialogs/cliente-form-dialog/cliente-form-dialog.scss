@@ -1,0 +1,43 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%; /* Ocupa 100% da largura do dialog */
+  box-sizing: border-box;
+  padding-top: 8px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.half-width {
+  flex: 1; /* Distribui igualmente */
+}
+
+/* Ajustes no Accordion */
+mat-expansion-panel {
+    margin-bottom: 8px;
+    background-color: #f9f9f9;
+}
+
+mat-panel-title {
+    align-items: center;
+    font-weight: 500;
+}
+
+.endereco-form-row {
+    margin-top: 8px;
+}
+
+/* Ajuste do Dialog Content para scroll suave */
+mat-dialog-content {
+    max-height: 80vh; /* Garante que o conteúdo role se exceder a tela */
+    overflow-y: auto;
+}
