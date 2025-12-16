@@ -20,9 +20,16 @@ public class Endereco {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // Agora é opcional, pois o endereço pode ser de fornecedor
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
+
+    // --- NOVO RELACIONAMENTO ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fornecedor_id", nullable = true)
+    private Fornecedor fornecedor;
+    // ---------------------------
 
     @Column(length = 20, nullable = false)
     private String cep;
@@ -37,7 +44,6 @@ public class Endereco {
     private String numero;
 
     private String complemento;
-
     private String cidade;
     private String uf;
 }

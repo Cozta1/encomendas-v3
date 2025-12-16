@@ -13,6 +13,11 @@ import { debounceTime, filter, switchMap } from 'rxjs/operators';
 import { ClienteRequest, ClienteResponse } from '../../../core/models/cliente.interfaces';
 import { CepService } from '../../../core/services/cep.service';
 
+// --- ATUALIZADO: Importar as novas diretivas ---
+import { PhoneMaskDirective } from '../../../core/directives/phone-mask.directive';
+import { CpfMaskDirective } from '../../../core/directives/cpf-mask.directive'; // Apenas CPF
+import { CepMaskDirective } from '../../../core/directives/cep-mask.directive';
+
 @Component({
   selector: 'app-cliente-form-dialog',
   standalone: true,
@@ -24,7 +29,11 @@ import { CepService } from '../../../core/services/cep.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatExpansionModule
+    MatExpansionModule,
+    // Diretivas Específicas
+    PhoneMaskDirective,
+    CpfMaskDirective, // Usar CpfMaskDirective aqui
+    CepMaskDirective
   ],
   templateUrl: './cliente-form-dialog.html',
   styleUrls: ['./cliente-form-dialog.scss']
@@ -44,7 +53,7 @@ export class ClienteFormDialog implements OnInit {
 
     this.form = this.fb.group({
       nome: [data?.nome || '', Validators.required],
-      cpf: [data?.cpf || ''], // Novo campo
+      cpf: [data?.cpf || ''],
       email: [data?.email || '', [Validators.required, Validators.email]],
       telefone: [data?.telefone || ''],
       enderecos: this.fb.array([])
@@ -111,7 +120,7 @@ export class ClienteFormDialog implements OnInit {
       const formValue = this.form.value;
       const clienteRequest: ClienteRequest = {
         nome: formValue.nome,
-        cpf: formValue.cpf, // Envia CPF
+        cpf: formValue.cpf,
         email: formValue.email,
         telefone: formValue.telefone,
         enderecos: formValue.enderecos

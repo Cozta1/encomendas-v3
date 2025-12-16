@@ -7,7 +7,7 @@
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Buscar Cliente</mat-label>
         <input type="text"
-               placeholder="Digite o nome..."
+               placeholder="Digite o nome do cliente..."
                matInput
                formControlName="cliente"
                [matAutocomplete]="autoCliente">
@@ -32,7 +32,13 @@
     <div style="display: flex; gap: 16px;">
       <mat-form-field appearance="outline" style="flex: 1;">
         <mat-label>CEP</mat-label>
-        <input matInput formControlName="enderecoCep" placeholder="00000-000" required>
+        <input matInput formControlName="enderecoCep" placeholder="00000-000" required appCepMask maxlength="9">
+        <mat-error *ngIf="encomendaForm.get('enderecoCep')?.hasError('required')">
+          O CEP é obrigatório.
+        </mat-error>
+        <mat-error *ngIf="encomendaForm.get('enderecoCep')?.hasError('minlength')">
+          CEP incompleto.
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" style="flex: 2;">
@@ -49,7 +55,7 @@
 
       <mat-form-field appearance="outline" style="flex: 1;">
         <mat-label>Número</mat-label>
-        <input matInput formControlName="enderecoNumero" required>
+        <input matInput formControlName="enderecoNumero" required maxlength="10">
       </mat-form-field>
 
       <mat-form-field appearance="outline" style="flex: 2;">
@@ -65,8 +71,8 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" style="flex: 3;">
-        <mat-label>Observações</mat-label>
-        <input matInput formControlName="observacoes">
+        <mat-label>Observações (Opcional)</mat-label>
+        <textarea matInput formControlName="observacoes" rows="1" style="resize: none;"></textarea>
       </mat-form-field>
     </div>
 
@@ -77,7 +83,7 @@
   <h3>Adicionar Itens</h3>
   <form [formGroup]="itemForm" class="item-form">
     <mat-form-field appearance="outline">
-      <mat-label>Produto</mat-label>
+      <mat-label>Buscar Produto</mat-label>
       <input type="text" matInput formControlName="produto" [matAutocomplete]="autoProduto">
       <mat-autocomplete #autoProduto="matAutocomplete" [displayWith]="displayProdutoFn">
         <mat-option *ngFor="let p of filteredProdutos$ | async" [value]="p">
@@ -87,7 +93,7 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Fornecedor</mat-label>
+      <mat-label>Buscar Fornecedor</mat-label>
       <input type="text" matInput formControlName="fornecedor" [matAutocomplete]="autoFornecedor">
       <mat-autocomplete #autoFornecedor="matAutocomplete" [displayWith]="displayFornecedorFn">
         <mat-option *ngFor="let f of filteredFornecedores$ | async" [value]="f">
@@ -102,22 +108,51 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="small-field">
-      <mat-label>Valor (R$)</mat-label>
+      <mat-label>Preço Cotado (R$)</mat-label>
       <input matInput type="number" formControlName="precoCotado" min="0">
     </mat-form-field>
 
     <button mat-flat-button color="primary" (click)="adicionarItem()" [disabled]="itemForm.invalid">
-      <mat-icon>add</mat-icon>
+      <mat-icon>add</mat-icon> Adicionar
     </button>
   </form>
 
   <table mat-table [dataSource]="itensDataSource.controls" #itensTable class="mat-elevation-z8" style="width: 100%; margin-top: 16px;">
-    <ng-container matColumnDef="produto"><th mat-header-cell *matHeaderCellDef> Produto </th><td mat-cell *matCellDef="let item"> {{item.value.produto.nome}} </td></ng-container>
-    <ng-container matColumnDef="fornecedor"><th mat-header-cell *matHeaderCellDef> Fornecedor </th><td mat-cell *matCellDef="let item"> {{item.value.fornecedor.nome}} </td></ng-container>
-    <ng-container matColumnDef="quantidade"><th mat-header-cell *matHeaderCellDef> Qtd </th><td mat-cell *matCellDef="let item"> {{item.value.quantidade}} </td></ng-container>
-    <ng-container matColumnDef="precoCotado"><th mat-header-cell *matHeaderCellDef> Preço </th><td mat-cell *matCellDef="let item"> {{item.value.precoCotado | currency:'BRL'}} </td></ng-container>
-    <ng-container matColumnDef="subtotal"><th mat-header-cell *matHeaderCellDef> Subtotal </th><td mat-cell *matCellDef="let item"> {{item.value.subtotal | currency:'BRL'}} </td></ng-container>
-    <ng-container matColumnDef="acoes"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let i = index" style="text-align: right;"><button mat-icon-button color="warn" (click)="removerItem(i)"><mat-icon>delete</mat-icon></button></td></ng-container>
+
+    <ng-container matColumnDef="produto">
+      <th mat-header-cell *matHeaderCellDef> Produto </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.produto.nome}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="fornecedor">
+      <th mat-header-cell *matHeaderCellDef> Fornecedor </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.fornecedor.nome}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="quantidade">
+      <th mat-header-cell *matHeaderCellDef> Qtd </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.quantidade}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="precoCotado">
+      <th mat-header-cell *matHeaderCellDef> Preço </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.precoCotado | currency:'BRL'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="subtotal">
+      <th mat-header-cell *matHeaderCellDef> Subtotal </th>
+      <td mat-cell *matCellDef="let item"> {{item.value.subtotal | currency:'BRL'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let i = index" style="text-align: right;">
+        <button mat-icon-button color="warn" (click)="removerItem(i)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>

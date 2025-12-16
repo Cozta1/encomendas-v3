@@ -1,0 +1,36 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 8px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.full-width { width: 100%; }
+.half-width { flex: 1; }
+
+mat-expansion-panel {
+    margin-bottom: 8px;
+    background-color: #f9f9f9;
+}
+
+mat-panel-title {
+    align-items: center;
+    font-weight: 500;
+}
+
+.endereco-form-row {
+    margin-top: 8px;
+}
+
+mat-dialog-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}

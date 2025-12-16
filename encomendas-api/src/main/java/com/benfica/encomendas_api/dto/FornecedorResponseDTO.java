@@ -1,40 +1,33 @@
 package com.benfica.encomendas_api.dto;
 
-import com.benfica.encomendas_api.model.Fornecedor; // Importar
-import lombok.AllArgsConstructor;
+import com.benfica.encomendas_api.model.Fornecedor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class FornecedorResponseDTO {
     private UUID id;
     private String nome;
     private String cnpj;
-    private String contatoNome;
-    private String telefone;
     private String email;
-    private String endereco;
+    private String telefone;
+    private List<EnderecoDTO> enderecos;
 
-    // --- NOVO MÉTODO ESTÁTICO ---
     public static FornecedorResponseDTO fromEntity(Fornecedor fornecedor) {
-        // --- ADICIONADA VERIFICAÇÃO DE NULO ---
-        if (fornecedor == null) {
-            return null;
-        }
         return FornecedorResponseDTO.builder()
                 .id(fornecedor.getId())
                 .nome(fornecedor.getNome())
                 .cnpj(fornecedor.getCnpj())
-                .contatoNome(fornecedor.getContatoNome())
-                .telefone(fornecedor.getTelefone())
                 .email(fornecedor.getEmail())
-                .endereco(fornecedor.getEndereco())
+                .telefone(fornecedor.getTelefone())
+                .enderecos(fornecedor.getEnderecos().stream()
+                        .map(EnderecoDTO::fromEntity)
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

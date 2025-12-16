@@ -12,12 +12,12 @@
     <div class="row">
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>CPF</mat-label>
-        <input matInput formControlName="cpf" placeholder="000.000.000-00">
+        <input matInput formControlName="cpf" placeholder="000.000.000-00" appCpfMask maxlength="14">
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Telefone</mat-label>
-        <input matInput formControlName="telefone" placeholder="(00) 00000-0000">
+        <input matInput formControlName="telefone" placeholder="(00) 00000-0000" appPhoneMask maxlength="15">
       </mat-form-field>
     </div>
 
@@ -51,7 +51,7 @@
           <div class="endereco-form-row" style="display: flex; gap: 10px;">
             <mat-form-field appearance="outline" style="flex: 1;">
               <mat-label>CEP</mat-label>
-              <input matInput formControlName="cep" placeholder="00000-000" required>
+              <input matInput formControlName="cep" placeholder="00000-000" required appCepMask maxlength="9">
             </mat-form-field>
 
             <mat-form-field appearance="outline" style="flex: 2;">
@@ -68,7 +68,7 @@
 
             <mat-form-field appearance="outline" style="flex: 1;">
               <mat-label>Número</mat-label>
-              <input matInput formControlName="numero" required>
+              <input matInput formControlName="numero" required maxlength="10">
             </mat-form-field>
           </div>
 
