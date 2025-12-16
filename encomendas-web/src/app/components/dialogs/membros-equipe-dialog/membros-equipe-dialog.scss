@@ -1,0 +1,9 @@
+/* Estilos opcionais se precisar ajustar a tabela dentro do modal */
+mat-dialog-content {
+  min-width: 600px; /* Garante uma largura mínima boa */
+  max-height: 70vh;
+}
+
+table {
+  width: 100%;
+}

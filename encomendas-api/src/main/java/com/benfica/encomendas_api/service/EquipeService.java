@@ -3,16 +3,21 @@ package com.benfica.encomendas_api.service;
 import com.benfica.encomendas_api.dto.ConviteResponseDTO;
 import com.benfica.encomendas_api.dto.EquipeDTO;
 import com.benfica.encomendas_api.dto.EquipeResponseDTO;
+import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO; // Importar
 import com.benfica.encomendas_api.model.Convite;
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.model.Usuario;
 import com.benfica.encomendas_api.repository.ConviteRepository;
 import com.benfica.encomendas_api.repository.EquipeRepository;
-import com.benfica.encomendas_api.repository.UsuarioRepository; // Importar
+import com.benfica.encomendas_api.repository.UsuarioRepository;
+import com.benfica.encomendas_api.security.TeamContextHolder; // Importar
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,24 +32,20 @@ public class EquipeService {
     private ConviteRepository conviteRepository;
 
     @Autowired
-    private UsuarioRepository usuarioRepository; // Injetar para buscar o usuário pelo email
+    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private EmailService emailService;
 
-    // --- Listar Equipes (ATUALIZADO) ---
     @Transactional(readOnly = true)
     public List<EquipeResponseDTO> listarEquipesDoUsuario(Usuario usuario) {
-        // Agora busca onde ele é DONO ou MEMBRO
         List<Equipe> equipes = equipeRepository.findByAdministradorOrMembrosContaining(usuario, usuario);
-
         return equipes.stream()
                 .map(equipe -> EquipeResponseDTO.builder()
                         .id(equipe.getId())
                         .nome(equipe.getNome())
                         .nomeAdministrador(equipe.getAdministrador().getNomeCompleto())
                         .isAdmin(equipe.getAdministrador().getId().equals(usuario.getId()))
-                        // Se não é admin, então é membro
                         .isMember(!equipe.getAdministrador().getId().equals(usuario.getId()))
                         .build())
                 .collect(Collectors.toList());
@@ -58,20 +59,81 @@ public class EquipeService {
                 .administrador(admin)
                 .ativa(true)
                 .build();
-
         return equipeRepository.save(novaEquipe);
     }
 
-    // --- LÓGICA DE CONVITES ---
+    // --- GESTÃO DE MEMBROS (RESTAURADO E ATUALIZADO) ---
+
+    @Transactional(readOnly = true)
+    public List<MembroEquipeResponseDTO> listarMembrosEquipeAtiva() {
+        UUID equipeId = TeamContextHolder.getTeamId();
+        if (equipeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nenhuma equipe ativa selecionada.");
+        }
+
+        Equipe equipe = equipeRepository.findById(equipeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
+
+        List<MembroEquipeResponseDTO> membrosDTO = new ArrayList<>();
+
+        // 1. Adiciona o Administrador
+        Usuario admin = equipe.getAdministrador();
+        membrosDTO.add(MembroEquipeResponseDTO.builder()
+                .id(admin.getId())
+                .nomeCompleto(admin.getNomeCompleto())
+                .email(admin.getEmail())
+                .cargo(admin.getCargo())
+                .role("ROLE_ADMIN") // Dono é sempre admin
+                .build());
+
+        // 2. Adiciona os Membros
+        if (equipe.getMembros() != null) {
+            equipe.getMembros().forEach(membro -> {
+                membrosDTO.add(MembroEquipeResponseDTO.builder()
+                        .id(membro.getId())
+                        .nomeCompleto(membro.getNomeCompleto())
+                        .email(membro.getEmail())
+                        .cargo(membro.getCargo())
+                        .role("ROLE_USER") // Ou pegue do objeto membro se for dinâmico
+                        .build());
+            });
+        }
+
+        return membrosDTO;
+    }
+
+    @Transactional
+    public void removerMembro(Long usuarioId) {
+        UUID equipeId = TeamContextHolder.getTeamId();
+        Equipe equipe = equipeRepository.findById(equipeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
+
+        // Verifica se é o admin (não pode se remover por aqui, ou lógica específica)
+        if (equipe.getAdministrador().getId().equals(usuarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "O administrador não pode ser removido da equipe.");
+        }
+
+        Usuario membroRemover = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+
+        // Remove da lista de membros da equipe
+        boolean removido = equipe.getMembros().removeIf(u -> u.getId().equals(usuarioId));
+
+        if (!removido) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este usuário não é membro desta equipe.");
+        }
+
+        equipeRepository.save(equipe);
+    }
+
+    // --- CONVITES ---
 
     @Transactional
     public void enviarConvite(UUID equipeId, String emailDestino) {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
 
-        // (Opcional) Verificar se já é membro
-        boolean jaMembro = equipe.getMembros().stream()
-                .anyMatch(u -> u.getEmail().equalsIgnoreCase(emailDestino));
+        boolean jaMembro = equipe.getMembros().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(emailDestino));
         if (jaMembro || equipe.getAdministrador().getEmail().equalsIgnoreCase(emailDestino)) {
             throw new RuntimeException("Usuário já faz parte da equipe.");
         }
@@ -83,8 +145,7 @@ public class EquipeService {
                 .build();
 
         conviteRepository.save(convite);
-        emailService.enviarEmail(emailDestino, "Convite para Equipe",
-                "Você foi convidado para a equipe: " + equipe.getNome());
+        // emailService.enviarEmail(...)
     }
 
     @Transactional(readOnly = true)
@@ -101,7 +162,6 @@ public class EquipeService {
                 .collect(Collectors.toList());
     }
 
-    // --- Aceitar Convite (ATUALIZADO) ---
     @Transactional
     public void aceitarConvite(UUID conviteId) {
         Convite convite = conviteRepository.findById(conviteId)
@@ -111,15 +171,12 @@ public class EquipeService {
             throw new RuntimeException("Este convite não está mais pendente.");
         }
 
-        // 1. Atualiza status do convite
         convite.setStatus("ACEITO");
         conviteRepository.save(convite);
 
-        // 2. Busca o usuário que foi convidado (pelo email do convite)
         Usuario novoMembro = usuarioRepository.findByEmail(convite.getEmailDestino())
                 .orElseThrow(() -> new RuntimeException("Usuário convidado não possui conta no sistema."));
 
-        // 3. Adiciona à equipe
         Equipe equipe = convite.getEquipe();
         equipe.getMembros().add(novoMembro);
         equipeRepository.save(equipe);

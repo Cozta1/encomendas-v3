@@ -43,18 +43,17 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
 
-        // --- CORREÇÃO DO ERRO ANTERIOR ---
-        // Pega o usuário autenticado para extrair role e nome
+        // Recupera o usuário autenticado para devolver role e nome no login
         Usuario user = (Usuario) authentication.getPrincipal();
 
-        // Passa os 3 argumentos requeridos: token, role, nome
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, user.getRole(), user.getNomeCompleto()));
+        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, user.getRole(), user.getNomeCompleto(), user.getId()));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDTO dto) {
         String roleDefinida;
 
+        // Lógica de definição de Role baseada na chave de registro
         if (adminRegistrationKey.equals(dto.getRegistrationKey())) {
             roleDefinida = "ROLE_ADMIN";
         } else if (userRegistrationKey.equals(dto.getRegistrationKey())) {
@@ -67,13 +66,14 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Erro: Email já está em uso!");
         }
 
+        // Construção do Usuário com o novo campo Cargo vindo do DTO
         Usuario usuario = Usuario.builder()
                 .nomeCompleto(dto.getNomeCompleto())
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .identificacao(dto.getIdentificacao())
                 .telefone(dto.getTelefone())
-                .cargo("Usuário")
+                .cargo(dto.getCargo()) // <--- ATUALIZADO: Salva o cargo enviado pelo frontend
                 .role(roleDefinida)
                 .ativo(true)
                 .build();

@@ -11,7 +11,6 @@ import { Clientes } from './pages/clientes/clientes';
 import { Produtos } from './pages/produtos/produtos';
 import { Encomendas } from './pages/encomendas/encomendas';
 import { Fornecedores } from './pages/fornecedores/fornecedores';
-// 1. IMPORTAR A PÁGINA DE EQUIPES
 import { EquipesPage } from './pages/equipes/equipes';
 
 export const routes: Routes = [
@@ -30,8 +29,7 @@ export const routes: Routes = [
       { path: 'encomendas', component: Encomendas },
       { path: 'fornecedores', component: Fornecedores },
 
-      // 2. ADICIONAR A ROTA PARA GESTÃO DE EQUIPES
-      // O path deve corresponder ao routerLink="/gestao-equipes" do sidebar
+      // Rota centralizada de equipes
       { path: 'gestao-equipes', component: EquipesPage },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

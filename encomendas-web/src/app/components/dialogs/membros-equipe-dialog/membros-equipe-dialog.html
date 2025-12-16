@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>Membros da Equipe</h2>
+
+<mat-dialog-content>
+  <table mat-table [dataSource]="membros" class="mat-elevation-z0" style="width: 100%;">
+
+    <ng-container matColumnDef="nome">
+      <th mat-header-cell *matHeaderCellDef> Nome </th>
+      <td mat-cell *matCellDef="let element"> {{element.nomeCompleto}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef> E-mail </th>
+      <td mat-cell *matCellDef="let element"> {{element.email}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="cargo">
+      <th mat-header-cell *matHeaderCellDef> Cargo </th>
+      <td mat-cell *matCellDef="let element"> {{element.cargo || '-'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="funcao">
+      <th mat-header-cell *matHeaderCellDef> Permissão </th>
+      <td mat-cell *matCellDef="let element">
+        <mat-chip [color]="element.role === 'ROLE_ADMIN' ? 'primary' : ''" selected>
+          {{ getRoleLabel(element.role) }}
+        </mat-chip>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acoes">
+      <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Ações </th>
+      <td mat-cell *matCellDef="let element" style="text-align: right;">
+        <button mat-icon-button color="warn"
+                (click)="removerMembro(element)"
+                [disabled]="element.id === currentUserId"
+                matTooltip="Remover membro">
+          <mat-icon>person_remove</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="5" style="text-align: center; padding: 20px;">
+        Nenhum membro encontrado.
+      </td>
+    </tr>
+  </table>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClose()">Fechar</button>
+</mat-dialog-actions>

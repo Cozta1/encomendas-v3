@@ -6,21 +6,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTabsModule } from '@angular/material/tabs'; // Importar Tabs
-import { MatChipsModule } from '@angular/material/chips'; // Importar Chips
-import { Observable } from 'rxjs';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTooltipModule } from '@angular/material/tooltip'; // Adicionado para tooltips
 
 import { TeamService, Equipe, Convite } from '../../core/team/team.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { EquipeFormDialog } from '../../components/dialogs/equipe-form-dialog/equipe-form-dialog';
 import { InviteDialog } from '../../components/dialogs/invite-dialog/invite-dialog';
+import { MembrosEquipeDialog } from '../../components/dialogs/membros-equipe-dialog/membros-equipe-dialog';
 
 @Component({
   selector: 'app-equipes-page',
   standalone: true,
   imports: [
     CommonModule, MatCardModule, MatButtonModule, MatIconModule,
-    MatTableModule, MatDialogModule, MatSnackBarModule, MatTabsModule, MatChipsModule
+    MatTableModule, MatDialogModule, MatSnackBarModule, MatTabsModule, MatChipsModule,
+    MatTooltipModule
   ],
   templateUrl: './equipes.html',
   styleUrls: ['./equipes.scss']
@@ -29,11 +31,10 @@ export class EquipesPage implements OnInit {
   equipes: Equipe[] = [];
   convitesPendentes: Convite[] = [];
 
-  // Colunas da tabela
   displayedColumns: string[] = ['nome', 'responsavel', 'acoes'];
   displayedColumnsConvites: string[] = ['equipe', 'status', 'acoes'];
 
-  isAdminGlobal = false; // Se é admin do sistema (ROLE_ADMIN)
+  isAdminGlobal = false;
 
   constructor(
     private teamService: TeamService,
@@ -48,10 +49,7 @@ export class EquipesPage implements OnInit {
   }
 
   carregarDados(): void {
-    // 1. Carrega Equipes
     this.teamService.fetchEquipesDoUsuario().subscribe(data => this.equipes = data);
-
-    // 2. Carrega Convites Pendentes (se não for admin ou pra todos)
     this.teamService.listarMeusConvitesPendentes().subscribe(data => this.convitesPendentes = data);
   }
 
@@ -94,9 +92,25 @@ export class EquipesPage implements OnInit {
     this.teamService.aceitarConvite(convite.id).subscribe({
       next: () => {
         this.snackBar.open('Convite aceito! Atualize para ver a equipe.', 'OK', { duration: 3000 });
-        this.carregarDados(); // Recarrega para sumir o convite e aparecer a equipe
+        this.carregarDados();
       },
       error: () => this.snackBar.open('Erro ao aceitar.', 'Fechar', { duration: 5000 })
+    });
+  }
+
+  // --- Lógica de Gestão de Membros (Modal) ---
+  abrirGestaoMembros(equipe: Equipe): void {
+    // Define como equipe ativa para que o endpoint de membros retorne os dados corretos
+    this.teamService.selecionarEquipe(equipe);
+
+    const dialogRef = this.dialog.open(MembrosEquipeDialog, {
+      width: '900px',
+      maxWidth: '95vw',
+      data: { equipe: equipe }
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      // Recarrega dados se necessário
     });
   }
 }

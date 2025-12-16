@@ -1,49 +1,79 @@
-<div class="login-container">
-  <mat-card class="login-card">
+<div class="register-container">
+  <mat-card class="register-card">
+
     <mat-card-header>
       <mat-card-title>Criar Conta</mat-card-title>
     </mat-card-header>
+
     <mat-card-content>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Nome Completo</mat-label>
-          <input matInput formControlName="nomeCompleto">
+          <input matInput formControlName="nomeCompleto" required>
+
+          <mat-error *ngIf="registerForm.get('nomeCompleto')?.hasError('required')">
+            Nome é obrigatório
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" type="email">
-        </mat-form-field>
+          <mat-label>E-mail</mat-label>
+          <input matInput formControlName="email" type="email" required>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>CPF/Identificação</mat-label>
-          <input matInput formControlName="identificacao">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Telefone</mat-label>
-          <input matInput formControlName="telefone">
+          <mat-error *ngIf="registerForm.get('email')?.hasError('email')">
+            E-mail inválido
+          </mat-error>
+          <mat-error *ngIf="registerForm.get('email')?.hasError('required')">
+            E-mail é obrigatório
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Senha</mat-label>
-          <input matInput formControlName="password" type="password">
+          <input matInput formControlName="password" type="password" required>
+
+          <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">
+            Mínimo 6 caracteres
+          </mat-error>
+          <mat-error *ngIf="registerForm.get('password')?.hasError('required')">
+            Senha é obrigatória
+          </mat-error>
         </mat-form-field>
+
+        <div class="row">
+          <mat-form-field appearance="outline" style="flex: 1;">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="identificacao" placeholder="000.000.000-00" appCpfMask maxlength="14">
+
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 1;">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" placeholder="(00) 00000-0000" appPhoneMask maxlength="15" required>
+
+            <mat-error *ngIf="registerForm.get('telefone')?.hasError('required')">
+              Obrigatório
+            </mat-error>
+          </mat-form-field>
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Chave de Registro</mat-label>
-          <input matInput formControlName="registrationKey" type="password" placeholder="Peça ao administrador">
-          <mat-hint>Chave necessária para criar conta.</mat-hint>
+          <mat-label>Cargo (Opcional)</mat-label>
+          <input matInput formControlName="cargo" placeholder="Ex: Gerente">
+
         </mat-form-field>
 
-        <div class="actions">
-          <button mat-button type="button" routerLink="/login">Voltar</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isLoading">
-            Cadastrar
-          </button>
-        </div>
+        <button mat-flat-button color="primary" class="full-width" type="submit" [disabled]="registerForm.invalid" style="height: 48px; font-size: 16px;">
+          REGISTRAR
+        </button>
+
       </form>
     </mat-card-content>
+
+    <mat-card-actions style="display: flex; justify-content: center; padding-bottom: 16px;">
+      <a mat-button routerLink="/login">Já tem conta? Faça login</a>
+    </mat-card-actions>
+
   </mat-card>
 </div>

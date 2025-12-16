@@ -1,8 +1,9 @@
 package com.benfica.encomendas_api.controller;
 
-import com.benfica.encomendas_api.dto.ConviteResponseDTO; // Importar
+import com.benfica.encomendas_api.dto.ConviteResponseDTO;
 import com.benfica.encomendas_api.dto.EquipeDTO;
 import com.benfica.encomendas_api.dto.EquipeResponseDTO;
+import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO; // Certifique-se de ter este DTO
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.model.Usuario;
 import com.benfica.encomendas_api.service.EquipeService;
@@ -39,7 +40,21 @@ public class EquipeController {
         return new ResponseEntity<>(novaEquipe, HttpStatus.CREATED);
     }
 
-    // --- ENDPOINTS DE CONVITE ---
+    // --- GESTÃO DE MEMBROS (RESTAURADO) ---
+
+    @GetMapping("/membros")
+    public ResponseEntity<List<MembroEquipeResponseDTO>> listarMembros() {
+        // Este método depende do Header 'X-Team-ID' enviado pelo interceptor
+        return ResponseEntity.ok(equipeService.listarMembrosEquipeAtiva());
+    }
+
+    @DeleteMapping("/membros/{usuarioId}")
+    public ResponseEntity<Void> removerMembro(@PathVariable Long usuarioId) {
+        equipeService.removerMembro(usuarioId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- CONVITES ---
 
     @PostMapping("/{id}/convidar")
     @PreAuthorize("hasRole('ADMIN')")
@@ -55,14 +70,12 @@ public class EquipeController {
     @GetMapping("/{id}/convites")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ConviteResponseDTO>> listarConvitesEnviados(@PathVariable UUID id) {
-        // Retorna DTOs para evitar erro de serialização
         List<ConviteResponseDTO> convites = equipeService.listarConvitesDaEquipe(id);
         return ResponseEntity.ok(convites);
     }
 
     @GetMapping("/meus-convites")
     public ResponseEntity<List<ConviteResponseDTO>> listarMeusConvites(@AuthenticationPrincipal Usuario usuarioLogado) {
-        // Retorna DTOs para evitar erro de serialização
         List<ConviteResponseDTO> convites = equipeService.listarConvitesPendentesDoUsuario(usuarioLogado.getEmail());
         return ResponseEntity.ok(convites);
     }

@@ -1,13 +1,18 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { Router, RouterModule } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+import { AuthService } from '../../core/auth/auth.service';
+
+// --- IMPORTAR DIRETIVAS DE MÁSCARA ---
+import { CpfMaskDirective } from '../../core/directives/cpf-mask.directive';
+import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
 
 @Component({
   selector: 'app-register',
@@ -15,19 +20,21 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatSnackBarModule
+    RouterModule,
+    MatSnackBarModule,
+    // ADICIONAR DIRETIVAS AO IMPORTS
+    CpfMaskDirective,
+    PhoneMaskDirective
   ],
   templateUrl: './register.html',
-  styleUrls: ['../login.scss'] // Reutiliza o estilo do login
+  styleUrls: ['./register.scss']
 })
 export class Register {
-  form: FormGroup;
-  isLoading = false;
+  registerForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
@@ -35,30 +42,35 @@ export class Register {
     private router: Router,
     private snackBar: MatSnackBar
   ) {
-    this.form = this.fb.group({
+    this.registerForm = this.fb.group({
       nomeCompleto: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      identificacao: ['', Validators.required],
-      telefone: [''],
-      password: ['', Validators.required],
-      registrationKey: ['', Validators.required]
+      password: ['', [Validators.required, Validators.minLength(6)]],
+
+      // CPF (Identificação)
+      identificacao: [''],
+
+      // TELEFONE AGORA OBRIGATÓRIO
+      telefone: ['', Validators.required],
+
+      cargo: ['']
     });
   }
 
   onSubmit() {
-    if (this.form.invalid) return;
-    this.isLoading = true;
-
-    this.authService.register(this.form.value).subscribe({
-      next: () => {
-        this.snackBar.open('Cadastro realizado! Faça login.', 'OK', { duration: 3000 });
-        this.router.navigate(['/login']);
-      },
-      error: (err) => {
-        this.isLoading = false;
-        const msg = typeof err.error === 'string' ? err.error : 'Erro ao cadastrar.';
-        this.snackBar.open(msg, 'Fechar', { duration: 5000 });
-      }
-    });
+    if (this.registerForm.valid) {
+      this.authService.register(this.registerForm.value).subscribe({
+        next: () => {
+          this.snackBar.open('Registro realizado com sucesso!', 'OK', { duration: 3000 });
+          this.router.navigate(['/login']);
+        },
+        error: (err) => {
+          console.error(err);
+          this.snackBar.open('Erro ao registrar. Verifique os dados.', 'Fechar', { duration: 3000 });
+        }
+      });
+    } else {
+      this.registerForm.markAllAsTouched();
+    }
   }
 }

@@ -37,10 +37,16 @@ public class Usuario implements UserDetails {
     @Column(unique = true, nullable = false, length = 20)
     private String identificacao;
 
-    @Column(nullable = false, length = 100)
+    // --- CAMPO ATUALIZADO: Cargo opcional ---
+    @Column(nullable = true, length = 100)
     private String cargo;
 
-    // --- NOVO CAMPO ROLE ---
+    // --- NOVO RELACIONAMENTO ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "equipe_id")
+    private Equipe equipe;
+    // ---------------------------
+
     @Column(nullable = false)
     private String role; // Ex: ROLE_ADMIN, ROLE_USER
 
