@@ -1,5 +1,4 @@
 export const environment = {
-  production: false,
-  // Aponta para o backend local para reconhecer os novos endpoints
-  apiUrl: 'http://localhost:8080/api'
+  production: true,
+  apiUrl: 'https://encomendas-api-969073157004.us-central1.run.app/api'
 };
