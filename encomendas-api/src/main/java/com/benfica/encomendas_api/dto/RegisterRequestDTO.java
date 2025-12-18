@@ -19,12 +19,14 @@ public class RegisterRequestDTO {
 
     // Identificação (CPF) é opcional no registro inicial segundo sua lógica atual,
     // mas se preenchido, será formatado no front.
+    @NotBlank(message = "CPF é obrigatório")
     private String identificacao;
 
     // --- AGORA OBRIGATÓRIO ---
     @NotBlank(message = "O telefone é obrigatório")
     private String telefone;
 
+    @NotBlank(message = "A chave de registro é obrigatória")
     private String registrationKey;
 
     private String cargo;
