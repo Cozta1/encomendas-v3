@@ -3,14 +3,14 @@ package com.benfica.encomendas_api.service;
 import com.benfica.encomendas_api.dto.ConviteResponseDTO;
 import com.benfica.encomendas_api.dto.EquipeDTO;
 import com.benfica.encomendas_api.dto.EquipeResponseDTO;
-import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO; // Importar
+import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO;
 import com.benfica.encomendas_api.model.Convite;
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.model.Usuario;
 import com.benfica.encomendas_api.repository.ConviteRepository;
 import com.benfica.encomendas_api.repository.EquipeRepository;
 import com.benfica.encomendas_api.repository.UsuarioRepository;
-import com.benfica.encomendas_api.security.TeamContextHolder; // Importar
+import com.benfica.encomendas_api.security.TeamContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,20 +34,33 @@ public class EquipeService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private EmailService emailService;
-
+    // --- ATUALIZAÇÃO: Listar Equipes com suporte a SUPER_ADMIN ---
     @Transactional(readOnly = true)
     public List<EquipeResponseDTO> listarEquipesDoUsuario(Usuario usuario) {
-        List<Equipe> equipes = equipeRepository.findByAdministradorOrMembrosContaining(usuario, usuario);
+        List<Equipe> equipes;
+
+        // Se for Super Admin, busca TODAS as equipes
+        if ("ROLE_SUPER_ADMIN".equals(usuario.getRole())) {
+            equipes = equipeRepository.findAll();
+        } else {
+            // Comportamento padrão: apenas equipes onde é dono ou membro
+            equipes = equipeRepository.findByAdministradorOrMembrosContaining(usuario, usuario);
+        }
+
         return equipes.stream()
-                .map(equipe -> EquipeResponseDTO.builder()
-                        .id(equipe.getId())
-                        .nome(equipe.getNome())
-                        .nomeAdministrador(equipe.getAdministrador().getNomeCompleto())
-                        .isAdmin(equipe.getAdministrador().getId().equals(usuario.getId()))
-                        .isMember(!equipe.getAdministrador().getId().equals(usuario.getId()))
-                        .build())
+                .map(equipe -> {
+                    boolean isSuperAdmin = "ROLE_SUPER_ADMIN".equals(usuario.getRole());
+                    boolean isOwner = equipe.getAdministrador().getId().equals(usuario.getId());
+
+                    return EquipeResponseDTO.builder()
+                            .id(equipe.getId())
+                            .nome(equipe.getNome())
+                            .nomeAdministrador(equipe.getAdministrador().getNomeCompleto())
+                            // Super Admin tem poderes de Admin em qualquer equipe na visualização
+                            .isAdmin(isOwner || isSuperAdmin)
+                            .isMember(!isOwner)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -62,7 +75,7 @@ public class EquipeService {
         return equipeRepository.save(novaEquipe);
     }
 
-    // --- GESTÃO DE MEMBROS (RESTAURADO E ATUALIZADO) ---
+    // --- GESTÃO DE MEMBROS ---
 
     @Transactional(readOnly = true)
     public List<MembroEquipeResponseDTO> listarMembrosEquipeAtiva() {
@@ -76,17 +89,17 @@ public class EquipeService {
 
         List<MembroEquipeResponseDTO> membrosDTO = new ArrayList<>();
 
-        // 1. Adiciona o Administrador
+        // Adiciona Administrador
         Usuario admin = equipe.getAdministrador();
         membrosDTO.add(MembroEquipeResponseDTO.builder()
                 .id(admin.getId())
                 .nomeCompleto(admin.getNomeCompleto())
                 .email(admin.getEmail())
                 .cargo(admin.getCargo())
-                .role("ROLE_ADMIN") // Dono é sempre admin
+                .role("ROLE_ADMIN")
                 .build());
 
-        // 2. Adiciona os Membros
+        // Adiciona Membros
         if (equipe.getMembros() != null) {
             equipe.getMembros().forEach(membro -> {
                 membrosDTO.add(MembroEquipeResponseDTO.builder()
@@ -94,7 +107,7 @@ public class EquipeService {
                         .nomeCompleto(membro.getNomeCompleto())
                         .email(membro.getEmail())
                         .cargo(membro.getCargo())
-                        .role("ROLE_USER") // Ou pegue do objeto membro se for dinâmico
+                        .role("ROLE_USER")
                         .build());
             });
         }
@@ -108,15 +121,11 @@ public class EquipeService {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
-        // Verifica se é o admin (não pode se remover por aqui, ou lógica específica)
+        // Proteção: Não remover o dono da equipe
         if (equipe.getAdministrador().getId().equals(usuarioId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "O administrador não pode ser removido da equipe.");
         }
 
-        Usuario membroRemover = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
-
-        // Remove da lista de membros da equipe
         boolean removido = equipe.getMembros().removeIf(u -> u.getId().equals(usuarioId));
 
         if (!removido) {
@@ -145,7 +154,6 @@ public class EquipeService {
                 .build();
 
         conviteRepository.save(convite);
-        // emailService.enviarEmail(...)
     }
 
     @Transactional(readOnly = true)

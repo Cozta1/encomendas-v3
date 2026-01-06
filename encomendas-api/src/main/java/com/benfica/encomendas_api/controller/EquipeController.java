@@ -33,7 +33,7 @@ public class EquipeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Equipe> criarEquipe(@Valid @RequestBody EquipeDTO dto,
                                               @AuthenticationPrincipal Usuario usuarioLogado) {
         Equipe novaEquipe = equipeService.criarEquipe(dto, usuarioLogado);
