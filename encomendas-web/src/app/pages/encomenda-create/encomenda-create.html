@@ -1,0 +1,206 @@
+<div class="page-container" style="padding: 24px; max-width: 1200px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h1>Nova Encomenda (Manual)</h1>
+    <button mat-stroked-button color="warn" routerLink="/dashboard">Cancelar</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>1. Informações do Cliente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="pt-3" formGroupName="cliente">
+        <div class="row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nome Completo</mat-label>
+            <input matInput formControlName="nome" placeholder="Ex: João da Silva">
+            <mat-error *ngIf="form.get('cliente.nome')?.hasError('required')">Nome é obrigatório</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="grid-3">
+          <mat-form-field appearance="outline">
+            <mat-label>CPF</mat-label>
+            <input matInput formControlName="cpf" appCpfMask placeholder="000.000.000-00">
+            <mat-error *ngIf="form.get('cliente.cpf')?.hasError('required')">CPF é obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" placeholder="cliente@email.com">
+            <mat-error *ngIf="form.get('cliente.email')?.hasError('required')">Email é obrigatório</mat-error>
+            <mat-error *ngIf="form.get('cliente.email')?.hasError('email')">Email inválido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" appPhoneMask placeholder="(00) 00000-0000">
+            <mat-error *ngIf="form.get('cliente.telefone')?.hasError('required')">Telefone é obrigatório</mat-error>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>2. Endereço de Entrega</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        <div class="grid-3">
+          <mat-form-field appearance="outline">
+            <mat-label>CEP</mat-label>
+            <input matInput formControlName="enderecoCep" appCepMask (blur)="buscarCep()" placeholder="00000-000">
+            <mat-error *ngIf="form.get('enderecoCep')?.hasError('required')">CEP é obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Bairro</mat-label>
+            <input matInput formControlName="enderecoBairro">
+            <mat-error *ngIf="form.get('enderecoBairro')?.hasError('required')">Bairro é obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Rua</mat-label>
+            <input matInput formControlName="enderecoRua">
+            <mat-error *ngIf="form.get('enderecoRua')?.hasError('required')">Rua é obrigatória</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="grid-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Número</mat-label>
+            <input matInput formControlName="enderecoNumero">
+            <mat-error *ngIf="form.get('enderecoNumero')?.hasError('required')">Número é obrigatório</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="grid-column: span 2;">
+            <mat-label>Complemento</mat-label>
+            <input matInput formControlName="enderecoComplemento">
+          </mat-form-field>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-top: 16px;">
+          <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>
+          <mat-checkbox formControlName="vendaEstoqueNegativo" color="warn">Venda c/ Estoque Negativo</mat-checkbox>
+        </div>
+
+        <div class="grid-3" style="margin-top: 16px;">
+          <mat-form-field appearance="outline">
+            <mat-label>Data Estimada</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="dataEstimadaEntrega" appDateMask>
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora Estimada</mat-label>
+            <input matInput type="time" formControlName="horaEstimadaEntrega">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Observações</mat-label>
+          <textarea matInput formControlName="observacoes" rows="2"></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>3. Itens da Encomenda</mat-card-title>
+        <span style="flex: 1 1 auto;"></span>
+        <button mat-raised-button color="primary" type="button" (click)="adicionarItem()">
+          <mat-icon>add</mat-icon> Adicionar Item
+        </button>
+      </mat-card-header>
+
+      <mat-card-content class="pt-3">
+        <div formArrayName="itens">
+          <div *ngFor="let item of itensFormArray.controls; let i = index" [formGroupName]="i" class="item-box">
+
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <strong>Item #{{i + 1}}</strong>
+              <button mat-icon-button color="warn" type="button" (click)="removerItem(i)" matTooltip="Remover Item">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <div class="grid-3" formGroupName="produto">
+              <mat-form-field appearance="outline">
+                <mat-label>Nome do Produto</mat-label>
+                <input matInput formControlName="nome" placeholder="Ex: Dipirona">
+                <mat-error *ngIf="item.get('produto.nome')?.hasError('required')">Obrigatório</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Código (Opcional)</mat-label>
+                <input matInput formControlName="codigo">
+              </mat-form-field>
+            </div>
+
+            <div class="grid-3">
+              <div formGroupName="fornecedor">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Fornecedor</mat-label>
+                  <input matInput formControlName="nome" placeholder="Ex: Distribuidora X">
+                  <mat-error *ngIf="item.get('fornecedor.nome')?.hasError('required')">Obrigatório</mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Quantidade</mat-label>
+                <input matInput type="number" formControlName="quantidade" min="1">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Preço Unitário</mat-label>
+                <span matTextPrefix>R$&nbsp;</span>
+                <input matInput type="number" formControlName="precoCotado">
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Descrição Adicional (Opcional)</mat-label>
+              <input matInput formControlName="descricaoOpcional">
+            </mat-form-field>
+
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="mb-4">
+      <mat-card-header>
+        <mat-card-title>4. Pagamento</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="pt-3">
+        <div class="row payment-row">
+
+          <div class="total-display">
+            <h3>Total: {{ form.get('valorTotal')?.value | currency:'BRL' }}</h3>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <mat-checkbox formControlName="quitado">Pedido Quitado (100%)</mat-checkbox>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Valor Adiantamento</mat-label>
+              <span matTextPrefix>R$&nbsp;</span>
+              <input matInput type="number" formControlName="valorAdiantamento">
+            </mat-form-field>
+          </div>
+
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div style="display: flex; justify-content: flex-end; gap: 16px; margin-bottom: 40px;">
+      <button mat-button type="button" routerLink="/dashboard">Voltar</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid" style="transform: scale(1.1);">
+        FINALIZAR PEDIDO
+      </button>
+    </div>
+
+  </form>
+</div>
