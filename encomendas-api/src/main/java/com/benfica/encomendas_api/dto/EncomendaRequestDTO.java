@@ -45,6 +45,10 @@ public class EncomendaRequestDTO {
     public static class ClienteDataDTO {
         @NotBlank(message = "Nome do cliente é obrigatório")
         private String nome;
+
+        // --- NOVO CAMPO ADICIONADO ---
+        private String codigoInterno;
+
         private String cpf;
         private String email;
         private String telefone;

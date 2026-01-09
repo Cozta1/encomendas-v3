@@ -12,8 +12,14 @@
         <mat-card-title>1. Informações do Cliente</mat-card-title>
       </mat-card-header>
       <mat-card-content class="pt-3" formGroupName="cliente">
-        <div class="row">
-          <mat-form-field appearance="outline" class="full-width">
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 150px;">
+            <mat-label>Código Interno</mat-label>
+            <input matInput formControlName="codigoInterno" placeholder="Opcional">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 3; min-width: 300px;">
             <mat-label>Nome Completo</mat-label>
             <input matInput formControlName="nome" placeholder="Ex: João da Silva">
             <mat-error *ngIf="form.get('cliente.nome')?.hasError('required')">Nome é obrigatório</mat-error>
@@ -79,11 +85,6 @@
             <mat-label>Complemento</mat-label>
             <input matInput formControlName="enderecoComplemento">
           </mat-form-field>
-        </div>
-
-        <div style="display: flex; gap: 16px; margin-top: 16px;">
-          <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>
-          <mat-checkbox formControlName="vendaEstoqueNegativo" color="warn">Venda c/ Estoque Negativo</mat-checkbox>
         </div>
 
         <div class="grid-3" style="margin-top: 16px;">
@@ -172,9 +173,15 @@
 
     <mat-card class="mb-4">
       <mat-card-header>
-        <mat-card-title>4. Pagamento</mat-card-title>
+        <mat-card-title>4. Pagamento e Opções</mat-card-title>
       </mat-card-header>
       <mat-card-content class="pt-3">
+
+        <div style="display: flex; gap: 24px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+          <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>
+          <mat-checkbox formControlName="vendaEstoqueNegativo" color="warn">Venda c/ Estoque Negativo</mat-checkbox>
+        </div>
+
         <div class="row payment-row">
 
           <div class="total-display">

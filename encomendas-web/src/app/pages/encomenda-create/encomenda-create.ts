@@ -19,7 +19,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { CepMaskDirective } from '../../core/directives/cep-mask.directive';
 import { CpfMaskDirective } from '../../core/directives/cpf-mask.directive';
 import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
-import { DateMaskDirective } from '../../core/directives/date-mask.directive'; // Ajuste o caminho
+import { DateMaskDirective } from '../../core/directives/date-mask.directive';
 
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { CepService } from '../../core/services/cep.service';
@@ -52,6 +52,7 @@ export class EncomendaCreate implements OnInit {
       // -- CLIENTE (Todos Obrigatórios) --
       cliente: this.fb.group({
         nome: ['', Validators.required],
+        codigoInterno: [''],
         cpf: ['', Validators.required],
         email: ['', [Validators.required, Validators.email]],
         telefone: ['', Validators.required]
