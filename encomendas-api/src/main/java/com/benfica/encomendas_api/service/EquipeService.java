@@ -34,16 +34,26 @@ public class EquipeService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // --- ATUALIZAÇÃO: Listar Equipes com suporte a SUPER_ADMIN ---
+    // --- LÓGICA DE SEGURANÇA: SUPER ADMIN OU DONO ---
+    private void validarPermissaoGestor(Equipe equipe, Usuario usuarioExecutor) {
+        boolean isSuperAdmin = "ROLE_SUPER_ADMIN".equals(usuarioExecutor.getRole());
+        boolean isDono = equipe.getAdministrador().getId().equals(usuarioExecutor.getId());
+
+        if (!isSuperAdmin && !isDono) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Você não tem permissão para gerenciar esta equipe.");
+        }
+    }
+    // ------------------------------------------------
+
     @Transactional(readOnly = true)
     public List<EquipeResponseDTO> listarEquipesDoUsuario(Usuario usuario) {
         List<Equipe> equipes;
 
-        // Se for Super Admin, busca TODAS as equipes
+        // Se for Super Admin, vê TODAS
         if ("ROLE_SUPER_ADMIN".equals(usuario.getRole())) {
             equipes = equipeRepository.findAll();
         } else {
-            // Comportamento padrão: apenas equipes onde é dono ou membro
             equipes = equipeRepository.findByAdministradorOrMembrosContaining(usuario, usuario);
         }
 
@@ -56,8 +66,7 @@ public class EquipeService {
                             .id(equipe.getId())
                             .nome(equipe.getNome())
                             .nomeAdministrador(equipe.getAdministrador().getNomeCompleto())
-                            // Super Admin tem poderes de Admin em qualquer equipe na visualização
-                            .isAdmin(isOwner || isSuperAdmin)
+                            .isAdmin(isOwner || isSuperAdmin) // Flag Admin para o Frontend
                             .isMember(!isOwner)
                             .build();
                 })
@@ -111,19 +120,21 @@ public class EquipeService {
                         .build());
             });
         }
-
         return membrosDTO;
     }
 
     @Transactional
-    public void removerMembro(Long usuarioId) {
+    public void removerMembro(Long usuarioId, Usuario usuarioExecutor) {
         UUID equipeId = TeamContextHolder.getTeamId();
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
-        // Proteção: Não remover o dono da equipe
+        // Validação de Permissão (Super Admin ou Dono)
+        validarPermissaoGestor(equipe, usuarioExecutor);
+
+        // Proteção: Não remover o dono da equipe (nem Super Admin deve fazer isso por esta rota)
         if (equipe.getAdministrador().getId().equals(usuarioId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "O administrador não pode ser removido da equipe.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "O administrador (dono) não pode ser removido da equipe.");
         }
 
         boolean removido = equipe.getMembros().removeIf(u -> u.getId().equals(usuarioId));
@@ -138,9 +149,12 @@ public class EquipeService {
     // --- CONVITES ---
 
     @Transactional
-    public void enviarConvite(UUID equipeId, String emailDestino) {
+    public void enviarConvite(UUID equipeId, String emailDestino, Usuario usuarioExecutor) {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
+
+        // Validação de Permissão (Super Admin ou Dono)
+        validarPermissaoGestor(equipe, usuarioExecutor);
 
         boolean jaMembro = equipe.getMembros().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(emailDestino));
         if (jaMembro || equipe.getAdministrador().getEmail().equalsIgnoreCase(emailDestino)) {
@@ -157,7 +171,13 @@ public class EquipeService {
     }
 
     @Transactional(readOnly = true)
-    public List<ConviteResponseDTO> listarConvitesDaEquipe(UUID equipeId) {
+    public List<ConviteResponseDTO> listarConvitesDaEquipe(UUID equipeId, Usuario usuarioExecutor) {
+        Equipe equipe = equipeRepository.findById(equipeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
+
+        // Validação de Permissão (Super Admin ou Dono)
+        validarPermissaoGestor(equipe, usuarioExecutor);
+
         return conviteRepository.findByEquipeId(equipeId).stream()
                 .map(ConviteResponseDTO::fromEntity)
                 .collect(Collectors.toList());

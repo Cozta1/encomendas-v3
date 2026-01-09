@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,8 @@ public class EncomendaService {
 
     @Autowired
     private EncomendaRepository encomendaRepository;
+    @Autowired
+    private EncomendaItemRepository encomendaItemRepository; // Necessário para salvar itens
     @Autowired
     private EquipeRepository equipeRepository;
     @Autowired
@@ -48,46 +51,42 @@ public class EncomendaService {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
 
-        Cliente cliente = clienteRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+        // 1. RESOLVER CLIENTE (Buscar existente ou Criar Novo)
+        Cliente cliente = resolverCliente(dto.getCliente(), equipe);
 
-        if (!cliente.getEquipe().getId().equals(equipeId)) {
-            throw new RuntimeException("Acesso negado: Cliente não pertence à sua equipe.");
-        }
-
+        // 2. CONSTRUIR ENCOMENDA
         Encomenda encomenda = Encomenda.builder()
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                // --- NOVOS CAMPOS DE ENDEREÇO ---
+                // --- Endereço ---
                 .enderecoCep(dto.getEnderecoCep())
                 .enderecoBairro(dto.getEnderecoBairro())
                 .enderecoRua(dto.getEnderecoRua())
                 .enderecoNumero(dto.getEnderecoNumero())
                 .enderecoComplemento(dto.getEnderecoComplemento())
-                .valorAdiantamento(dto.getValorAdiantamento())
-                // --------------------------------
+                // --- Novos Campos ---
+                .dataEstimadaEntrega(dto.getDataEstimadaEntrega())
+                .notaFutura(dto.isNotaFutura())
+                .vendaEstoqueNegativo(dto.isVendaEstoqueNegativo())
+                // --- Valores ---
+                .valorAdiantamento(dto.getValorAdiantamento() != null ? dto.getValorAdiantamento() : BigDecimal.ZERO)
                 .status(STATUS_PENDENTE)
-                .valorTotal(BigDecimal.ZERO)
+                .valorTotal(BigDecimal.ZERO) // Será calculado abaixo
                 .build();
 
+        // Salva a encomenda primeiro para ter o ID (se necessário para cascade)
+        // Mas como vamos salvar itens depois e atualizar o total, podemos salvar a entidade base agora.
+        encomenda = encomendaRepository.save(encomenda);
+
+        // 3. PROCESSAR ITENS
         List<EncomendaItem> itens = new ArrayList<>();
         BigDecimal valorTotal = BigDecimal.ZERO;
 
         for (var itemDto : dto.getItens()) {
-            Produto produto = produtoRepository.findById(itemDto.getProdutoId())
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
-
-            if (!produto.getEquipe().getId().equals(equipeId)) {
-                throw new RuntimeException("Acesso negado: Produto não pertence à equipe.");
-            }
-
-            Fornecedor fornecedor = fornecedorRepository.findById(itemDto.getFornecedorId())
-                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado"));
-
-            if (!fornecedor.getEquipe().getId().equals(equipeId)) {
-                throw new RuntimeException("Acesso negado: Fornecedor não pertence à equipe.");
-            }
+            // Resolver Produto e Fornecedor
+            Produto produto = resolverProduto(itemDto.getProduto(), equipe);
+            Fornecedor fornecedor = resolverFornecedor(itemDto.getFornecedor(), equipe);
 
             BigDecimal precoCotado = itemDto.getPrecoCotado();
             BigDecimal quantidade = new BigDecimal(itemDto.getQuantidade());
@@ -95,16 +94,22 @@ public class EncomendaService {
 
             valorTotal = valorTotal.add(subtotal);
 
-            itens.add(EncomendaItem.builder()
+            // Cria o item vinculado à encomenda
+            EncomendaItem item = EncomendaItem.builder()
                     .encomenda(encomenda)
                     .produto(produto)
                     .fornecedor(fornecedor)
                     .quantidade(itemDto.getQuantidade())
                     .precoCotado(precoCotado)
                     .subtotal(subtotal)
-                    .build());
+                    .build();
+
+            // Salva item individualmente (ou poderia adicionar na lista e salvar via cascade se configurado)
+            encomendaItemRepository.save(item);
+            itens.add(item);
         }
 
+        // Atualiza totais e lista de itens na encomenda
         encomenda.setValorTotal(valorTotal);
         encomenda.setItens(itens);
 
@@ -112,12 +117,82 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
-    // ... métodos de remover, avançar, retornar, cancelar, descancelar (mantidos iguais) ...
+    // --- MÉTODOS AUXILIARES (FIND OR CREATE) ---
+
+    private Cliente resolverCliente(EncomendaRequestDTO.ClienteDataDTO dto, Equipe equipe) {
+        // Tenta buscar por CPF dentro da equipe
+        if (dto.getCpf() != null && !dto.getCpf().trim().isEmpty()) {
+            // OBS: Estamos usando stream para filtrar, garantindo funcionamento sem mudar o Repository agora.
+            // O ideal seria: clienteRepository.findByCpfAndEquipe(dto.getCpf(), equipe)
+            Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
+                    .filter(c -> dto.getCpf().equals(c.getCpf()))
+                    .findFirst();
+
+            if (existente.isPresent()) return existente.get();
+        }
+
+        // Se não achou, cria novo
+        Cliente novo = Cliente.builder()
+                .equipe(equipe)
+                .nome(dto.getNome())
+                .cpf(dto.getCpf())
+                .email(dto.getEmail())
+                .telefone(dto.getTelefone())
+                .build();
+        return clienteRepository.save(novo);
+    }
+
+    private Produto resolverProduto(EncomendaRequestDTO.ProdutoDataDTO dto, Equipe equipe) {
+        // Tenta buscar por Código dentro da equipe
+        if (dto.getCodigo() != null && !dto.getCodigo().trim().isEmpty()) {
+            Optional<Produto> existente = produtoRepository.findByEquipeId(equipe.getId()).stream()
+                    .filter(p -> dto.getCodigo().equals(p.getCodigo()))
+                    .findFirst();
+
+            if (existente.isPresent()) return existente.get();
+        } else {
+            // Se não tem código, tenta buscar por Nome exato (para evitar duplicação óbvia)
+            Optional<Produto> existentePorNome = produtoRepository.findByEquipeId(equipe.getId()).stream()
+                    .filter(p -> p.getNome().equalsIgnoreCase(dto.getNome()))
+                    .findFirst();
+            if (existentePorNome.isPresent()) return existentePorNome.get();
+        }
+
+        // Cria novo
+        Produto novo = Produto.builder()
+                .equipe(equipe)
+                .nome(dto.getNome())
+                .codigo(dto.getCodigo())
+                .precoBase(BigDecimal.ZERO) // Preço base zero, pois o preço real está no item da encomenda
+                .build();
+        return produtoRepository.save(novo);
+    }
+
+    private Fornecedor resolverFornecedor(EncomendaRequestDTO.FornecedorDataDTO dto, Equipe equipe) {
+        // Busca por Nome exato na equipe
+        Optional<Fornecedor> existente = fornecedorRepository.findByEquipeId(equipe.getId()).stream()
+                .filter(f -> f.getNome().equalsIgnoreCase(dto.getNome()))
+                .findFirst();
+
+        if (existente.isPresent()) return existente.get();
+
+        // Cria novo
+        Fornecedor novo = Fornecedor.builder()
+                .equipe(equipe)
+                .nome(dto.getNome())
+                // CNPJ/Email/Telefone ficam vazios se vierem do cadastro rápido manual
+                .build();
+        return fornecedorRepository.save(novo);
+    }
+
+    // --- MÉTODOS DE GESTÃO DE ESTADO (MANTIDOS) ---
+
     @Transactional
     public void removerEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         encomendaRepository.delete(encomenda);
     }
+
     @Transactional
     public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
@@ -131,6 +206,7 @@ public class EncomendaService {
         }
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
+
     @Transactional
     public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
@@ -143,6 +219,7 @@ public class EncomendaService {
         }
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
+
     @Transactional
     public EncomendaResponseDTO cancelarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
@@ -150,6 +227,7 @@ public class EncomendaService {
         encomenda.setStatus(STATUS_CANCELADO);
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
+
     @Transactional
     public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
@@ -161,6 +239,8 @@ public class EncomendaService {
     private Encomenda buscarEValidarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = encomendaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Encomenda não encontrada"));
+
+        // Verifica se a equipe bate com a solicitada (segurança básica)
         if (!encomenda.getEquipe().getId().equals(equipeId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
         }

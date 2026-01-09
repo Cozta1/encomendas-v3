@@ -40,7 +40,7 @@ public class Encomenda {
     @Column(nullable = false, length = 50)
     private String status;
 
-    // --- ENDEREÇO MULTIVALORADO ---
+    // --- ENDEREÇO ---
     @Column(name = "endereco_cep", length = 20, nullable = false)
     private String enderecoCep;
 
@@ -54,8 +54,18 @@ public class Encomenda {
     private String enderecoNumero;
 
     @Column(name = "endereco_complemento")
-    private String enderecoComplemento; // Opcional
-    // ------------------------------
+    private String enderecoComplemento;
+
+    // --- NOVOS CAMPOS ---
+    @Column(name = "data_estimada_entrega")
+    private LocalDateTime dataEstimadaEntrega;
+
+    @Column(name = "nota_futura")
+    private boolean notaFutura;
+
+    @Column(name = "venda_estoque_negativo")
+    private boolean vendaEstoqueNegativo;
+    // --------------------
 
     @Column(name = "valor_adiantamento", precision = 10, scale = 2)
     private BigDecimal valorAdiantamento;

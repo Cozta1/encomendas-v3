@@ -3,7 +3,7 @@ package com.benfica.encomendas_api.controller;
 import com.benfica.encomendas_api.dto.ConviteResponseDTO;
 import com.benfica.encomendas_api.dto.EquipeDTO;
 import com.benfica.encomendas_api.dto.EquipeResponseDTO;
-import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO; // Certifique-se de ter este DTO
+import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO;
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.model.Usuario;
 import com.benfica.encomendas_api.service.EquipeService;
@@ -32,6 +32,7 @@ public class EquipeController {
         return ResponseEntity.ok(equipesDTO);
     }
 
+    // Aceita ADMIN ou SUPER_ADMIN para criar equipes
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Equipe> criarEquipe(@Valid @RequestBody EquipeDTO dto,
@@ -40,37 +41,41 @@ public class EquipeController {
         return new ResponseEntity<>(novaEquipe, HttpStatus.CREATED);
     }
 
-    // --- GESTÃO DE MEMBROS (RESTAURADO) ---
+    // --- GESTÃO DE MEMBROS ---
 
     @GetMapping("/membros")
     public ResponseEntity<List<MembroEquipeResponseDTO>> listarMembros() {
-        // Este método depende do Header 'X-Team-ID' enviado pelo interceptor
         return ResponseEntity.ok(equipeService.listarMembrosEquipeAtiva());
     }
 
     @DeleteMapping("/membros/{usuarioId}")
-    public ResponseEntity<Void> removerMembro(@PathVariable Long usuarioId) {
-        equipeService.removerMembro(usuarioId);
+    public ResponseEntity<Void> removerMembro(@PathVariable Long usuarioId,
+                                              @AuthenticationPrincipal Usuario usuarioLogado) {
+        // Agora passamos o usuarioLogado para validar se ele tem permissão (Admin da Equipe ou Super Admin)
+        equipeService.removerMembro(usuarioId, usuarioLogado);
         return ResponseEntity.noContent().build();
     }
 
     // --- CONVITES ---
 
     @PostMapping("/{id}/convidar")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> convidarUsuario(@PathVariable UUID id, @RequestBody Map<String, String> payload) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Super Admin também pode convidar
+    public ResponseEntity<?> convidarUsuario(@PathVariable UUID id,
+                                             @RequestBody Map<String, String> payload,
+                                             @AuthenticationPrincipal Usuario usuarioLogado) {
         String email = payload.get("email");
         if (email == null || email.isEmpty()) {
             return ResponseEntity.badRequest().body("O email é obrigatório.");
         }
-        equipeService.enviarConvite(id, email);
+        equipeService.enviarConvite(id, email, usuarioLogado);
         return ResponseEntity.ok("Convite enviado com sucesso.");
     }
 
     @GetMapping("/{id}/convites")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ConviteResponseDTO>> listarConvitesEnviados(@PathVariable UUID id) {
-        List<ConviteResponseDTO> convites = equipeService.listarConvitesDaEquipe(id);
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<List<ConviteResponseDTO>> listarConvitesEnviados(@PathVariable UUID id,
+                                                                           @AuthenticationPrincipal Usuario usuarioLogado) {
+        List<ConviteResponseDTO> convites = equipeService.listarConvitesDaEquipe(id, usuarioLogado);
         return ResponseEntity.ok(convites);
     }
 

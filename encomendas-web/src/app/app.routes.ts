@@ -12,6 +12,7 @@ import { Produtos } from './pages/produtos/produtos';
 import { Encomendas } from './pages/encomendas/encomendas';
 import { Fornecedores } from './pages/fornecedores/fornecedores';
 import { EquipesPage } from './pages/equipes/equipes';
+import { EncomendaCreate } from './pages/encomenda-create/encomenda-create'; // Verifique o caminho gerado
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -26,7 +27,10 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'clientes', component: Clientes },
       { path: 'produtos', component: Produtos },
+
       { path: 'encomendas', component: Encomendas },
+      { path: 'encomendas/nova', component: EncomendaCreate },
+
       { path: 'fornecedores', component: Fornecedores },
 
       // Rota centralizada de equipes
