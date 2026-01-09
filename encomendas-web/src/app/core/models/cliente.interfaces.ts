@@ -11,7 +11,8 @@ export interface Endereco {
 
 export interface ClienteRequest {
   nome: string;
-  cpf: string; // Novo
+  codigoInterno?: string; // Novo campo
+  cpf: string;
   email: string;
   telefone: string;
   enderecos: Endereco[];
@@ -20,7 +21,8 @@ export interface ClienteRequest {
 export interface ClienteResponse {
   id: string;
   nome: string;
-  cpf: string; // Novo
+  codigoInterno?: string; // Novo campo
+  cpf: string;
   email: string;
   telefone: string;
   enderecos: Endereco[];

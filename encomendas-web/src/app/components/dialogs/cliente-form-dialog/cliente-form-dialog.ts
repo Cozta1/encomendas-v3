@@ -13,9 +13,8 @@ import { debounceTime, filter, switchMap } from 'rxjs/operators';
 import { ClienteRequest, ClienteResponse } from '../../../core/models/cliente.interfaces';
 import { CepService } from '../../../core/services/cep.service';
 
-// --- ATUALIZADO: Importar as novas diretivas ---
 import { PhoneMaskDirective } from '../../../core/directives/phone-mask.directive';
-import { CpfMaskDirective } from '../../../core/directives/cpf-mask.directive'; // Apenas CPF
+import { CpfMaskDirective } from '../../../core/directives/cpf-mask.directive';
 import { CepMaskDirective } from '../../../core/directives/cep-mask.directive';
 
 @Component({
@@ -30,9 +29,8 @@ import { CepMaskDirective } from '../../../core/directives/cep-mask.directive';
     MatButtonModule,
     MatIconModule,
     MatExpansionModule,
-    // Diretivas Específicas
     PhoneMaskDirective,
-    CpfMaskDirective, // Usar CpfMaskDirective aqui
+    CpfMaskDirective,
     CepMaskDirective
   ],
   templateUrl: './cliente-form-dialog.html',
@@ -52,6 +50,8 @@ export class ClienteFormDialog implements OnInit {
     this.isEditMode = !!data;
 
     this.form = this.fb.group({
+      // Adicionado o campo codigoInterno
+      codigoInterno: [data?.codigoInterno || ''],
       nome: [data?.nome || '', Validators.required],
       cpf: [data?.cpf || ''],
       email: [data?.email || '', [Validators.required, Validators.email]],
@@ -119,6 +119,8 @@ export class ClienteFormDialog implements OnInit {
     if (this.form.valid) {
       const formValue = this.form.value;
       const clienteRequest: ClienteRequest = {
+        // Mapeando o novo campo para o objeto de request
+        codigoInterno: formValue.codigoInterno,
         nome: formValue.nome,
         cpf: formValue.cpf,
         email: formValue.email,

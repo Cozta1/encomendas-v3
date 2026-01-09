@@ -1,4 +1,4 @@
-package com.benfica.encomendas_api.dto;
+package com.benfica.encomendas_api.dto; //
 
 import com.benfica.encomendas_api.model.Cliente;
 import lombok.Builder;
@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 public class ClienteResponseDTO {
     private UUID id;
     private String nome;
-    private String cpf; // Novo campo
+    private String codigoInterno; // <--- Novo campo no DTO de resposta
+    private String cpf;
     private String email;
     private String telefone;
     private List<EnderecoDTO> enderecos;
@@ -22,7 +23,8 @@ public class ClienteResponseDTO {
         return ClienteResponseDTO.builder()
                 .id(cliente.getId())
                 .nome(cliente.getNome())
-                .cpf(cliente.getCpf()) // Mapeia
+                .codigoInterno(cliente.getCodigoInterno()) // <--- Mapeamento adicionado
+                .cpf(cliente.getCpf())
                 .email(cliente.getEmail())
                 .telefone(cliente.getTelefone())
                 .enderecos(cliente.getEnderecos().stream()

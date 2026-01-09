@@ -1,4 +1,4 @@
-package com.benfica.encomendas_api.model;
+package com.benfica.encomendas_api.model; //
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,10 +32,13 @@ public class Cliente {
     @Column(nullable = false)
     private String nome;
 
-    // --- NOVO CAMPO ---
+    // --- NOVO CAMPO: CODIGO INTERNO ---
+    @Column(name = "codigo_interno", length = 50) // Ajuste o length conforme necessário
+    private String codigoInterno;
+    // ----------------------------------
+
     @Column(length = 14) // Ex: 000.000.000-00
     private String cpf;
-    // ------------------
 
     @Column(nullable = false, length = 100)
     private String email;

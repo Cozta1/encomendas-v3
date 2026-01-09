@@ -3,11 +3,19 @@
 <mat-dialog-content>
   <form [formGroup]="form" class="form-container">
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Nome Completo</mat-label>
-      <input matInput formControlName="nome" placeholder="Ex: João Silva" required>
-      <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório</mat-error>
-    </mat-form-field>
+    <div class="row" style="display: flex; gap: 16px;">
+      <mat-form-field appearance="outline" style="flex: 1;">
+        <mat-label>Cód. Interno</mat-label>
+        <input matInput formControlName="codigoInterno" placeholder="Ex: CLI-001">
+        <mat-icon matSuffix>badge</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 3;">
+        <mat-label>Nome Completo</mat-label>
+        <input matInput formControlName="nome" placeholder="Ex: João Silva" required>
+        <mat-error *ngIf="form.get('nome')?.hasError('required')">Nome é obrigatório</mat-error>
+      </mat-form-field>
+    </div>
 
     <div class="row">
       <mat-form-field appearance="outline" class="half-width">

@@ -33,8 +33,8 @@ export class Clientes implements OnInit, OnDestroy {
   private clientesSubject = new BehaviorSubject<ClienteResponse[]>([]);
   public clientes$ = this.clientesSubject.asObservable();
 
-  // ATUALIZADO: 'cpf' em vez de 'cpfCnpj'
-  public displayedColumns: string[] = ['nome', 'email', 'telefone', 'cpf', 'acoes'];
+  // ATUALIZADO: Adicionado 'codigoInterno' no início da lista de colunas
+  public displayedColumns: string[] = ['codigoInterno', 'nome', 'email', 'telefone', 'cpf', 'acoes'];
 
   private teamSubscription: Subscription | undefined;
 
@@ -65,9 +65,9 @@ export class Clientes implements OnInit, OnDestroy {
 
   adicionarCliente(): void {
     const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '800px',        // Aumentado
-      maxWidth: '95vw',      // Responsivo
-      maxHeight: '90vh',     // Altura máxima quase total
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
       data: null
     });
 
@@ -89,7 +89,7 @@ export class Clientes implements OnInit, OnDestroy {
 
   editarCliente(cliente: ClienteResponse): void {
     const dialogRef = this.dialog.open(ClienteFormDialog, {
-      width: '800px',        // Aumentado
+      width: '800px',
       maxWidth: '95vw',
       maxHeight: '90vh',
       data: cliente
