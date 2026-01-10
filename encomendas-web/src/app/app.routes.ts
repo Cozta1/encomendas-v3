@@ -1,13 +1,11 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 
-// Layouts
 import { Main } from './layout/main/main';
 import { Login } from './login/login';
 import { Register } from './login/register/register';
 import { ForgotPassword } from './login/forgot-password/forgot-password';
 
-// Pages
 import { Dashboard } from './dashboard/dashboard';
 import { Clientes } from './pages/clientes/clientes';
 import { Produtos } from './pages/produtos/produtos';
@@ -16,9 +14,9 @@ import { GestaoEquipe } from './pages/gestao-equipe/gestao-equipe';
 import { Encomendas } from './pages/encomendas/encomendas';
 import { EncomendaCreate } from './pages/encomenda-create/encomenda-create';
 import { EncomendaDetalhesComponent } from './pages/encomenda-detalhes/encomenda-detalhes';
-
-// CORREÇÃO: Importar EquipesPage ao invés de Equipes
 import { EquipesPage } from './pages/equipes/equipes';
+// NOVA IMPORTAÇÃO
+import { PerfilPage } from './pages/perfil/perfil';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
@@ -33,6 +31,9 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
 
+      // Nova Rota de Perfil
+      { path: 'perfil', component: PerfilPage },
+
       // Encomendas
       { path: 'encomendas', component: Encomendas },
       { path: 'encomenda-create', component: EncomendaCreate },
@@ -44,7 +45,7 @@ export const routes: Routes = [
       { path: 'fornecedores', component: Fornecedores },
 
       // Gestão
-      { path: 'equipes', component: EquipesPage }, // CORREÇÃO: Usar EquipesPage
+      { path: 'equipes', component: EquipesPage },
       { path: 'minha-equipe', component: GestaoEquipe }
     ]
   },

@@ -1,0 +1,72 @@
+<div class="page-container">
+
+  <mat-card class="profile-card">
+    <mat-card-header>
+      <div mat-card-avatar class="profile-avatar">
+        <mat-icon>person</mat-icon>
+      </div>
+      <mat-card-title>Meu Perfil</mat-card-title>
+      <mat-card-subtitle>{{ (usuario$ | async)?.email }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+
+        <div class="info-section">
+          <div class="info-row">
+            <span class="label">Função no Sistema:</span>
+            <span class="value badge">{{ (usuario$ | async)?.role }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Equipe Atual:</span>
+            <span class="value">{{ (usuario$ | async)?.nomeEquipe }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Membro desde:</span>
+            <span class="value">{{ (usuario$ | async)?.dataCriacao | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+        <h3>Dados Pessoais</h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nome Completo</mat-label>
+          <input matInput formControlName="nomeCompleto" placeholder="Seu nome">
+          <mat-error *ngIf="form.get('nomeCompleto')?.hasError('required')">Nome é obrigatório</mat-error>
+        </mat-form-field>
+
+        <div class="grid-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Telefone</mat-label>
+            <input matInput formControlName="telefone" placeholder="(00) 00000-0000">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cargo / Função</mat-label>
+            <input matInput formControlName="cargo" placeholder="Ex: Gerente, Vendedor">
+          </mat-form-field>
+        </div>
+
+        <mat-divider></mat-divider>
+        <h3>Alterar Senha <small>(Opcional)</small></h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nova Senha</mat-label>
+          <input matInput formControlName="password" type="password" placeholder="Deixe em branco para manter a atual">
+          <mat-hint>Mínimo de 6 caracteres</mat-hint>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-button type="button" routerLink="/dashboard">Voltar</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || loading">
+            <mat-icon>save</mat-icon>
+            {{ loading ? 'Salvando...' : 'Salvar Alterações' }}
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+</div>
