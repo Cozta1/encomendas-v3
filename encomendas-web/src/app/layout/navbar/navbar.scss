@@ -3,6 +3,7 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding-right: 16px;
 }
 
 .spacer {
@@ -12,12 +13,10 @@
 .logo-text {
   font-weight: 500;
   font-size: 1.2rem;
-  margin-left: 8px;
 }
 
-// Estilo da saudação
 .welcome-text {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-right: 16px;
   color: rgba(255, 255, 255, 0.9);
 
@@ -25,9 +24,40 @@
     font-weight: 600;
     color: #fff;
   }
+}
 
-  // Oculta em celulares muito pequenos para não quebrar o layout
-  @media (max-width: 450px) {
-    display: none;
+.team-selector-btn {
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 0 12px;
+  height: 36px;
+  line-height: 36px;
+  margin-right: 8px;
+  font-size: 0.9rem;
+
+  .team-name {
+    margin: 0 8px;
+    font-weight: 400;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    vertical-align: middle;
+  }
+}
+
+@media (max-width: 600px) {
+  .welcome-text {
+    display: none; // Oculta saudação em telas pequenas
+  }
+  .team-name {
+    display: none; // Oculta nome da equipe em telas muito pequenas, deixando só ícone
+  }
+  .team-selector-btn {
+    min-width: 0;
+    padding: 0 8px;
   }
 }

@@ -1,7 +1,7 @@
 <div class="page-container" style="padding: 24px; max-width: 1200px; margin: 0 auto;">
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-    <h1>Nova Encomenda (Manual)</h1>
+    <h1>Nova Encomenda</h1>
     <button mat-stroked-button color="warn" routerLink="/dashboard">Cancelar</button>
   </div>
 
@@ -114,63 +114,78 @@
     <mat-card class="mb-4">
       <mat-card-header>
         <mat-card-title>3. Itens da Encomenda</mat-card-title>
-        <span style="flex: 1 1 auto;"></span>
-        <button mat-raised-button color="primary" type="button" (click)="adicionarItem()">
-          <mat-icon>add</mat-icon> Adicionar Item
-        </button>
       </mat-card-header>
 
       <mat-card-content class="pt-3">
+
+        <form [formGroup]="itemForm" style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 24px; padding: 16px; background-color: #f9f9f9; border-radius: 8px;">
+
+          <mat-form-field appearance="outline" style="flex: 2; min-width: 250px;">
+            <mat-label>Buscar Produto</mat-label>
+            <input type="text" matInput formControlName="produto" [matAutocomplete]="autoProduto">
+            <mat-autocomplete #autoProduto="matAutocomplete" [displayWith]="displayProdutoFn">
+              <mat-option *ngFor="let p of filteredProdutos$ | async" [value]="p">
+                {{p.nome}}
+              </mat-option>
+            </mat-autocomplete>
+            <mat-error *ngIf="itemForm.get('produto')?.hasError('required')">Selecione um produto</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 2; min-width: 250px;">
+            <mat-label>Fornecedor</mat-label>
+            <input type="text" matInput formControlName="fornecedor" [matAutocomplete]="autoFornecedor">
+            <mat-autocomplete #autoFornecedor="matAutocomplete" [displayWith]="displayFornecedorFn">
+              <mat-option *ngFor="let f of filteredFornecedores$ | async" [value]="f">
+                {{f.nome}}
+              </mat-option>
+            </mat-autocomplete>
+            <mat-error *ngIf="itemForm.get('fornecedor')?.hasError('required')">Selecione um fornecedor</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 100px;">
+            <mat-label>Qtd</mat-label>
+            <input matInput type="number" formControlName="quantidade" min="1">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 120px;">
+            <mat-label>Preço Unit.</mat-label>
+            <span matTextPrefix>R$&nbsp;</span>
+            <input matInput type="number" formControlName="precoCotado">
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" type="button" (click)="adicionarItem()" [disabled]="itemForm.invalid" style="height: 56px; margin-top: 4px;">
+            <mat-icon>add</mat-icon>
+          </button>
+        </form>
+
         <div formArrayName="itens">
           <div *ngFor="let item of itensFormArray.controls; let i = index" [formGroupName]="i" class="item-box">
 
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <strong>Item #{{i + 1}}</strong>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>{{ i + 1 }}. {{ item.get('produto')?.value?.nome || item.get('produto.nome')?.value }}</strong>
+                <div style="font-size: 0.9em; color: #666;">
+                  Fornecedor: {{ item.get('fornecedor')?.value?.nome || item.get('fornecedor.nome')?.value }}
+                </div>
+              </div>
+
+              <div style="text-align: right;">
+                <div>{{ item.get('quantidade')?.value }} x {{ item.get('precoCotado')?.value | currency:'BRL' }}</div>
+                <strong>{{ (item.get('quantidade')?.value * item.get('precoCotado')?.value) | currency:'BRL' }}</strong>
+              </div>
+
               <button mat-icon-button color="warn" type="button" (click)="removerItem(i)" matTooltip="Remover Item">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
 
-            <div class="grid-3" formGroupName="produto">
-              <mat-form-field appearance="outline">
-                <mat-label>Nome do Produto</mat-label>
-                <input matInput formControlName="nome" placeholder="Ex: Dipirona">
-                <mat-error *ngIf="item.get('produto.nome')?.hasError('required')">Obrigatório</mat-error>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Código (Opcional)</mat-label>
-                <input matInput formControlName="codigo">
-              </mat-form-field>
-            </div>
+          </div>
 
-            <div class="grid-3">
-              <div formGroupName="fornecedor">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Fornecedor</mat-label>
-                  <input matInput formControlName="nome" placeholder="Ex: Distribuidora X">
-                  <mat-error *ngIf="item.get('fornecedor.nome')?.hasError('required')">Obrigatório</mat-error>
-                </mat-form-field>
-              </div>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Quantidade</mat-label>
-                <input matInput type="number" formControlName="quantidade" min="1">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Preço Unitário</mat-label>
-                <span matTextPrefix>R$&nbsp;</span>
-                <input matInput type="number" formControlName="precoCotado">
-              </mat-form-field>
-            </div>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Descrição Adicional (Opcional)</mat-label>
-              <input matInput formControlName="descricaoOpcional">
-            </mat-form-field>
-
+          <div *ngIf="itensFormArray.length === 0" style="text-align: center; color: #999; padding: 20px;">
+            Nenhum item adicionado.
           </div>
         </div>
+
       </mat-card-content>
     </mat-card>
 
@@ -207,7 +222,7 @@
 
     <div style="display: flex; justify-content: flex-end; gap: 16px; margin-bottom: 40px;">
       <button mat-button type="button" routerLink="/dashboard">Voltar</button>
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid" style="transform: scale(1.1);">
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || itensFormArray.length === 0" style="transform: scale(1.1);">
         FINALIZAR PEDIDO
       </button>
     </div>

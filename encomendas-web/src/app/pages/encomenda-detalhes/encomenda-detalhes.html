@@ -1,0 +1,155 @@
+<div class="page-container" *ngIf="encomenda$ | async as e" style="padding: 24px; max-width: 1200px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <button mat-icon-button routerLink="/encomendas"><mat-icon>arrow_back</mat-icon></button>
+      <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">Encomenda #{{ e.id.split('-')[0] | uppercase }}</h1>
+        <span style="color: #666;">Cliente: <strong>{{ e.cliente.nome }}</strong></span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button mat-stroked-button color="warn" (click)="cancelar(e)" *ngIf="e.status !== 'Cancelado' && e.status !== 'Concluído'">
+        <mat-icon>block</mat-icon> Cancelar
+      </button>
+
+      <button mat-raised-button color="primary" (click)="avancar(e)" *ngIf="e.status !== 'Concluído' && e.status !== 'Cancelado'">
+        Avançar Status <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="mb-4">
+    <mat-card-content style="padding: 24px;">
+      <mat-stepper [selectedIndex]="getStepIndex(e.status)" #stepper [linear]="false">
+
+        <ng-template matStepperIcon="edit"><mat-icon>check</mat-icon></ng-template>
+        <ng-template matStepperIcon="done"><mat-icon>check</mat-icon></ng-template>
+
+        <mat-step [label]="'Criada'" state="done">
+          <ng-template matStepLabel>Criada</ng-template>
+          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Encomenda Criada') as h">
+            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
+            <small>por {{ h.nomeUsuario }}</small>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="'Na Loja'" state="done">
+          <ng-template matStepLabel>Na Loja</ng-template>
+          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Mercadoria em Loja') as h">
+            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
+            <small>por {{ h.nomeUsuario }}</small>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="'Aguardando'" state="done">
+          <ng-template matStepLabel>Aguardando</ng-template>
+          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Aguardando Entrega') as h">
+            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
+            <small>por {{ h.nomeUsuario }}</small>
+          </div>
+        </mat-step>
+
+        <mat-step [label]="'Concluído'" state="done">
+          <ng-template matStepLabel>Concluído</ng-template>
+          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Concluído') as h">
+            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
+            <small>por {{ h.nomeUsuario }}</small>
+          </div>
+        </mat-step>
+
+      </mat-stepper>
+
+      <div *ngIf="e.status === 'Cancelado'" style="background: #ffebee; color: #c62828; padding: 12px; text-align: center; border-radius: 4px; margin-top: 16px; font-weight: bold;">
+        <mat-icon style="vertical-align: bottom; margin-right: 8px;">error</mat-icon>
+        ESTA ENCOMENDA FOI CANCELADA
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Itens do Pedido</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <table mat-table [dataSource]="e.itens" class="full-width-table">
+            <ng-container matColumnDef="produto">
+              <th mat-header-cell *matHeaderCellDef> Produto </th>
+              <td mat-cell *matCellDef="let item">
+                <strong>{{item.produto.nome}}</strong>
+                <div style="font-size: 0.85em; color: #666;">{{item.fornecedor.nome}}</div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="qtd">
+              <th mat-header-cell *matHeaderCellDef> Qtd </th>
+              <td mat-cell *matCellDef="let item"> {{item.quantidade}} </td>
+            </ng-container>
+            <ng-container matColumnDef="total">
+              <th mat-header-cell *matHeaderCellDef> Total </th>
+              <td mat-cell *matCellDef="let item"> {{item.subtotal | currency:'BRL'}} </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="['produto', 'qtd', 'total']"></tr>
+            <tr mat-row *matRowDef="let row; columns: ['produto', 'qtd', 'total'];"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Endereço de Entrega</mat-card-title></mat-card-header>
+        <mat-card-content style="padding-top: 16px;">
+          <p style="font-size: 1.1rem; margin-bottom: 4px;">{{ e.enderecoRua }}, {{ e.enderecoNumero }}</p>
+          <p>{{ e.enderecoBairro }} - {{ e.enderecoCep }}</p>
+          <p *ngIf="e.enderecoComplemento" style="color: #666;">Compl: {{ e.enderecoComplemento }}</p>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Resumo Financeiro</mat-card-title></mat-card-header>
+        <mat-card-content style="padding-top: 16px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Total Itens:</span>
+            <strong>{{ e.valorTotal | currency:'BRL' }}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 16px; color: #4caf50;">
+            <span>Adiantamento:</span>
+            <strong>- {{ e.valorAdiantamento | currency:'BRL' }}</strong>
+          </div>
+          <mat-divider></mat-divider>
+          <div style="display: flex; justify-content: space-between; margin-top: 16px; font-size: 1.2rem;">
+            <span>Restante:</span>
+            <strong class="primary-text">{{ ((e.valorTotal || 0) - (e.valorAdiantamento || 0)) | currency:'BRL' }}</strong>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Observações</mat-card-title></mat-card-header>
+        <mat-card-content style="padding-top: 16px;">
+          <p style="white-space: pre-wrap;">{{ e.observacoes || 'Nenhuma observação.' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="e.dataEstimadaEntrega">
+        <mat-card-header><mat-card-title>Previsão</mat-card-title></mat-card-header>
+        <mat-card-content style="padding-top: 16px;">
+          <div style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px;"
+               [style.color]="verificarAtraso(e) ? '#f44336' : '#333'">
+            <mat-icon>event</mat-icon>
+            {{ e.dataEstimadaEntrega | date:'dd/MM/yyyy HH:mm' }}
+            <span *ngIf="verificarAtraso(e)" style="font-weight: bold; font-size: 0.8em;">(ATRASADA)</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+
+  </div>
+</div>

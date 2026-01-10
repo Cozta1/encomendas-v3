@@ -19,7 +19,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// Import do Dialog de Detalhes
+// Import do Dialog de Detalhes APENAS (o de form foi removido)
 import { EncomendaDetalheDialog } from '../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
 
 @Component({
@@ -48,10 +48,7 @@ export class Dashboard implements OnInit, OnDestroy {
   public contagemPedidosMes$ = new BehaviorSubject<number>(0);
   public ticketMedio$ = new BehaviorSubject<number>(0);
 
-  // ATUALIZADO: Keys para os novos status
   public statusCounts$ = new BehaviorSubject<any>({ criada: 0, loja: 0, aguardando: 0, concluido: 0 });
-
-  // ATUALIZADO: Substituiu topProdutos por encomendasAtrasadas
   public encomendasAtrasadas$ = new BehaviorSubject<EncomendaResponse[]>([]);
 
   public ultimasEncomendasAbertas$ = new BehaviorSubject<EncomendaResponse[]>([]);
@@ -107,14 +104,12 @@ export class Dashboard implements OnInit, OnDestroy {
      let somaLiquido = 0;
      let countMes = 0;
 
-     // Contadores atualizados
      const statusMap = { criada: 0, loja: 0, aguardando: 0, concluido: 0 };
      const atrasadas: EncomendaResponse[] = [];
 
      for (const enc of encomendas) {
        const dataEncomenda = new Date(enc.dataCriacao);
 
-       // Métricas financeiras (30 dias)
        if (dataEncomenda >= inicioMes) {
          if (enc.status !== 'Cancelado') {
             somaBruto += enc.valorTotal;
@@ -126,18 +121,16 @@ export class Dashboard implements OnInit, OnDestroy {
        }
 
        if (enc.status !== 'Cancelado') {
-          // Contagem de Status (Novos Status)
           switch(enc.status) {
             case 'Encomenda Criada': statusMap.criada++; break;
             case 'Mercadoria em Loja': statusMap.loja++; break;
             case 'Aguardando Entrega': statusMap.aguardando++; break;
             case 'Concluído': statusMap.concluido++; break;
-            // Fallback para status antigos se existirem no banco
+            // Fallback
             case 'Pendente': statusMap.criada++; break;
             case 'Em Preparo': statusMap.loja++; break;
           }
 
-          // Verificação de Atraso
           if (enc.status !== 'Concluído' && enc.dataEstimadaEntrega) {
              const dataEntrega = new Date(enc.dataEstimadaEntrega);
              if (dataEntrega < agora) {
@@ -156,7 +149,6 @@ export class Dashboard implements OnInit, OnDestroy {
 
      this.statusCounts$.next(statusMap);
 
-     // Ordena atrasadas da mais antiga para a mais recente
      atrasadas.sort((a, b) => {
        const da = a.dataEstimadaEntrega ? new Date(a.dataEstimadaEntrega).getTime() : 0;
        const db = b.dataEstimadaEntrega ? new Date(b.dataEstimadaEntrega).getTime() : 0;
@@ -177,10 +169,10 @@ export class Dashboard implements OnInit, OnDestroy {
   public getStatusColor(status: string): 'primary' | 'accent' | 'warn' {
     switch (status) {
       case 'Concluído': return 'primary';
-      case 'Mercadoria em Loja': return 'accent'; // Novo Status
+      case 'Mercadoria em Loja': return 'accent';
       case 'Aguardando Entrega': return 'accent';
-      case 'Encomenda Criada': return 'warn';     // Novo Status
-      case 'Pendente': return 'warn';             // Compatibilidade
+      case 'Encomenda Criada': return 'warn';
+      case 'Pendente': return 'warn';
       default: return 'primary';
     }
   }

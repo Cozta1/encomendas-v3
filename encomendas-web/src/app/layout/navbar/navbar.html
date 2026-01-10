@@ -1,19 +1,37 @@
 <mat-toolbar color="primary" class="navbar-toolbar">
 
-  <button mat-icon-button (click)="drawer.toggle()" *ngIf="isMobile">
+  <button mat-icon-button (click)="onMenuClick()" *ngIf="isMobile" style="margin-right: 8px;">
     <mat-icon>menu</mat-icon>
   </button>
 
   <span class="logo-text" routerLink="/dashboard" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
     <mat-icon>local_shipping</mat-icon>
-    Encomendas
+    <span *ngIf="!isMobile">Encomendas</span>
   </span>
 
   <span class="spacer"></span>
 
-  <span class="welcome-text" *ngIf="nomeUsuario">
+  <span class="welcome-text" *ngIf="nomeUsuario && !isMobile">
     Olá, <strong>{{ nomeUsuario }}</strong>
   </span>
+
+  <button mat-button [matMenuTriggerFor]="menuEquipes" class="team-selector-btn">
+    <mat-icon>groups</mat-icon>
+    <span class="team-name" *ngIf="teamService.equipeAtiva$ | async as equipeAtiva">
+       {{ equipeAtiva.nome | slice:0:15 }}{{ equipeAtiva.nome.length > 15 ? '...' : '' }}
+    </span>
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+
+  <mat-menu #menuEquipes="matMenu">
+    <button *ngFor="let equipe of equipes$ | async" mat-menu-item (click)="selecionarEquipe(equipe)">
+      <span>{{ equipe.nome }}</span>
+    </button>
+  </mat-menu>
+
+  <button mat-icon-button (click)="toggleTheme()" matTooltip="Alternar Tema">
+    <mat-icon>{{ (isDark$ | async) ? 'light_mode' : 'dark_mode' }}</mat-icon>
+  </button>
 
   <button mat-icon-button [matMenuTriggerFor]="menuUser">
     <mat-icon>account_circle</mat-icon>
@@ -24,8 +42,9 @@
       <mat-icon>person</mat-icon>
       <span>Perfil</span>
     </button>
+    <mat-divider></mat-divider>
     <button mat-menu-item (click)="logout()">
-      <mat-icon>exit_to_app</mat-icon>
+      <mat-icon>logout</mat-icon>
       <span>Sair</span>
     </button>
   </mat-menu>

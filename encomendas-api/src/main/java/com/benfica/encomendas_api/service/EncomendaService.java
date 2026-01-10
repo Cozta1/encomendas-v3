@@ -6,11 +6,13 @@ import com.benfica.encomendas_api.model.*;
 import com.benfica.encomendas_api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +22,6 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    // --- NOVOS STATUS ---
     private static final String STATUS_CRIADA = "Encomenda Criada";
     private static final String STATUS_NA_LOJA = "Mercadoria em Loja";
     private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega";
@@ -47,6 +48,12 @@ public class EncomendaService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public EncomendaResponseDTO buscarPorId(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        return EncomendaResponseDTO.fromEntity(encomenda);
+    }
+
     @Transactional
     public EncomendaResponseDTO criarEncomenda(EncomendaRequestDTO dto, UUID equipeId) {
         Equipe equipe = equipeRepository.findById(equipeId)
@@ -67,9 +74,15 @@ public class EncomendaService {
                 .notaFutura(dto.isNotaFutura())
                 .vendaEstoqueNegativo(dto.isVendaEstoqueNegativo())
                 .valorAdiantamento(dto.getValorAdiantamento() != null ? dto.getValorAdiantamento() : BigDecimal.ZERO)
-                .status(STATUS_CRIADA) // Define o novo status inicial
+                .status(STATUS_CRIADA)
                 .valorTotal(BigDecimal.ZERO)
                 .build();
+
+        // Inicializa e registra o primeiro histórico
+        if (encomenda.getHistorico() == null) {
+            encomenda.setHistorico(new ArrayList<>());
+        }
+        registrarHistorico(encomenda, STATUS_CRIADA);
 
         encomenda = encomendaRepository.save(encomenda);
 
@@ -106,6 +119,112 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
+    // --- MÉTODOS DE GESTÃO DE ESTADO COM HISTÓRICO ---
+
+    @Transactional
+    public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
+
+        String novoStatus;
+        switch (encomenda.getStatus()) {
+            case STATUS_CRIADA: novoStatus = STATUS_NA_LOJA; break;
+            case STATUS_NA_LOJA: novoStatus = STATUS_AGUARDANDO_ENTREGA; break;
+            case STATUS_AGUARDANDO_ENTREGA: novoStatus = STATUS_CONCLUIDO; break;
+            case STATUS_CONCLUIDO: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já concluída.");
+            default: novoStatus = STATUS_NA_LOJA; // Fallback
+        }
+
+        encomenda.setStatus(novoStatus);
+        registrarHistorico(encomenda, novoStatus);
+
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
+    }
+
+    @Transactional
+    public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
+
+        String novoStatus;
+        switch (encomenda.getStatus()) {
+            case STATUS_CONCLUIDO: novoStatus = STATUS_AGUARDANDO_ENTREGA; break;
+            case STATUS_AGUARDANDO_ENTREGA: novoStatus = STATUS_NA_LOJA; break;
+            case STATUS_NA_LOJA: novoStatus = STATUS_CRIADA; break;
+            case STATUS_CRIADA: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já está no início.");
+            default: novoStatus = STATUS_CRIADA;
+        }
+
+        encomenda.setStatus(novoStatus);
+        registrarHistorico(encomenda, novoStatus);
+
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
+    }
+
+    @Transactional
+    public EncomendaResponseDTO cancelarEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        if(encomenda.getStatus().equals(STATUS_CONCLUIDO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Concluída não cancela.");
+
+        encomenda.setStatus(STATUS_CANCELADO);
+        registrarHistorico(encomenda, STATUS_CANCELADO);
+
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
+    }
+
+    @Transactional
+    public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        if(!encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não está cancelada.");
+
+        encomenda.setStatus(STATUS_CRIADA);
+        registrarHistorico(encomenda, STATUS_CRIADA);
+
+        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
+    }
+
+    @Transactional
+    public void removerEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
+        encomendaRepository.delete(encomenda);
+    }
+
+    // --- MÉTODOS AUXILIARES ---
+
+    private void registrarHistorico(Encomenda encomenda, String status) {
+        String usuarioLogado = "Sistema";
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
+                usuarioLogado = auth.getName();
+            }
+        } catch (Exception e) {
+            // Ignora erro em testes ou seed
+        }
+
+        EncomendaHistorico historico = EncomendaHistorico.builder()
+                .encomenda(encomenda)
+                .status(status)
+                .dataAlteracao(LocalDateTime.now())
+                .nomeUsuario(usuarioLogado)
+                .build();
+
+        if (encomenda.getHistorico() == null) {
+            encomenda.setHistorico(new ArrayList<>());
+        }
+        encomenda.getHistorico().add(historico);
+    }
+
+    private Encomenda buscarEValidarEncomenda(UUID id, UUID equipeId) {
+        Encomenda encomenda = encomendaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Encomenda não encontrada"));
+
+        if (!encomenda.getEquipe().getId().equals(equipeId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+        }
+        return encomenda;
+    }
+
     private Cliente resolverCliente(EncomendaRequestDTO.ClienteDataDTO dto, Equipe equipe) {
         if (dto.getCodigoInterno() != null && !dto.getCodigoInterno().trim().isEmpty()) {
             Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
@@ -113,15 +232,12 @@ public class EncomendaService {
                     .findFirst();
             if (existente.isPresent()) return existente.get();
         }
-
         if (dto.getCpf() != null && !dto.getCpf().trim().isEmpty()) {
             Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
                     .filter(c -> dto.getCpf().equals(c.getCpf()))
                     .findFirst();
-
             if (existente.isPresent()) return existente.get();
         }
-
         Cliente novo = Cliente.builder()
                 .equipe(equipe)
                 .nome(dto.getNome())
@@ -138,7 +254,6 @@ public class EncomendaService {
             Optional<Produto> existente = produtoRepository.findByEquipeId(equipe.getId()).stream()
                     .filter(p -> dto.getCodigo().equals(p.getCodigo()))
                     .findFirst();
-
             if (existente.isPresent()) return existente.get();
         } else {
             Optional<Produto> existentePorNome = produtoRepository.findByEquipeId(equipe.getId()).stream()
@@ -146,7 +261,6 @@ public class EncomendaService {
                     .findFirst();
             if (existentePorNome.isPresent()) return existentePorNome.get();
         }
-
         Produto novo = Produto.builder()
                 .equipe(equipe)
                 .nome(dto.getNome())
@@ -160,7 +274,6 @@ public class EncomendaService {
         Optional<Fornecedor> existente = fornecedorRepository.findByEquipeId(equipe.getId()).stream()
                 .filter(f -> f.getNome().equalsIgnoreCase(dto.getNome()))
                 .findFirst();
-
         if (existente.isPresent()) return existente.get();
 
         Fornecedor novo = Fornecedor.builder()
@@ -168,71 +281,5 @@ public class EncomendaService {
                 .nome(dto.getNome())
                 .build();
         return fornecedorRepository.save(novo);
-    }
-
-    @Transactional
-    public void removerEncomenda(UUID id, UUID equipeId) {
-        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-        encomendaRepository.delete(encomenda);
-    }
-
-    // --- NOVA MÁQUINA DE ESTADOS ---
-    @Transactional
-    public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
-        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
-
-        switch (encomenda.getStatus()) {
-            case STATUS_CRIADA: encomenda.setStatus(STATUS_NA_LOJA); break;
-            case STATUS_NA_LOJA: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
-            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_CONCLUIDO); break;
-            case STATUS_CONCLUIDO: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já concluída.");
-            default:
-                // Se for um status antigo ou desconhecido, tenta mover para o próximo lógico ou reseta
-                encomenda.setStatus(STATUS_NA_LOJA);
-        }
-        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
-    }
-
-    @Transactional
-    public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
-        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-        if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
-
-        switch (encomenda.getStatus()) {
-            case STATUS_CONCLUIDO: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
-            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_NA_LOJA); break;
-            case STATUS_NA_LOJA: encomenda.setStatus(STATUS_CRIADA); break;
-            case STATUS_CRIADA: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já está no início.");
-            default:
-                encomenda.setStatus(STATUS_CRIADA);
-        }
-        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
-    }
-
-    @Transactional
-    public EncomendaResponseDTO cancelarEncomenda(UUID id, UUID equipeId) {
-        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-        if(encomenda.getStatus().equals(STATUS_CONCLUIDO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Concluída não cancela.");
-        encomenda.setStatus(STATUS_CANCELADO);
-        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
-    }
-
-    @Transactional
-    public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
-        Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
-        if(!encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não está cancelada.");
-        encomenda.setStatus(STATUS_CRIADA); // Reseta para o início
-        return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
-    }
-
-    private Encomenda buscarEValidarEncomenda(UUID id, UUID equipeId) {
-        Encomenda encomenda = encomendaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Encomenda não encontrada"));
-
-        if (!encomenda.getEquipe().getId().equals(equipeId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
-        }
-        return encomenda;
     }
 }

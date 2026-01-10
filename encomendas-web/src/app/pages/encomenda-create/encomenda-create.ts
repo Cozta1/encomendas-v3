@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Observable } from 'rxjs';
+import { startWith, map, filter } from 'rxjs/operators';
 
-// Imports do Material
+// Material
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,15 +16,21 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
-// Imports das Diretivas de Máscara
+// Services e Models
+import { EncomendaService } from '../../core/services/encomenda.service';
+import { CepService } from '../../core/services/cep.service';
+import { ProdutoService } from '../../core/services/produto.service';
+import { FornecedorService } from '../../core/services/fornecedor.service';
+import { ProdutoResponse } from '../../core/models/produto.interfaces';
+import { FornecedorResponse } from '../../core/models/fornecedor.interfaces';
+
+// Diretivas
 import { CepMaskDirective } from '../../core/directives/cep-mask.directive';
 import { CpfMaskDirective } from '../../core/directives/cpf-mask.directive';
 import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
 import { DateMaskDirective } from '../../core/directives/date-mask.directive';
-
-import { EncomendaService } from '../../core/services/encomenda.service';
-import { CepService } from '../../core/services/cep.service';
 
 @Component({
   selector: 'app-encomenda-create',
@@ -31,8 +39,7 @@ import { CepService } from '../../core/services/cep.service';
     CommonModule, ReactiveFormsModule, FormsModule, RouterModule,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatDatepickerModule, MatNativeDateModule,
-    MatCheckboxModule, MatDividerModule,
-    // Diretivas
+    MatCheckboxModule, MatDividerModule, MatAutocompleteModule,
     CepMaskDirective, CpfMaskDirective, PhoneMaskDirective, DateMaskDirective
   ],
   templateUrl: './encomenda-create.html',
@@ -40,16 +47,25 @@ import { CepService } from '../../core/services/cep.service';
 })
 export class EncomendaCreate implements OnInit {
   form: FormGroup;
+  itemForm: FormGroup;
+
+  filteredProdutos$!: Observable<ProdutoResponse[]>;
+  filteredFornecedores$!: Observable<FornecedorResponse[]>;
+
+  allProdutos: ProdutoResponse[] = [];
+  allFornecedores: FornecedorResponse[] = [];
 
   constructor(
     private fb: FormBuilder,
     private encomendaService: EncomendaService,
     private cepService: CepService,
+    private produtoService: ProdutoService,
+    private fornecedorService: FornecedorService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {
+    // Formulário Principal
     this.form = this.fb.group({
-      // -- CLIENTE --
       cliente: this.fb.group({
         nome: ['', Validators.required],
         codigoInterno: [''],
@@ -57,36 +73,69 @@ export class EncomendaCreate implements OnInit {
         email: ['', [Validators.required, Validators.email]],
         telefone: ['', Validators.required]
       }),
-
-      // -- ENDEREÇO --
       enderecoCep: ['', [Validators.required, Validators.minLength(8)]],
       enderecoBairro: ['', Validators.required],
       enderecoRua: ['', Validators.required],
       enderecoNumero: ['', Validators.required],
       enderecoComplemento: [''],
-
-      // -- DETALHES (DATA AGORA É OBRIGATÓRIA) --
       dataEstimadaEntrega: [null, Validators.required],
       horaEstimadaEntrega: [''],
       observacoes: [''],
-
-      // -- FLAGS --
       notaFutura: [false],
       vendaEstoqueNegativo: [false],
-
-      // -- ITENS --
       itens: this.fb.array([], Validators.required),
-
-      // -- PAGAMENTO --
       valorTotal: [{ value: 0, disabled: true }],
       quitado: [false],
       valorAdiantamento: [0]
     });
+
+    // Formulário Auxiliar para adicionar itens
+    this.itemForm = this.fb.group({
+      produto: [null, Validators.required],
+      fornecedor: [null, Validators.required],
+      quantidade: [1, [Validators.required, Validators.min(1)]],
+      precoCotado: [0, Validators.required]
+    });
   }
 
   ngOnInit(): void {
-    this.adicionarItem(); // Item inicial
+    this.carregarDadosAuxiliares();
+    this.setupListeners();
+  }
 
+  carregarDadosAuxiliares() {
+    this.produtoService.getProdutos().subscribe(dados => {
+      this.allProdutos = dados;
+      this.filteredProdutos$ = this.itemForm.get('produto')!.valueChanges.pipe(
+        startWith(''),
+        map(value => {
+          const nome = typeof value === 'string' ? value : value?.nome;
+          return nome ? this._filterProdutos(nome as string) : this.allProdutos.slice();
+        })
+      );
+    });
+
+    this.fornecedorService.getFornecedores().subscribe(dados => {
+      this.allFornecedores = dados;
+      this.filteredFornecedores$ = this.itemForm.get('fornecedor')!.valueChanges.pipe(
+        startWith(''),
+        map(value => {
+          const nome = typeof value === 'string' ? value : value?.nome;
+          return nome ? this._filterFornecedores(nome as string) : this.allFornecedores.slice();
+        })
+      );
+    });
+  }
+
+  setupListeners() {
+    // Preencher preço ao selecionar produto
+    this.itemForm.get('produto')?.valueChanges.pipe(
+      filter(value => typeof value === 'object' && value !== null)
+    ).subscribe((produto: ProdutoResponse) => {
+      this.itemForm.get('precoCotado')?.setValue(produto.precoBase);
+    });
+
+    // Lógica do Quitado
     this.form.get('quitado')?.valueChanges.subscribe(isQuitado => {
       const adiantamentoControl = this.form.get('valorAdiantamento');
       if (isQuitado) {
@@ -99,6 +148,26 @@ export class EncomendaCreate implements OnInit {
     });
   }
 
+  // --- MÉTODOS DE FILTRO ---
+  private _filterProdutos(value: string): ProdutoResponse[] {
+    const filterValue = value.toLowerCase();
+    return this.allProdutos.filter(option => option.nome.toLowerCase().includes(filterValue));
+  }
+
+  private _filterFornecedores(value: string): FornecedorResponse[] {
+    const filterValue = value.toLowerCase();
+    return this.allFornecedores.filter(option => option.nome.toLowerCase().includes(filterValue));
+  }
+
+  displayProdutoFn(produto: ProdutoResponse): string {
+    return produto && produto.nome ? produto.nome : '';
+  }
+
+  displayFornecedorFn(fornecedor: FornecedorResponse): string {
+    return fornecedor && fornecedor.nome ? fornecedor.nome : '';
+  }
+
+  // --- CEP ---
   buscarCep() {
     const rawCep = this.form.get('enderecoCep')?.value?.replace(/\D/g, '') || '';
     if (rawCep.length === 8) {
@@ -114,28 +183,33 @@ export class EncomendaCreate implements OnInit {
     }
   }
 
+  // --- GESTÃO DE ITENS ---
   get itensFormArray() {
     return this.form.get('itens') as FormArray;
   }
 
   adicionarItem() {
+    if (this.itemForm.invalid) return;
+
+    const { produto, fornecedor, quantidade, precoCotado } = this.itemForm.value;
+
     const itemGroup = this.fb.group({
-      produto: this.fb.group({
-        nome: ['', Validators.required],
-        codigo: ['']
-      }),
-      fornecedor: this.fb.group({
-        nome: ['', Validators.required]
-      }),
-      quantidade: [1, [Validators.required, Validators.min(1)]],
-      precoCotado: [0, Validators.required],
-      descricaoOpcional: ['']
+      produto: [produto],
+      fornecedor: [fornecedor],
+      quantidade: [quantidade],
+      precoCotado: [precoCotado]
     });
 
-    itemGroup.get('quantidade')?.valueChanges.subscribe(() => this.atualizarTotais());
-    itemGroup.get('precoCotado')?.valueChanges.subscribe(() => this.atualizarTotais());
-
     this.itensFormArray.push(itemGroup);
+    this.atualizarTotais();
+
+    // Resetar form auxiliar
+    this.itemForm.reset({
+      produto: null,
+      fornecedor: null,
+      quantidade: 1,
+      precoCotado: 0
+    });
   }
 
   removerItem(index: number) {
@@ -146,7 +220,6 @@ export class EncomendaCreate implements OnInit {
   atualizarTotais() {
     const total = this.calcularTotalItens();
     this.form.get('valorTotal')?.setValue(total);
-
     if (this.form.get('quitado')?.value) {
       this.form.get('valorAdiantamento')?.setValue(total);
     }
@@ -160,34 +233,23 @@ export class EncomendaCreate implements OnInit {
     }, 0);
   }
 
+  // --- SUBMIT ---
   private limparFormatacao(valor: string): string {
     return valor ? valor.replace(/\D/g, '') : '';
   }
 
-  // --- PARSER DE DATA BRASILEIRA (Para suportar digitação) ---
   private parseDataBR(valor: any): Date | null {
     if (!valor) return null;
-
-    // Se já for Date (via datepicker)
     if (valor instanceof Date) return valor;
-
-    // Se for string (via digitação com máscara DD/MM/AAAA)
     if (typeof valor === 'string') {
-      // Verifica se é formato ISO
-      if (!isNaN(Date.parse(valor))) {
-         return new Date(valor);
-      }
-
+      if (!isNaN(Date.parse(valor))) return new Date(valor);
       const partes = valor.split('/');
       if (partes.length === 3) {
         const dia = parseInt(partes[0], 10);
-        const mes = parseInt(partes[1], 10) - 1; // Mês começa em 0
+        const mes = parseInt(partes[1], 10) - 1;
         const ano = parseInt(partes[2], 10);
-
         const dataObj = new Date(ano, mes, dia);
-        if (!isNaN(dataObj.getTime())) {
-          return dataObj;
-        }
+        if (!isNaN(dataObj.getTime())) return dataObj;
       }
     }
     return null;
@@ -196,21 +258,20 @@ export class EncomendaCreate implements OnInit {
   salvar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.snackBar.open('Verifique os campos obrigatórios em vermelho.', 'Fechar', { duration: 3000 });
+      this.snackBar.open('Verifique os campos obrigatórios.', 'Fechar', { duration: 3000 });
       return;
     }
 
     const formVal = this.form.getRawValue();
 
-    // Normalização dos dados
+    // Normalizar cliente
     formVal.cliente.cpf = this.limparFormatacao(formVal.cliente.cpf);
     formVal.cliente.telefone = this.limparFormatacao(formVal.cliente.telefone);
     formVal.enderecoCep = this.limparFormatacao(formVal.enderecoCep);
 
-    // --- LÓGICA DE DATA ATUALIZADA ---
+    // Processar Data
     let dataFinal = null;
     const dataObj = this.parseDataBR(formVal.dataEstimadaEntrega);
-
     if (dataObj) {
       if (formVal.horaEstimadaEntrega) {
         const [horas, minutos] = formVal.horaEstimadaEntrega.split(':');
@@ -219,12 +280,21 @@ export class EncomendaCreate implements OnInit {
       }
       dataFinal = dataObj.toISOString();
     } else {
-        this.snackBar.open('Data inválida. Use o formato DD/MM/AAAA.', 'Corrigir', { duration: 3000 });
+        this.snackBar.open('Data inválida.', 'Corrigir', { duration: 3000 });
         return;
     }
 
+    // Preparar Itens para o DTO
+    const itensDTO = formVal.itens.map((item: any) => ({
+      produto: { nome: item.produto.nome || item.produto, codigo: item.produto.codigo },
+      fornecedor: { nome: item.fornecedor.nome || item.fornecedor },
+      quantidade: item.quantidade,
+      precoCotado: item.precoCotado
+    }));
+
     const payload = {
       ...formVal,
+      itens: itensDTO,
       dataEstimadaEntrega: dataFinal
     };
 

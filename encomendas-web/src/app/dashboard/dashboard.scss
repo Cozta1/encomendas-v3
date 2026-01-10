@@ -72,7 +72,7 @@ mat-grid-tile { border-radius: 6px; overflow: hidden; }
   &.warn .icon-num-group { color: #f44336; }
   &.accent .icon-num-group { color: #ff9800; }
   &.primary .icon-num-group { color: #3f51b5; }
-  &.success .icon-num-group { color: #2e7d32; background: #FFFFFF;} /* Verde Escuro */
+  &.success .icon-num-group { color: #2e7d32; background: #FFFFFF;}
 }
 
 .funnel-arrow { color: #e0e0e0; font-size: 24px; }
@@ -85,13 +85,30 @@ mat-grid-tile { border-radius: 6px; overflow: hidden; }
   &::-webkit-scrollbar { width: 6px; height: 6px; }
   &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 }
+
 .full-width-table {
   width: 100%;
+  table-layout: fixed; /* DISTRIBUIÇÃO IGUAL DE COLUNAS */
+
   tr.mat-mdc-row, tr.mat-mdc-header-row { height: 38px !important; }
-  td.mat-mdc-cell, th.mat-mdc-header-cell { padding: 0 8px !important; font-size: 0.85rem; border-bottom-color: #f0f0f0; }
+
+  td.mat-mdc-cell, th.mat-mdc-header-cell {
+    padding: 0 8px !important;
+    font-size: 0.85rem;
+    border-bottom-color: #f0f0f0;
+    text-align: center; /* Centraliza conteúdo para uniformidade */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Remove alinhamento específico para forçar uniformidade */
+  .mat-column-cliente { text-align: center; }
+  .mat-column-valorTotal { text-align: center; }
+  .mat-column-acoes { text-align: center; }
 }
 
-/* Top Produtos */
+/* Scrollable Cards */
 .scrollable-card {
   mat-card-content { justify-content: flex-start; overflow-y: auto; padding-top: 8px !important; }
 }
@@ -117,11 +134,22 @@ mat-grid-tile { border-radius: 6px; overflow: hidden; }
 
 /* Classes utilitárias */
 .primary-text { color: var(--app-primary-color); }
-.text-right { text-align: right; }
-.col-data { width: 80px; }
-.col-cliente { max-width: 150px; }
+
+/* Removidas classes de largura fixa (.col-data, .col-cliente) */
 .truncate-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.small-chip { transform: scale(0.85); transform-origin: center; }
+
+/* CHIP CENTRALIZADA E PEQUENA */
+.small-chip {
+  transform: scale(0.85);
+  transform-origin: center;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-width: 90px;
+  padding: 0 8px !important;
+  height: 32px;
+}
+
 .small-icon-btn { width: 32px; height: 32px; line-height: 32px; mat-icon { font-size: 18px; } }
 .shortcuts-content { gap: 8px; justify-content: center; }
 .mobile-stack { height: auto; overflow-y: auto; padding-bottom: 80px; gap: 8px; }

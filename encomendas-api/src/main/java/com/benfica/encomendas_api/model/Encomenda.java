@@ -25,6 +25,10 @@ public class Encomenda {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @OneToMany(mappedBy = "encomenda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dataAlteracao ASC")
+    private List<EncomendaHistorico> historico = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "equipe_id", nullable = false)
     private Equipe equipe;

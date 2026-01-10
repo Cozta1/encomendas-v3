@@ -2,6 +2,13 @@ import { ClienteResponse } from './cliente.interfaces';
 import { FornecedorResponse } from './fornecedor.interfaces';
 import { ProdutoResponse } from './produto.interfaces';
 
+// --- HISTÓRICO ---
+export interface EncomendaHistorico {
+  status: string;
+  dataAlteracao: string;
+  nomeUsuario: string;
+}
+
 export interface EncomendaItemRequest {
   produtoId: string;
   fornecedorId: string;
@@ -24,13 +31,17 @@ export interface EncomendaRequest {
   status?: string;
   observacoes?: string;
 
-  // --- ENDEREÇO MULTIVALORADO ---
+  // Endereço
   enderecoCep: string;
   enderecoBairro: string;
   enderecoRua: string;
   enderecoNumero: string;
-  enderecoComplemento?: string; // Opcional
-  // -----------------------------
+  enderecoComplemento?: string;
+
+  // Novos Campos Opcionais no Request
+  dataEstimadaEntrega?: string;
+  notaFutura?: boolean;
+  vendaEstoqueNegativo?: boolean;
 
   valorAdiantamento?: number;
 }
@@ -44,16 +55,18 @@ export interface EncomendaResponse {
   valorTotal: number;
   dataCriacao: string;
 
-  // --- NOVO: Data Estimada para cálculo de atraso ---
+  // Data Estimada para cálculo de atraso
   dataEstimadaEntrega?: string;
 
-  // --- ENDEREÇO MULTIVALORADO ---
+  // Histórico de alterações
+  historico: EncomendaHistorico[];
+
+  // Endereço
   enderecoCep: string;
   enderecoBairro: string;
   enderecoRua: string;
   enderecoNumero: string;
   enderecoComplemento?: string;
-  // -----------------------------
 
   valorAdiantamento?: number;
 }

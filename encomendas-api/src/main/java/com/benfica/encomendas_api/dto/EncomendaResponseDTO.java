@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,8 +32,9 @@ public class EncomendaResponseDTO {
     private BigDecimal valorTotal;
     private LocalDateTime dataCriacao;
 
-    // --- NOVO CAMPO PARA O FRONTEND CALCULAR ATRASO ---
+    // --- DATAS E HISTÓRICO ---
     private LocalDateTime dataEstimadaEntrega;
+    private List<EncomendaHistoricoDTO> historico;
 
     public static EncomendaResponseDTO fromEntity(Encomenda encomenda) {
         if (encomenda == null) {
@@ -47,17 +49,22 @@ public class EncomendaResponseDTO {
                         .collect(Collectors.toList()))
                 .status(encomenda.getStatus())
                 .observacoes(encomenda.getObservacoes())
-                // Mapeamento dos novos campos
+                // Endereço
                 .enderecoCep(encomenda.getEnderecoCep())
                 .enderecoBairro(encomenda.getEnderecoBairro())
                 .enderecoRua(encomenda.getEnderecoRua())
                 .enderecoNumero(encomenda.getEnderecoNumero())
                 .enderecoComplemento(encomenda.getEnderecoComplemento())
+                // Valores
                 .valorAdiantamento(encomenda.getValorAdiantamento())
                 .valorTotal(encomenda.getValorTotal())
                 .dataCriacao(encomenda.getDataCriacao())
-                // Mapeia a data estimada
+                // Novos Campos
                 .dataEstimadaEntrega(encomenda.getDataEstimadaEntrega())
+                .historico(encomenda.getHistorico() != null ?
+                        encomenda.getHistorico().stream()
+                                .map(EncomendaHistoricoDTO::fromEntity)
+                                .collect(Collectors.toList()) : new ArrayList<>())
                 .build();
     }
 }

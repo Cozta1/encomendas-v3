@@ -1,0 +1,21 @@
+.step-info {
+  margin-top: 4px;
+  line-height: 1.2;
+  color: #666;
+  text-align: center;
+}
+
+/* Customização do Stepper para parecer Timeline */
+::ng-deep .mat-step-header {
+  pointer-events: none !important; /* Desabilita clique nos steps */
+}
+
+/* Estilo para tabela interna */
+.full-width-table {
+  width: 100%;
+  td, th { padding: 8px; }
+  tr:last-child td { border-bottom: none; }
+}
+
+.mb-4 { margin-bottom: 24px; }
+.primary-text { color: var(--app-primary-color); }
