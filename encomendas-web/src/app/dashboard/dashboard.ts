@@ -17,10 +17,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-
-// Import do Dialog de Detalhes APENAS (o de form foi removido)
-import { EncomendaDetalheDialog } from '../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,7 +24,7 @@ import { EncomendaDetalheDialog } from '../components/dialogs/encomenda-detalhe-
   imports: [
     CommonModule, RouterModule, MatGridListModule, MatCardModule,
     MatTableModule, MatIconModule, MatChipsModule, MatButtonModule,
-    MatListModule, MatDividerModule, MatProgressBarModule, MatDialogModule
+    MatListModule, MatDividerModule, MatProgressBarModule
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -58,8 +54,7 @@ export class Dashboard implements OnInit, OnDestroy {
     private encomendaService: EncomendaService,
     private teamService: TeamService,
     private router: Router,
-    private breakpointObserver: BreakpointObserver,
-    private dialog: MatDialog
+    private breakpointObserver: BreakpointObserver
   ) {}
 
   ngOnInit(): void {
@@ -182,9 +177,7 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   public verDetalhes(encomenda: EncomendaResponse): void {
-    this.dialog.open(EncomendaDetalheDialog, {
-      width: '600px',
-      data: encomenda
-    });
+    // Redireciona para a página de detalhes em vez de abrir modal
+    this.router.navigate(['/encomendas', encomenda.id]);
   }
 }

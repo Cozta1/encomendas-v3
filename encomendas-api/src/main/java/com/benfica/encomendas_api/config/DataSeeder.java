@@ -2,15 +2,19 @@ package com.benfica.encomendas_api.config;
 
 import com.benfica.encomendas_api.model.*;
 import com.benfica.encomendas_api.repository.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,6 +26,12 @@ public class DataSeeder {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @Value("${app.super-admin.email:super@benfica.com}")
     private String superAdminEmail;
 
@@ -32,257 +42,114 @@ public class DataSeeder {
     private String superAdminName;
 
     @Bean
-    @Transactional
-    CommandLineRunner initDatabase(UsuarioRepository usuarioRepository,
-                                   EquipeRepository equipeRepository,
-                                   ClienteRepository clienteRepository,
-                                   FornecedorRepository fornecedorRepository,
-                                   ProdutoRepository produtoRepository,
-                                   EncomendaRepository encomendaRepository,
-                                   EncomendaItemRepository encomendaItemRepository,
-                                   ConviteRepository conviteRepository,
-                                   PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initDatabase(UsuarioRepository usuarioRepository,
+                                          EquipeRepository equipeRepository,
+                                          ClienteRepository clienteRepository,
+                                          FornecedorRepository fornecedorRepository,
+                                          ProdutoRepository produtoRepository,
+                                          EncomendaRepository encomendaRepository,
+                                          EncomendaItemRepository encomendaItemRepository,
+                                          PasswordEncoder passwordEncoder) {
 
         return args -> {
-            log.info("--- LIMPANDO BANCO DE DADOS (PERFIL DEV) ---");
+            TransactionTemplate tx = new TransactionTemplate(transactionManager);
 
-            // 1. Limpa tabelas dependentes (filhas)
-            encomendaItemRepository.deleteAll();
-            encomendaRepository.deleteAll();
-            produtoRepository.deleteAll();
-            fornecedorRepository.deleteAll();
-            clienteRepository.deleteAll();
-            conviteRepository.deleteAll();
+            // 1. LIMPEZA (Garante transação para o TRUNCATE)
+            tx.executeWithoutResult(status -> {
+                log.info("--- LIMPANDO BANCO DE DADOS (TRUNCATE CASCADE) ---");
+                try {
+                    // Executa SQL nativo para limpar tudo ignorando constraints
+                    entityManager.createNativeQuery("TRUNCATE TABLE encomenda_historico, encomenda_itens, encomendas, produtos, enderecos, fornecedores, clientes, convites, usuarios, equipes CASCADE").executeUpdate();
+                    entityManager.flush();
+                    log.info("--- BANCO DE DADOS LIMPO COM SUCESSO ---");
+                } catch (Exception e) {
+                    log.error("FALHA AO LIMPAR BANCO: " + e.getMessage());
+                    // Não engolimos a exceção crítica aqui para saber se falhou de verdade
+                    throw new RuntimeException("Erro crítico ao limpar banco de dados", e);
+                }
+            });
 
-            // 2. Quebra a dependência circular (Usuario <-> Equipe)
-            // Remove a referência de equipe dos usuários
-            List<Usuario> usuariosExistentes = usuarioRepository.findAll();
-            for (Usuario u : usuariosExistentes) {
-                u.setEquipe(null);
-            }
-            usuarioRepository.saveAll(usuariosExistentes);
+            // 2. POPULAÇÃO (Garante transação para os inserts)
+            tx.executeWithoutResult(status -> {
+                log.info("--- INICIANDO POPULAÇÃO DE DADOS ---");
 
-            // Remove a referência de administrador das equipes
-            List<Equipe> equipesExistentes = equipeRepository.findAll();
-            for (Equipe e : equipesExistentes) {
-                e.setAdministrador(null);
-            }
-            equipeRepository.saveAll(equipesExistentes);
+                String senhaPadrao = passwordEncoder.encode("admin123");
+                String senhaSuper = passwordEncoder.encode(superAdminPassword);
 
-            // 3. Agora pode excluir com segurança
-            equipeRepository.deleteAll();
-            usuarioRepository.deleteAll();
+                // --- CRIAR USUÁRIOS ---
+                Usuario superAdmin = Usuario.builder().nomeCompleto(superAdminName).email(superAdminEmail).password(senhaSuper).identificacao("99999999999").cargo("CEO").role("ROLE_SUPER_ADMIN").ativo(true).build();
+                Usuario adminCentro = Usuario.builder().nomeCompleto("Admin Benfica").email("admin@benfica.com").password(senhaPadrao).identificacao("00000000001").cargo("Gerente").role("ROLE_ADMIN").ativo(true).build();
+                Usuario funcBairro = Usuario.builder().nomeCompleto("Func Silva").email("func@benfica.com").password(senhaPadrao).identificacao("11122233344").cargo("Balconista").role("ROLE_USER").ativo(true).build();
 
-            log.info("--- BANCO DE DADOS LIMPO ---");
+                usuarioRepository.saveAll(List.of(superAdmin, adminCentro, funcBairro));
 
-            // --- INÍCIO DA CRIAÇÃO DE DADOS (POPULATE) ---
-            log.info("--- CRIANDO USUÁRIOS E EQUIPES ---");
+                // --- CRIAR EQUIPES ---
+                Equipe equipeCentro = Equipe.builder().nome("Farmácia Benfica - Centro").descricao("Matriz").administrador(adminCentro).ativa(true).build();
+                Equipe equipeBairro = Equipe.builder().nome("Drogaria Silva - Bairro").descricao("Filial").administrador(funcBairro).ativa(true).build();
 
-            String senhaPadrao = passwordEncoder.encode("admin123");
-            String senhaSuper = passwordEncoder.encode(superAdminPassword);
+                equipeRepository.saveAll(List.of(equipeCentro, equipeBairro));
 
-            // Super Admin
-            Usuario superAdmin = Usuario.builder()
-                    .nomeCompleto(superAdminName)
-                    .email(superAdminEmail)
-                    .password(senhaSuper)
-                    .identificacao("99999999999")
-                    .cargo("CEO / Gestor Geral")
-                    .role("ROLE_SUPER_ADMIN")
-                    .ativo(true)
-                    .build();
+                // --- VINCULAR ---
+                adminCentro.setEquipe(equipeCentro);
+                funcBairro.setEquipe(equipeBairro);
+                usuarioRepository.saveAll(List.of(adminCentro, funcBairro));
 
-            // Admin da Equipe Centro
-            Usuario adminUser = Usuario.builder()
-                    .nomeCompleto("Admin Principal (Benfica)")
-                    .email("admin@benfica.com")
-                    .password(senhaPadrao)
-                    .identificacao("00000000001")
-                    .cargo("Farmacêutico Gerente")
-                    .role("ROLE_ADMIN")
-                    .ativo(true)
-                    .build();
+                // --- DADOS BASE ---
+                Cliente cJoao = Cliente.builder().equipe(equipeCentro).nome("João da Silva").cpf("111.111.111-11").email("joao@email.com").telefone("(32) 99999-1111").build();
+                Cliente cMaria = Cliente.builder().equipe(equipeCentro).nome("Maria Oliveira").cpf("222.222.222-22").email("maria@email.com").telefone("(32) 99999-2222").codigoInterno("CLI-002").build();
+                Cliente cPedro = Cliente.builder().equipe(equipeCentro).nome("Pedro Atrasado").cpf("333.333.333-33").email("pedro@email.com").telefone("(32) 99999-3333").build();
+                clienteRepository.saveAll(List.of(cJoao, cMaria, cPedro));
 
-            // Funcionário da Equipe Bairro
-            Usuario funcUser = Usuario.builder()
-                    .nomeCompleto("Funcionario Silva")
-                    .email("func@benfica.com")
-                    .password(senhaPadrao)
-                    .identificacao("11122233344")
-                    .cargo("Balconista")
-                    .role("ROLE_USER")
-                    .ativo(true)
-                    .build();
+                Fornecedor fSantaCruz = Fornecedor.builder().equipe(equipeCentro).nome("Santa Cruz").telefone("0800 111 222").build();
+                Fornecedor fPanpharma = Fornecedor.builder().equipe(equipeCentro).nome("Panpharma").telefone("0800 333 444").build();
+                fornecedorRepository.saveAll(List.of(fSantaCruz, fPanpharma));
 
-            usuarioRepository.saveAll(List.of(superAdmin, adminUser, funcUser));
+                Produto pDipirona = Produto.builder().equipe(equipeCentro).nome("Dipirona 500mg").codigo("789111").precoBase(new BigDecimal("4.50")).build();
+                Produto pTorsilax = Produto.builder().equipe(equipeCentro).nome("Torsilax 30cp").codigo("789222").precoBase(new BigDecimal("18.90")).build();
+                Produto pVitamina = Produto.builder().equipe(equipeCentro).nome("Vitamina C 1g").codigo("789333").precoBase(new BigDecimal("22.00")).build();
+                produtoRepository.saveAll(List.of(pDipirona, pTorsilax, pVitamina));
 
-            // CRIAR EQUIPES
-            Equipe equipeCentro = Equipe.builder()
-                    .nome("Farmácia Benfica - Centro")
-                    .descricao("Filial Principal - Matriz")
-                    .administrador(adminUser)
-                    .ativa(true)
-                    .build();
+                // --- ENCOMENDAS ---
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao, "Encomenda Criada", LocalDateTime.now().plusDays(2), BigDecimal.ZERO, "Pagar na retirada", false, false, pDipirona, fSantaCruz, 2, new BigDecimal("4.50"));
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Mercadoria em Loja", LocalDateTime.now().plusDays(1), new BigDecimal("10.00"), "Cliente avisada", false, false, pTorsilax, fPanpharma, 1, new BigDecimal("18.90"));
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao, "Aguardando Entrega", LocalDateTime.now().plusHours(4), new BigDecimal("50.00"), "Motoboy saiu", true, false, pVitamina, fSantaCruz, 2, new BigDecimal("22.00"));
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Concluído", LocalDateTime.now().minusDays(5), BigDecimal.ZERO, "Entregue", false, false, pDipirona, fPanpharma, 5, new BigDecimal("4.00"));
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro, "Cancelado", LocalDateTime.now().plusDays(10), BigDecimal.ZERO, "Desistência", false, false, pTorsilax, fSantaCruz, 1, new BigDecimal("18.90"));
 
-            Equipe equipeBairro = Equipe.builder()
-                    .nome("Drogaria Silva - Bairro")
-                    .descricao("Filial Zona Norte")
-                    .administrador(funcUser)
-                    .ativa(true)
-                    .build();
+                // Atrasadas
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro, "Encomenda Criada", LocalDateTime.now().minusDays(2), BigDecimal.ZERO, "URGENTE ATRASADA", false, true, pVitamina, fPanpharma, 1, new BigDecimal("22.00"));
+                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Mercadoria em Loja", LocalDateTime.now().minusHours(5), new BigDecimal("5.00"), "Esqueceram de dar baixa", false, false, pDipirona, fSantaCruz, 10, new BigDecimal("4.20"));
 
-            equipeRepository.saveAll(List.of(equipeCentro, equipeBairro));
-
-            // ATUALIZA USUÁRIOS COM AS EQUIPES
-            adminUser.setEquipe(equipeCentro);
-            funcUser.setEquipe(equipeBairro);
-            usuarioRepository.saveAll(List.of(adminUser, funcUser));
-
-            // DADOS BASE
-            log.info("--- POPULANDO DADOS BASE ---");
-
-            // Clientes
-            Cliente cJoao = Cliente.builder().equipe(equipeCentro).nome("João da Silva").cpf("111.111.111-11").email("joao@email.com").telefone("(32) 99999-1111").build();
-            Cliente cMaria = Cliente.builder().equipe(equipeCentro).nome("Maria Oliveira").cpf("222.222.222-22").email("maria@email.com").telefone("(32) 99999-2222").codigoInterno("CLI-002").build();
-            Cliente cPedro = Cliente.builder().equipe(equipeCentro).nome("Pedro Atrasado").cpf("333.333.333-33").email("pedro@email.com").telefone("(32) 99999-3333").build();
-            clienteRepository.saveAll(List.of(cJoao, cMaria, cPedro));
-
-            // Fornecedores
-            Fornecedor fSantaCruz = Fornecedor.builder().equipe(equipeCentro).nome("Santa Cruz Distribuidora").telefone("0800 111 222").build();
-            Fornecedor fPanpharma = Fornecedor.builder().equipe(equipeCentro).nome("Panpharma").telefone("0800 333 444").build();
-            fornecedorRepository.saveAll(List.of(fSantaCruz, fPanpharma));
-
-            // Produtos
-            Produto pDipirona = Produto.builder().equipe(equipeCentro).nome("Dipirona 500mg (EMS)").codigo("789111").precoBase(new BigDecimal("4.50")).build();
-            Produto pTorsilax = Produto.builder().equipe(equipeCentro).nome("Torsilax 30cp").codigo("789222").precoBase(new BigDecimal("18.90")).build();
-            Produto pVitamina = Produto.builder().equipe(equipeCentro).nome("Vitamina C 1g").codigo("789333").precoBase(new BigDecimal("22.00")).build();
-            produtoRepository.saveAll(List.of(pDipirona, pTorsilax, pVitamina));
-
-            // ENCOMENDAS DE TESTE
-            log.info("--- GERANDO ENCOMENDAS DE TESTE ---");
-
-            // #1 - Status: Encomenda Criada (Data Futura - Em dia)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao,
-                    "Encomenda Criada",
-                    LocalDateTime.now().plusDays(2),
-                    BigDecimal.ZERO,
-                    "Cliente vai passar para pagar na retirada.",
-                    false, false,
-                    pDipirona, fSantaCruz, 2, new BigDecimal("4.50"));
-
-            // #2 - Status: Mercadoria em Loja (Data Futura - Em dia)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria,
-                    "Mercadoria em Loja",
-                    LocalDateTime.now().plusDays(1),
-                    new BigDecimal("10.00"),
-                    "Chegou hoje cedo. Cliente avisada.",
-                    false, false,
-                    pTorsilax, fPanpharma, 1, new BigDecimal("18.90"));
-
-            // #3 - Status: Aguardando Entrega (Data Futura - Em dia)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao,
-                    "Aguardando Entrega",
-                    LocalDateTime.now().plusHours(4),
-                    new BigDecimal("50.00"),
-                    "Motoboy saiu para entrega.",
-                    true, false,
-                    pVitamina, fSantaCruz, 2, new BigDecimal("22.00"));
-
-            // #4 - Status: Concluído (Histórico)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria,
-                    "Concluído",
-                    LocalDateTime.now().minusDays(5),
-                    BigDecimal.ZERO,
-                    "Entregue semana passada.",
-                    false, false,
-                    pDipirona, fPanpharma, 5, new BigDecimal("4.00"));
-
-            // #5 - Status: Cancelado
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro,
-                    "Cancelado",
-                    LocalDateTime.now().plusDays(10),
-                    BigDecimal.ZERO,
-                    "Cliente desistiu da compra.",
-                    false, false,
-                    pTorsilax, fSantaCruz, 1, new BigDecimal("18.90"));
-
-            // #6 - Status: Encomenda Criada (ATRASADA!)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro,
-                    "Encomenda Criada",
-                    LocalDateTime.now().minusDays(2), // Data Passada!
-                    BigDecimal.ZERO,
-                    "URGENTE: Estava previsto para antes de ontem!",
-                    false, true, // Venda Estoque Negativo
-                    pVitamina, fPanpharma, 1, new BigDecimal("22.00"));
-
-            // #7 - Status: Mercadoria em Loja (ATRASADA!)
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria,
-                    "Mercadoria em Loja",
-                    LocalDateTime.now().minusHours(5), // Data Passada
-                    new BigDecimal("5.00"),
-                    "Esqueceram de dar baixa ou cliente não veio.",
-                    false, false,
-                    pDipirona, fSantaCruz, 10, new BigDecimal("4.20"));
-
-            // #8 - Teste Flags
-            criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao,
-                    "Encomenda Criada",
-                    LocalDateTime.now().plusDays(7),
-                    BigDecimal.ZERO,
-                    "Teste de flags ativadas.",
-                    true, true,
-                    pTorsilax, fPanpharma, 3, new BigDecimal("18.00"));
-
-            log.info("--- BANCO DE DADOS POPULADO COM SUCESSO ---");
+                log.info("--- POPULAÇÃO CONCLUÍDA ---");
+            });
         };
     }
 
-    private void criarEncomenda(EncomendaRepository encomendaRepo,
-                                EncomendaItemRepository itemRepo,
-                                Equipe equipe,
-                                Cliente cliente,
-                                String status,
-                                LocalDateTime dataEstimada,
-                                BigDecimal adiantamento,
-                                String obs,
-                                boolean notaFutura,
-                                boolean estoqueNegativo,
-                                Produto produto,
-                                Fornecedor fornecedor,
-                                int quantidade,
-                                BigDecimal precoCotado) {
-
+    private void criarEncomenda(EncomendaRepository encomendaRepo, EncomendaItemRepository itemRepo, Equipe equipe, Cliente cliente, String status, LocalDateTime dataEstimada, BigDecimal adiantamento, String obs, boolean notaFutura, boolean estoqueNegativo, Produto produto, Fornecedor fornecedor, int quantidade, BigDecimal precoCotado) {
         BigDecimal subtotal = precoCotado.multiply(new BigDecimal(quantidade));
 
         Encomenda enc = Encomenda.builder()
-                .equipe(equipe)
-                .cliente(cliente)
-                .status(status)
+                .equipe(equipe).cliente(cliente).status(status)
                 .dataCriacao(LocalDateTime.now())
                 .dataEstimadaEntrega(dataEstimada)
-                .valorAdiantamento(adiantamento)
-                .valorTotal(subtotal)
-                .observacoes(obs)
-                .notaFutura(notaFutura)
-                .vendaEstoqueNegativo(estoqueNegativo)
-                .enderecoCep("36000-000")
-                .enderecoBairro("Centro")
-                .enderecoRua("Rua Halfeld")
-                .enderecoNumero("100")
+                .valorAdiantamento(adiantamento).valorTotal(subtotal)
+                .observacoes(obs).notaFutura(notaFutura).vendaEstoqueNegativo(estoqueNegativo)
+                .enderecoCep("36000-000").enderecoBairro("Centro").enderecoRua("Rua Halfeld").enderecoNumero("100")
                 .build();
+
+        // Garante a lista para evitar NullPointer no listener de histórico (se houver)
+        if (enc.getHistorico() == null) {
+            enc.setHistorico(java.util.Collections.emptyList());
+        }
 
         enc = encomendaRepo.save(enc);
 
         EncomendaItem item = EncomendaItem.builder()
-                .encomenda(enc)
-                .produto(produto)
-                .fornecedor(fornecedor)
-                .quantidade(quantidade)
-                .precoCotado(precoCotado)
-                .subtotal(subtotal)
+                .encomenda(enc).produto(produto).fornecedor(fornecedor)
+                .quantidade(quantidade).precoCotado(precoCotado).subtotal(subtotal)
                 .build();
-
         itemRepo.save(item);
+
         enc.setItens(List.of(item));
         encomendaRepo.save(enc);
     }

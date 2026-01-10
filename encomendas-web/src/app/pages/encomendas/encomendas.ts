@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BehaviorSubject, Observable, Subscription, skip } from 'rxjs';
+import { Router } from '@angular/router'; // Importar Router
+import { BehaviorSubject, Subscription, skip } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
 import { TeamService } from '../../core/team/team.service';
@@ -15,8 +16,6 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { EncomendaFormDialog } from '../../components/dialogs/encomenda-form-dialog/encomenda-form-dialog';
-import { EncomendaDetalheDialog } from '../../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
-
 
 @Component({
   selector: 'app-encomendas',
@@ -48,7 +47,8 @@ export class Encomendas implements OnInit, OnDestroy {
     private encomendaService: EncomendaService,
     private teamService: TeamService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router // Injeção do Router
   ) {}
 
   ngOnInit(): void {
@@ -82,6 +82,7 @@ export class Encomendas implements OnInit, OnDestroy {
           next: (novaEncomenda) => {
             this.snackBar.open('Encomenda criada com sucesso!', 'OK', { duration: 3000 });
             this.carregarEncomendas();
+            // Opcional: Redirecionar para detalhes da nova encomenda
             this.verDetalhes(novaEncomenda);
           },
           error: (err) => {
@@ -152,10 +153,8 @@ export class Encomendas implements OnInit, OnDestroy {
   }
 
   verDetalhes(encomenda: EncomendaResponse): void {
-    this.dialog.open(EncomendaDetalheDialog, {
-      width: '600px',
-      data: encomenda
-    });
+    // Agora navega para a página de detalhes
+    this.router.navigate(['/encomendas', encomenda.id]);
   }
 
   removerEncomenda(encomenda: EncomendaResponse): void {
@@ -177,17 +176,12 @@ export class Encomendas implements OnInit, OnDestroy {
     return item.id;
   }
 
-  // --- NOVA LÓGICA DE ATRASO ---
   public verificarAtraso(encomenda: EncomendaResponse): boolean {
-    // Se não tem data, ou já está concluída/cancelada, não está "atrasada" visualmente
     if (!encomenda.dataEstimadaEntrega || encomenda.status === 'Concluído' || encomenda.status === 'Cancelado') {
       return false;
     }
-
     const dataEstimada = new Date(encomenda.dataEstimadaEntrega);
     const agora = new Date();
-
-    // Retorna true se a data estimada for anterior a agora
     return dataEstimada < agora;
   }
 }

@@ -10,6 +10,10 @@
     </div>
 
     <div style="display: flex; gap: 8px;">
+      <button mat-stroked-button (click)="gerarPDF(e)">
+        <mat-icon>picture_as_pdf</mat-icon> Gerar PDF
+      </button>
+
       <button mat-stroked-button color="warn" (click)="cancelar(e)" *ngIf="e.status !== 'Cancelado' && e.status !== 'Concluído'">
         <mat-icon>block</mat-icon> Cancelar
       </button>
@@ -22,54 +26,54 @@
 
   <mat-card class="mb-4">
     <mat-card-content style="padding: 24px;">
-      <mat-stepper [selectedIndex]="getStepIndex(e.status)" #stepper [linear]="false">
 
+      <mat-stepper [selectedIndex]="getStepIndex(e.status)" #stepper [linear]="false" class="visual-stepper">
         <ng-template matStepperIcon="edit"><mat-icon>check</mat-icon></ng-template>
         <ng-template matStepperIcon="done"><mat-icon>check</mat-icon></ng-template>
 
-        <mat-step [label]="'Criada'" state="done">
-          <ng-template matStepLabel>Criada</ng-template>
-          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Encomenda Criada') as h">
-            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
-            <small>por {{ h.nomeUsuario }}</small>
-          </div>
-        </mat-step>
-
-        <mat-step [label]="'Na Loja'" state="done">
-          <ng-template matStepLabel>Na Loja</ng-template>
-          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Mercadoria em Loja') as h">
-            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
-            <small>por {{ h.nomeUsuario }}</small>
-          </div>
-        </mat-step>
-
-        <mat-step [label]="'Aguardando'" state="done">
-          <ng-template matStepLabel>Aguardando</ng-template>
-          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Aguardando Entrega') as h">
-            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
-            <small>por {{ h.nomeUsuario }}</small>
-          </div>
-        </mat-step>
-
-        <mat-step [label]="'Concluído'" state="done">
-          <ng-template matStepLabel>Concluído</ng-template>
-          <div class="step-info" *ngIf="getHistoricoInfo(e, 'Concluído') as h">
-            <small>{{ h.dataAlteracao | date:'dd/MM HH:mm' }}</small><br>
-            <small>por {{ h.nomeUsuario }}</small>
-          </div>
-        </mat-step>
-
+        <mat-step [label]="'Criada'" state="done"><ng-template matStepLabel>Criada</ng-template></mat-step>
+        <mat-step [label]="'Na Loja'" state="done"><ng-template matStepLabel>Na Loja</ng-template></mat-step>
+        <mat-step [label]="'Aguardando'" state="done"><ng-template matStepLabel>Aguardando</ng-template></mat-step>
+        <mat-step [label]="'Concluído'" state="done"><ng-template matStepLabel>Concluído</ng-template></mat-step>
       </mat-stepper>
 
-      <div *ngIf="e.status === 'Cancelado'" style="background: #ffebee; color: #c62828; padding: 12px; text-align: center; border-radius: 4px; margin-top: 16px; font-weight: bold;">
-        <mat-icon style="vertical-align: bottom; margin-right: 8px;">error</mat-icon>
-        ESTA ENCOMENDA FOI CANCELADA
+      <div *ngIf="e.status === 'Cancelado'" class="cancelled-banner">
+        <mat-icon>error</mat-icon> ESTA ENCOMENDA FOI CANCELADA
+      </div>
+
+      <mat-divider style="margin: 24px 0;"></mat-divider>
+
+      <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #444;">
+        <mat-icon>history</mat-icon> Histórico de Alterações
+      </h3>
+
+      <div class="log-container">
+        <div class="log-item" *ngFor="let log of getLogHistorico(e)">
+
+          <div class="log-left">
+            <div class="log-dot"></div>
+            <div class="log-line"></div>
+          </div>
+
+          <div class="log-content">
+            <div class="log-title">{{ log.transicao }}</div>
+            <div class="log-meta">
+              <span><mat-icon class="inline-icon">person</mat-icon> {{ log.nomeUsuario }}</span>
+              <span><mat-icon class="inline-icon">schedule</mat-icon> {{ log.dataAlteracao | date:'dd/MM/yy HH:mm' }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div *ngIf="getLogHistorico(e).length === 0" style="color: #999; font-style: italic; padding-left: 20px;">
+          Nenhum histórico registrado.
+        </div>
       </div>
 
     </mat-card-content>
   </mat-card>
 
-  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+  <div class="details-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
 
     <div style="display: flex; flex-direction: column; gap: 24px;">
 
