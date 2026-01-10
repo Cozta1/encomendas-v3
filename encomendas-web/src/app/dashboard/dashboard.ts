@@ -17,7 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog'; // Adicionado
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 // Import do Dialog de Detalhes
 import { EncomendaDetalheDialog } from '../components/dialogs/encomenda-detalhe-dialog/encomenda-detalhe-dialog';
@@ -47,8 +47,12 @@ export class Dashboard implements OnInit, OnDestroy {
   public totalLiquidoMes$ = new BehaviorSubject<number>(0);
   public contagemPedidosMes$ = new BehaviorSubject<number>(0);
   public ticketMedio$ = new BehaviorSubject<number>(0);
-  public statusCounts$ = new BehaviorSubject<any>({ pendente: 0, preparo: 0, aguardando: 0, concluido: 0 });
-  public topProdutos$ = new BehaviorSubject<{nome: string, qtd: number}[]>([]);
+
+  // ATUALIZADO: Keys para os novos status
+  public statusCounts$ = new BehaviorSubject<any>({ criada: 0, loja: 0, aguardando: 0, concluido: 0 });
+
+  // ATUALIZADO: Substituiu topProdutos por encomendasAtrasadas
+  public encomendasAtrasadas$ = new BehaviorSubject<EncomendaResponse[]>([]);
 
   public ultimasEncomendasAbertas$ = new BehaviorSubject<EncomendaResponse[]>([]);
   public displayedColumns: string[] = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
@@ -58,7 +62,7 @@ export class Dashboard implements OnInit, OnDestroy {
     private teamService: TeamService,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private dialog: MatDialog // Injeção do Dialog
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -70,7 +74,6 @@ export class Dashboard implements OnInit, OnDestroy {
     ]).subscribe(result => {
       this.isMobile = result.matches;
       if (this.isMobile) {
-        // Ajuste de colunas para mobile
         this.displayedColumns = ['cliente', 'status', 'valorTotal', 'acoes'];
       } else {
         this.displayedColumns = ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
@@ -104,12 +107,14 @@ export class Dashboard implements OnInit, OnDestroy {
      let somaLiquido = 0;
      let countMes = 0;
 
-     const statusMap = { pendente: 0, preparo: 0, aguardando: 0, concluido: 0 };
-     const produtoMap = new Map<string, number>();
+     // Contadores atualizados
+     const statusMap = { criada: 0, loja: 0, aguardando: 0, concluido: 0 };
+     const atrasadas: EncomendaResponse[] = [];
 
      for (const enc of encomendas) {
        const dataEncomenda = new Date(enc.dataCriacao);
 
+       // Métricas financeiras (30 dias)
        if (dataEncomenda >= inicioMes) {
          if (enc.status !== 'Cancelado') {
             somaBruto += enc.valorTotal;
@@ -121,17 +126,24 @@ export class Dashboard implements OnInit, OnDestroy {
        }
 
        if (enc.status !== 'Cancelado') {
+          // Contagem de Status (Novos Status)
           switch(enc.status) {
-            case 'Pendente': statusMap.pendente++; break;
-            case 'Em Preparo': statusMap.preparo++; break;
+            case 'Encomenda Criada': statusMap.criada++; break;
+            case 'Mercadoria em Loja': statusMap.loja++; break;
             case 'Aguardando Entrega': statusMap.aguardando++; break;
             case 'Concluído': statusMap.concluido++; break;
+            // Fallback para status antigos se existirem no banco
+            case 'Pendente': statusMap.criada++; break;
+            case 'Em Preparo': statusMap.loja++; break;
           }
 
-          enc.itens.forEach(item => {
-            const qtdAtual = produtoMap.get(item.produto.nome) || 0;
-            produtoMap.set(item.produto.nome, qtdAtual + item.quantidade);
-          });
+          // Verificação de Atraso
+          if (enc.status !== 'Concluído' && enc.dataEstimadaEntrega) {
+             const dataEntrega = new Date(enc.dataEstimadaEntrega);
+             if (dataEntrega < agora) {
+               atrasadas.push(enc);
+             }
+          }
        }
      }
 
@@ -144,18 +156,20 @@ export class Dashboard implements OnInit, OnDestroy {
 
      this.statusCounts$.next(statusMap);
 
-     const sortedProdutos = Array.from(produtoMap.entries())
-       .map(([nome, qtd]) => ({ nome, qtd }))
-       .sort((a, b) => b.qtd - a.qtd)
-       .slice(0, 5);
-     this.topProdutos$.next(sortedProdutos);
+     // Ordena atrasadas da mais antiga para a mais recente
+     atrasadas.sort((a, b) => {
+       const da = a.dataEstimadaEntrega ? new Date(a.dataEstimadaEntrega).getTime() : 0;
+       const db = b.dataEstimadaEntrega ? new Date(b.dataEstimadaEntrega).getTime() : 0;
+       return da - db;
+     });
+     this.encomendasAtrasadas$.next(atrasadas);
   }
 
   private processarEncomendasAbertas(encomendas: EncomendaResponse[]): void {
     const encomendasAbertas = encomendas
       .filter(e => e.status !== 'Concluído' && e.status !== 'Cancelado')
       .sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime())
-      .slice(0, 5); // Apenas as 5 mais recentes
+      .slice(0, 5);
 
     this.ultimasEncomendasAbertas$.next(encomendasAbertas);
   }
@@ -163,9 +177,10 @@ export class Dashboard implements OnInit, OnDestroy {
   public getStatusColor(status: string): 'primary' | 'accent' | 'warn' {
     switch (status) {
       case 'Concluído': return 'primary';
-      case 'Em Preparo': return 'accent';
+      case 'Mercadoria em Loja': return 'accent'; // Novo Status
       case 'Aguardando Entrega': return 'accent';
-      case 'Pendente': return 'warn';
+      case 'Encomenda Criada': return 'warn';     // Novo Status
+      case 'Pendente': return 'warn';             // Compatibilidade
       default: return 'primary';
     }
   }
@@ -174,7 +189,6 @@ export class Dashboard implements OnInit, OnDestroy {
     this.router.navigate(['/encomendas']);
   }
 
-  // --- NOVO MÉTODO: Abrir Dialog ---
   public verDetalhes(encomenda: EncomendaResponse): void {
     this.dialog.open(EncomendaDetalheDialog, {
       width: '600px',

@@ -20,8 +20,9 @@ import java.util.stream.Collectors;
 @Service
 public class EncomendaService {
 
-    private static final String STATUS_PENDENTE = "Pendente";
-    private static final String STATUS_EM_PREPARO = "Em Preparo";
+    // --- NOVOS STATUS ---
+    private static final String STATUS_CRIADA = "Encomenda Criada";
+    private static final String STATUS_NA_LOJA = "Mercadoria em Loja";
     private static final String STATUS_AGUARDANDO_ENTREGA = "Aguardando Entrega";
     private static final String STATUS_CONCLUIDO = "Concluído";
     private static final String STATUS_CANCELADO = "Cancelado";
@@ -51,33 +52,27 @@ public class EncomendaService {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new RuntimeException("Equipe não encontrada"));
 
-        // 1. RESOLVER CLIENTE (Buscar existente ou Criar Novo)
         Cliente cliente = resolverCliente(dto.getCliente(), equipe);
 
-        // 2. CONSTRUIR ENCOMENDA
         Encomenda encomenda = Encomenda.builder()
                 .equipe(equipe)
                 .cliente(cliente)
                 .observacoes(dto.getObservacoes())
-                // --- Endereço ---
                 .enderecoCep(dto.getEnderecoCep())
                 .enderecoBairro(dto.getEnderecoBairro())
                 .enderecoRua(dto.getEnderecoRua())
                 .enderecoNumero(dto.getEnderecoNumero())
                 .enderecoComplemento(dto.getEnderecoComplemento())
-                // --- Novos Campos ---
                 .dataEstimadaEntrega(dto.getDataEstimadaEntrega())
                 .notaFutura(dto.isNotaFutura())
                 .vendaEstoqueNegativo(dto.isVendaEstoqueNegativo())
-                // --- Valores ---
                 .valorAdiantamento(dto.getValorAdiantamento() != null ? dto.getValorAdiantamento() : BigDecimal.ZERO)
-                .status(STATUS_PENDENTE)
+                .status(STATUS_CRIADA) // Define o novo status inicial
                 .valorTotal(BigDecimal.ZERO)
                 .build();
 
         encomenda = encomendaRepository.save(encomenda);
 
-        // 3. PROCESSAR ITENS
         List<EncomendaItem> itens = new ArrayList<>();
         BigDecimal valorTotal = BigDecimal.ZERO;
 
@@ -111,11 +106,7 @@ public class EncomendaService {
         return EncomendaResponseDTO.fromEntity(salva);
     }
 
-    // --- MÉTODOS AUXILIARES (FIND OR CREATE) ---
-
     private Cliente resolverCliente(EncomendaRequestDTO.ClienteDataDTO dto, Equipe equipe) {
-
-        // 1. Tenta buscar por CÓDIGO INTERNO (se informado) - PRIORIDADE
         if (dto.getCodigoInterno() != null && !dto.getCodigoInterno().trim().isEmpty()) {
             Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
                     .filter(c -> dto.getCodigoInterno().equalsIgnoreCase(c.getCodigoInterno()))
@@ -123,7 +114,6 @@ public class EncomendaService {
             if (existente.isPresent()) return existente.get();
         }
 
-        // 2. Tenta buscar por CPF dentro da equipe
         if (dto.getCpf() != null && !dto.getCpf().trim().isEmpty()) {
             Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
                     .filter(c -> dto.getCpf().equals(c.getCpf()))
@@ -132,11 +122,10 @@ public class EncomendaService {
             if (existente.isPresent()) return existente.get();
         }
 
-        // 3. Se não achou, cria novo com todos os dados
         Cliente novo = Cliente.builder()
                 .equipe(equipe)
                 .nome(dto.getNome())
-                .codigoInterno(dto.getCodigoInterno()) // Salva o código interno
+                .codigoInterno(dto.getCodigoInterno())
                 .cpf(dto.getCpf())
                 .email(dto.getEmail())
                 .telefone(dto.getTelefone())
@@ -181,24 +170,26 @@ public class EncomendaService {
         return fornecedorRepository.save(novo);
     }
 
-    // --- MÉTODOS DE GESTÃO DE ESTADO ---
-
     @Transactional
     public void removerEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         encomendaRepository.delete(encomenda);
     }
 
+    // --- NOVA MÁQUINA DE ESTADOS ---
     @Transactional
     public EncomendaResponseDTO avancarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
+
         switch (encomenda.getStatus()) {
-            case STATUS_PENDENTE: encomenda.setStatus(STATUS_EM_PREPARO); break;
-            case STATUS_EM_PREPARO: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
+            case STATUS_CRIADA: encomenda.setStatus(STATUS_NA_LOJA); break;
+            case STATUS_NA_LOJA: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
             case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_CONCLUIDO); break;
             case STATUS_CONCLUIDO: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já concluída.");
-            default: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido.");
+            default:
+                // Se for um status antigo ou desconhecido, tenta mover para o próximo lógico ou reseta
+                encomenda.setStatus(STATUS_NA_LOJA);
         }
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
@@ -207,11 +198,14 @@ public class EncomendaService {
     public EncomendaResponseDTO retornarEtapa(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         if(encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cancelada.");
+
         switch (encomenda.getStatus()) {
             case STATUS_CONCLUIDO: encomenda.setStatus(STATUS_AGUARDANDO_ENTREGA); break;
-            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_EM_PREPARO); break;
-            case STATUS_EM_PREPARO: encomenda.setStatus(STATUS_PENDENTE); break;
-            case STATUS_PENDENTE: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já está no início.");
+            case STATUS_AGUARDANDO_ENTREGA: encomenda.setStatus(STATUS_NA_LOJA); break;
+            case STATUS_NA_LOJA: encomenda.setStatus(STATUS_CRIADA); break;
+            case STATUS_CRIADA: throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já está no início.");
+            default:
+                encomenda.setStatus(STATUS_CRIADA);
         }
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
@@ -228,7 +222,7 @@ public class EncomendaService {
     public EncomendaResponseDTO descancelarEncomenda(UUID id, UUID equipeId) {
         Encomenda encomenda = buscarEValidarEncomenda(id, equipeId);
         if(!encomenda.getStatus().equals(STATUS_CANCELADO)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não está cancelada.");
-        encomenda.setStatus(STATUS_PENDENTE);
+        encomenda.setStatus(STATUS_CRIADA); // Reseta para o início
         return EncomendaResponseDTO.fromEntity(encomendaRepository.save(encomenda));
     }
 

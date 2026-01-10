@@ -12,7 +12,14 @@
 
       <ng-container matColumnDef="data">
         <th mat-header-cell *matHeaderCellDef> Data </th>
-        <td mat-cell *matCellDef="let e"> {{e.dataCriacao | date:'dd/MM/yy HH:mm'}} </td>
+        <td mat-cell *matCellDef="let e">
+          {{e.dataCriacao | date:'dd/MM/yy HH:mm'}}
+          <div *ngIf="verificarAtraso(e)" style="margin-top: 4px;">
+             <span style="background-color: #f44336; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold;">
+               ATRASADA
+             </span>
+          </div>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="cliente">
@@ -36,13 +43,17 @@
                   color="accent"
                   matTooltip="Retornar Etapa"
                   (click)="retornarEtapa(e)"
-                  [disabled]="e.status === 'Pendente' || e.status === 'Cancelado'">
+                  [disabled]="e.status === 'Encomenda Criada' || e.status === 'Cancelado'">
             <mat-icon>chevron_left</mat-icon>
           </button>
 
-          <mat-chip [color]="e.status === 'Pendente' ? 'warn' : (e.status === 'Concluído' ? 'primary' : (e.status === 'Cancelado' ? 'default' : 'accent'))"
+          <mat-chip [color]="e.status === 'Encomenda Criada' ? 'warn' :
+                             (e.status === 'Mercadoria em Loja' ? 'accent' :
+                             (e.status === 'Concluído' ? 'primary' :
+                             (e.status === 'Cancelado' ? 'default' : 'primary')))"
                     [ngClass]="{'chip-cancelado': e.status === 'Cancelado'}"
-                    selected>
+                    selected
+                    style="min-width: 130px; justify-content: center;">
             {{e.status}}
           </mat-chip>
 

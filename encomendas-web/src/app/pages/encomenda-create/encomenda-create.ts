@@ -32,7 +32,7 @@ import { CepService } from '../../core/services/cep.service';
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatDatepickerModule, MatNativeDateModule,
     MatCheckboxModule, MatDividerModule,
-    // Diretivas adicionadas aqui
+    // Diretivas
     CepMaskDirective, CpfMaskDirective, PhoneMaskDirective, DateMaskDirective
   ],
   templateUrl: './encomenda-create.html',
@@ -49,7 +49,7 @@ export class EncomendaCreate implements OnInit {
     private snackBar: MatSnackBar
   ) {
     this.form = this.fb.group({
-      // -- CLIENTE (Todos Obrigatórios) --
+      // -- CLIENTE --
       cliente: this.fb.group({
         nome: ['', Validators.required],
         codigoInterno: [''],
@@ -65,8 +65,8 @@ export class EncomendaCreate implements OnInit {
       enderecoNumero: ['', Validators.required],
       enderecoComplemento: [''],
 
-      // -- DETALHES --
-      dataEstimadaEntrega: [null],
+      // -- DETALHES (DATA AGORA É OBRIGATÓRIA) --
+      dataEstimadaEntrega: [null, Validators.required],
       horaEstimadaEntrega: [''],
       observacoes: [''],
 
@@ -87,7 +87,6 @@ export class EncomendaCreate implements OnInit {
   ngOnInit(): void {
     this.adicionarItem(); // Item inicial
 
-    // Lógica do Checkbox "Quitado"
     this.form.get('quitado')?.valueChanges.subscribe(isQuitado => {
       const adiantamentoControl = this.form.get('valorAdiantamento');
       if (isQuitado) {
@@ -100,11 +99,8 @@ export class EncomendaCreate implements OnInit {
     });
   }
 
-  // --- BUSCA CEP AUTOMÁTICA ---
   buscarCep() {
-    // Remove mascara para verificar tamanho
     const rawCep = this.form.get('enderecoCep')?.value?.replace(/\D/g, '') || '';
-
     if (rawCep.length === 8) {
       this.cepService.buscarCep(rawCep).subscribe(dados => {
         if (dados && !dados.erro) {
@@ -118,7 +114,6 @@ export class EncomendaCreate implements OnInit {
     }
   }
 
-  // --- GESTÃO DE ITENS ---
   get itensFormArray() {
     return this.form.get('itens') as FormArray;
   }
@@ -148,7 +143,6 @@ export class EncomendaCreate implements OnInit {
     this.atualizarTotais();
   }
 
-  // --- CÁLCULOS ---
   atualizarTotais() {
     const total = this.calcularTotalItens();
     this.form.get('valorTotal')?.setValue(total);
@@ -166,12 +160,39 @@ export class EncomendaCreate implements OnInit {
     }, 0);
   }
 
-  // --- MÉTODOS AUXILIARES DE NORMALIZAÇÃO ---
   private limparFormatacao(valor: string): string {
     return valor ? valor.replace(/\D/g, '') : '';
   }
 
-  // --- SUBMIT ---
+  // --- PARSER DE DATA BRASILEIRA (Para suportar digitação) ---
+  private parseDataBR(valor: any): Date | null {
+    if (!valor) return null;
+
+    // Se já for Date (via datepicker)
+    if (valor instanceof Date) return valor;
+
+    // Se for string (via digitação com máscara DD/MM/AAAA)
+    if (typeof valor === 'string') {
+      // Verifica se é formato ISO
+      if (!isNaN(Date.parse(valor))) {
+         return new Date(valor);
+      }
+
+      const partes = valor.split('/');
+      if (partes.length === 3) {
+        const dia = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10) - 1; // Mês começa em 0
+        const ano = parseInt(partes[2], 10);
+
+        const dataObj = new Date(ano, mes, dia);
+        if (!isNaN(dataObj.getTime())) {
+          return dataObj;
+        }
+      }
+    }
+    return null;
+  }
+
   salvar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -181,21 +202,25 @@ export class EncomendaCreate implements OnInit {
 
     const formVal = this.form.getRawValue();
 
-    // 1. Normalização dos dados (Remove máscaras)
+    // Normalização dos dados
     formVal.cliente.cpf = this.limparFormatacao(formVal.cliente.cpf);
     formVal.cliente.telefone = this.limparFormatacao(formVal.cliente.telefone);
     formVal.enderecoCep = this.limparFormatacao(formVal.enderecoCep);
 
-    // 2. Combinar Data e Hora
+    // --- LÓGICA DE DATA ATUALIZADA ---
     let dataFinal = null;
-    if (formVal.dataEstimadaEntrega) {
-      const data = new Date(formVal.dataEstimadaEntrega);
+    const dataObj = this.parseDataBR(formVal.dataEstimadaEntrega);
+
+    if (dataObj) {
       if (formVal.horaEstimadaEntrega) {
         const [horas, minutos] = formVal.horaEstimadaEntrega.split(':');
-        data.setHours(+horas);
-        data.setMinutes(+minutos);
+        dataObj.setHours(+horas);
+        dataObj.setMinutes(+minutos);
       }
-      dataFinal = data.toISOString();
+      dataFinal = dataObj.toISOString();
+    } else {
+        this.snackBar.open('Data inválida. Use o formato DD/MM/AAAA.', 'Corrigir', { duration: 3000 });
+        return;
     }
 
     const payload = {

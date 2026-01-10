@@ -88,11 +88,14 @@
         </div>
 
         <div class="grid-3" style="margin-top: 16px;">
+
           <mat-form-field appearance="outline">
             <mat-label>Data Estimada</mat-label>
-            <input matInput [matDatepicker]="picker" formControlName="dataEstimadaEntrega" appDateMask>
+            <input matInput [matDatepicker]="picker" formControlName="dataEstimadaEntrega" appDateMask placeholder="DD/MM/AAAA">
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
+            <mat-error *ngIf="form.get('dataEstimadaEntrega')?.hasError('required')">A data é obrigatória.</mat-error>
+            <mat-error *ngIf="form.get('dataEstimadaEntrega')?.hasError('matDatepickerParse')">Data inválida.</mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">

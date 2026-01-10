@@ -1,59 +1,44 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core'; // Adicionar Output, EventEmitter
-import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../core/auth/auth.service';
-import { ThemeService } from '../../core/theme/theme.service';
-import { TeamService, Equipe } from '../../core/team/team.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,
     MatMenuModule
   ],
   templateUrl: './navbar.html',
-  styleUrl: './navbar.scss'
+  styleUrls: ['./navbar.scss']
 })
 export class Navbar implements OnInit {
 
-  // Evento para avisar ao Main que o botão foi clicado
-  @Output() menuToggle = new EventEmitter<void>();
-
-  public equipes$!: Observable<Equipe[]>;
-  public isDark$!: Observable<boolean>;
+  nomeUsuario: string = '';
 
   constructor(
     private authService: AuthService,
-    public teamService: TeamService,
-    private themeService: ThemeService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.equipes$ = this.teamService.fetchEquipesDoUsuario();
-    this.isDark$ = this.themeService.isDark$;
-  }
-
-  // Emite o evento
-  onMenuClick(): void {
-    this.menuToggle.emit();
-  }
-
-  selecionarEquipe(equipe: Equipe): void {
-    this.teamService.selecionarEquipe(equipe);
-  }
-
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
+    // Tenta obter o usuário do serviço de autenticação
+    const user = this.authService.getUser();
+    if (user && user.nome) {
+      // Pega apenas o primeiro nome para não ficar muito longo
+      this.nomeUsuario = user.nome.split(' ')[0];
+    } else {
+      this.nomeUsuario = 'Usuário';
+    }
   }
 
   logout(): void {

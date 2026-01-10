@@ -31,6 +31,9 @@ public class EncomendaResponseDTO {
     private BigDecimal valorTotal;
     private LocalDateTime dataCriacao;
 
+    // --- NOVO CAMPO PARA O FRONTEND CALCULAR ATRASO ---
+    private LocalDateTime dataEstimadaEntrega;
+
     public static EncomendaResponseDTO fromEntity(Encomenda encomenda) {
         if (encomenda == null) {
             return null;
@@ -53,6 +56,8 @@ public class EncomendaResponseDTO {
                 .valorAdiantamento(encomenda.getValorAdiantamento())
                 .valorTotal(encomenda.getValorTotal())
                 .dataCriacao(encomenda.getDataCriacao())
+                // Mapeia a data estimada
+                .dataEstimadaEntrega(encomenda.getDataEstimadaEntrega())
                 .build();
     }
 }

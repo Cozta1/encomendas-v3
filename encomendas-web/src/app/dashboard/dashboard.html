@@ -15,12 +15,12 @@
       <mat-card-content>
         <div class="status-grid">
           <div class="status-item warn">
-            <div class="value-group"><span class="count">{{ (statusCounts$ | async)?.pendente }}</span></div>
-            <span class="desc">Pendentes</span>
+            <div class="value-group"><span class="count">{{ (statusCounts$ | async)?.criada }}</span></div>
+            <span class="desc">Criadas</span>
           </div>
           <div class="status-item accent">
-            <div class="value-group"><span class="count">{{ (statusCounts$ | async)?.preparo }}</span></div>
-            <span class="desc">Preparo</span>
+            <div class="value-group"><span class="count">{{ (statusCounts$ | async)?.loja }}</span></div>
+            <span class="desc">Na Loja</span>
           </div>
           <div class="status-item primary">
             <div class="value-group"><span class="count">{{ (statusCounts$ | async)?.aguardando }}</span></div>
@@ -33,6 +33,19 @@
     <button mat-raised-button color="primary" routerLink="/encomendas" class="full-width-btn">
       <mat-icon>add</mat-icon> Nova Encomenda
     </button>
+
+    <mat-card class="table-card" *ngIf="(encomendasAtrasadas$ | async)?.length">
+      <mat-card-header><mat-card-title style="color: #f44336;">⚠ Atrasadas</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <mat-list dense>
+          <mat-list-item *ngFor="let e of (encomendasAtrasadas$ | async)" (click)="verDetalhes(e)">
+            <span matListItemIcon style="color: #f44336;"><mat-icon>warning</mat-icon></span>
+            <h3 matListItemTitle>{{e.cliente.nome}}</h3>
+            <p matListItemLine>Previsto: {{e.dataEstimadaEntrega | date:'dd/MM HH:mm'}}</p>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
 
     <mat-card class="table-card">
       <mat-card-header><mat-card-title>Últimas Abertas</mat-card-title></mat-card-header>
@@ -100,19 +113,18 @@
             <div class="funnel-step warn">
               <div class="icon-num-group">
                 <mat-icon>pending</mat-icon>
-                <span class="count">{{ (statusCounts$ | async)?.pendente }}</span>
+                <span class="count">{{ (statusCounts$ | async)?.criada }}</span>
               </div>
-              <span class="label">Pendentes</span>
+              <span class="label">Criadas</span>
             </div>
 
             <mat-icon class="funnel-arrow">arrow_forward</mat-icon>
 
             <div class="funnel-step accent">
               <div class="icon-num-group">
-                <mat-icon>autorenew</mat-icon>
-                <span class="count">{{ (statusCounts$ | async)?.preparo }}</span>
+                <mat-icon>store</mat-icon> <span class="count">{{ (statusCounts$ | async)?.loja }}</span>
               </div>
-              <span class="label">Em Preparo</span>
+              <span class="label">Na Loja</span>
             </div>
 
             <mat-icon class="funnel-arrow">arrow_forward</mat-icon>
@@ -140,16 +152,26 @@
       </mat-grid-tile>
 
       <mat-grid-tile colspan="1" rowspan="2">
-        <mat-card class="table-card scrollable-card">
-          <mat-card-header><mat-card-title>Top Vendas</mat-card-title></mat-card-header>
+        <mat-card class="table-card scrollable-card" style="border: 1px solid #ffebee;">
+          <mat-card-header>
+            <mat-card-title style="color: #d32f2f; display: flex; align-items: center; gap: 8px;">
+              <mat-icon>warning</mat-icon> Atrasadas
+            </mat-card-title>
+          </mat-card-header>
           <mat-card-content>
             <mat-list dense>
-              <mat-list-item *ngFor="let p of (topProdutos$ | async); let i = index">
-                <span matListItemIcon class="rank-badge">{{i+1}}º</span>
-                <span matListItemTitle>{{p.nome}}</span>
-                <span matListItemLine>{{p.qtd}} un.</span>
+              <mat-list-item *ngFor="let e of (encomendasAtrasadas$ | async)" (click)="verDetalhes(e)" style="cursor: pointer; border-bottom: 1px solid #eee;">
+                <span matListItemIcon style="color: #d32f2f; font-weight: bold;">!</span>
+                <span matListItemTitle>{{e.cliente.nome}}</span>
+                <span matListItemLine style="color: #d32f2f;">
+                  {{e.dataEstimadaEntrega | date:'dd/MM HH:mm'}}
+                </span>
               </mat-list-item>
-              <div *ngIf="(topProdutos$ | async)?.length === 0" class="empty-state">Sem dados.</div>
+
+              <div *ngIf="(encomendasAtrasadas$ | async)?.length === 0" class="empty-state" style="color: #4caf50;">
+                <mat-icon style="font-size: 32px; height: 32px; width: 32px; margin-bottom: 8px;">check</mat-icon>
+                <p>Tudo em dia!</p>
+              </div>
             </mat-list>
           </mat-card-content>
         </mat-card>

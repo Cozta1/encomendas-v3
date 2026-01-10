@@ -1,25 +1,33 @@
+.navbar-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .spacer {
   flex: 1 1 auto;
 }
 
-.navbar-brand {
+.logo-text {
   font-weight: 500;
-  font-size: 1.1rem;
-}
-
-.team-selector-btn {
+  font-size: 1.2rem;
   margin-left: 8px;
-
-  /* No celular, esconde o texto da equipe */
-  @media (max-width: 600px) {
-    .team-name {
-      display: none;
-    }
-    min-width: 0;
-    padding: 0 8px;
-  }
 }
 
-mat-icon {
-  vertical-align: middle;
+// Estilo da saudação
+.welcome-text {
+  font-size: 0.95rem;
+  margin-right: 16px;
+  color: rgba(255, 255, 255, 0.9);
+
+  strong {
+    font-weight: 600;
+    color: #fff;
+  }
+
+  // Oculta em celulares muito pequenos para não quebrar o layout
+  @media (max-width: 450px) {
+    display: none;
+  }
 }

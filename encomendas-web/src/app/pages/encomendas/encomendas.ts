@@ -79,11 +79,9 @@ export class Encomendas implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
         this.encomendaService.criarEncomenda(resultado).subscribe({
-          next: (novaEncomenda) => { // <-- Recebe a encomenda criada
+          next: (novaEncomenda) => {
             this.snackBar.open('Encomenda criada com sucesso!', 'OK', { duration: 3000 });
             this.carregarEncomendas();
-
-            // --- NOVO: Abre o resumo automaticamente ---
             this.verDetalhes(novaEncomenda);
           },
           error: (err) => {
@@ -125,7 +123,7 @@ export class Encomendas implements OnInit, OnDestroy {
     if (encomenda.status === 'Cancelado') {
       this.encomendaService.descancelarEncomenda(encomenda.id).subscribe({
         next: (encomendaAtualizada) => {
-          this.snackBar.open('Encomenda REATIVADA (Pendente)', 'OK', { duration: 2000 });
+          this.snackBar.open('Encomenda REATIVADA (Criada)', 'OK', { duration: 2000 });
           this.atualizarEncomendaNaLista(encomendaAtualizada);
         },
         error: (err) => this.snackBar.open('Erro ao reativar encomenda.', 'Fechar', { duration: 5000 })
@@ -177,5 +175,19 @@ export class Encomendas implements OnInit, OnDestroy {
 
   public trackPorId(index: number, item: EncomendaResponse): string {
     return item.id;
+  }
+
+  // --- NOVA LÓGICA DE ATRASO ---
+  public verificarAtraso(encomenda: EncomendaResponse): boolean {
+    // Se não tem data, ou já está concluída/cancelada, não está "atrasada" visualmente
+    if (!encomenda.dataEstimadaEntrega || encomenda.status === 'Concluído' || encomenda.status === 'Cancelado') {
+      return false;
+    }
+
+    const dataEstimada = new Date(encomenda.dataEstimadaEntrega);
+    const agora = new Date();
+
+    // Retorna true se a data estimada for anterior a agora
+    return dataEstimada < agora;
   }
 }

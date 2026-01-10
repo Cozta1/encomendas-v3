@@ -44,6 +44,9 @@ export interface EncomendaResponse {
   valorTotal: number;
   dataCriacao: string;
 
+  // --- NOVO: Data Estimada para cálculo de atraso ---
+  dataEstimadaEntrega?: string;
+
   // --- ENDEREÇO MULTIVALORADO ---
   enderecoCep: string;
   enderecoBairro: string;
