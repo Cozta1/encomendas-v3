@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common'; // Import Pipes
+import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Observable, switchMap } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
-import { EncomendaResponse, EncomendaHistorico } from '../../core/models/encomenda.interfaces';
+import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
 
 // Material Imports
 import { MatCardModule } from '@angular/material/card';
@@ -27,7 +27,7 @@ import autoTable from 'jspdf-autotable';
     MatIconModule, MatStepperModule, MatTableModule, MatDividerModule,
     MatSnackBarModule, MatListModule
   ],
-  providers: [DatePipe, CurrencyPipe], // Prover Pipes para uso no TS
+  providers: [DatePipe, CurrencyPipe],
   templateUrl: './encomenda-detalhes.html',
   styleUrls: ['./encomenda-detalhes.scss']
 })
@@ -39,8 +39,8 @@ export class EncomendaDetalhesComponent implements OnInit {
     private route: ActivatedRoute,
     private encomendaService: EncomendaService,
     private snackBar: MatSnackBar,
-    private datePipe: DatePipe,        // Injetado
-    private currencyPipe: CurrencyPipe // Injetado
+    private datePipe: DatePipe,
+    private currencyPipe: CurrencyPipe
   ) {}
 
   ngOnInit(): void {
@@ -67,13 +67,9 @@ export class EncomendaDetalhesComponent implements OnInit {
     }
   }
 
-  /**
-   * Gera o Log Cronológico com a transição de status
-   */
   getLogHistorico(encomenda: EncomendaResponse): any[] {
     if (!encomenda.historico || encomenda.historico.length === 0) return [];
 
-    // Ordena do mais antigo para o mais novo para calcular a evolução
     const historicoOrdenado = [...encomenda.historico].sort((a, b) =>
       new Date(a.dataAlteracao).getTime() - new Date(b.dataAlteracao).getTime()
     );
@@ -82,7 +78,6 @@ export class EncomendaDetalhesComponent implements OnInit {
       const statusAnterior = index > 0 ? historicoOrdenado[index - 1].status : 'Início';
       const statusAtual = h.status;
 
-      // Lógica do texto: "Anterior -> Novo"
       let textoTransicao = '';
       if (index === 0) {
         textoTransicao = `Encomenda criada como '${statusAtual}'`;
@@ -96,7 +91,6 @@ export class EncomendaDetalhesComponent implements OnInit {
       };
     });
 
-    // Retorna invertido (Mais recente no topo da lista visual)
     return logs.reverse();
   }
 
@@ -111,7 +105,7 @@ export class EncomendaDetalhesComponent implements OnInit {
     const doc = new jsPDF();
     let cursorY = 20;
 
-    // 1. Cabeçalho
+    // Cabeçalho
     doc.setFontSize(18);
     doc.text('Resumo da Encomenda', 14, cursorY);
     cursorY += 6;
@@ -124,7 +118,7 @@ export class EncomendaDetalhesComponent implements OnInit {
     doc.text(`Pedido criado em: ${dataFormatada}`, 14, cursorY);
     cursorY += 10;
 
-    // 2. Cliente
+    // Cliente
     doc.setTextColor(0);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -143,12 +137,11 @@ export class EncomendaDetalhesComponent implements OnInit {
     }
     cursorY += 2;
 
-    // Status
     doc.setFontSize(12);
     doc.text(`Status Atual: ${encomenda.status}`, 14, cursorY);
     cursorY += 10;
 
-    // 3. Endereço
+    // Endereço
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text('Endereço de Entrega:', 14, cursorY);
@@ -164,7 +157,7 @@ export class EncomendaDetalhesComponent implements OnInit {
     doc.text(bairroCep, 14, cursorY);
     cursorY += 10;
 
-    // 4. Observações
+    // Observações
     if (encomenda.observacoes) {
       doc.setFont("helvetica", "italic");
       const splitObs = doc.splitTextToSize(`Obs: ${encomenda.observacoes}`, 180);
@@ -173,7 +166,7 @@ export class EncomendaDetalhesComponent implements OnInit {
       doc.setFont("helvetica", "normal");
     }
 
-    // 5. Tabela
+    // Tabela
     const head = [['Produto', 'Fornecedor', 'Qtd', 'Preço Unit.', 'Subtotal']];
     const data = encomenda.itens.map(item => [
       item.produto.nome,
@@ -192,7 +185,7 @@ export class EncomendaDetalhesComponent implements OnInit {
       headStyles: { fillColor: [63, 81, 181] }
     });
 
-    // 6. Totais
+    // Totais
     const finalY = (doc as any).lastAutoTable.finalY + 10;
 
     doc.setFontSize(11);
@@ -209,7 +202,6 @@ export class EncomendaDetalhesComponent implements OnInit {
       doc.text(`Restante: ${this.currencyPipe.transform(restante, 'BRL')}`, 140, finalY + 14, { align: 'right' });
     }
 
-    // 7. Salvar
     const nomeArquivo = `encomenda_${encomenda.cliente.nome.replace(/\s+/g, '_')}_${this.datePipe.transform(new Date(), 'ddMMyy')}.pdf`;
     doc.save(nomeArquivo);
   }
@@ -232,7 +224,21 @@ export class EncomendaDetalhesComponent implements OnInit {
         next: () => {
           this.snackBar.open('Encomenda cancelada.', 'OK', { duration: 2000 });
           this.ngOnInit();
-        }
+        },
+        error: () => this.snackBar.open('Erro ao cancelar.', 'Fechar')
+      });
+    }
+  }
+
+  // --- NOVO MÉTODO: REATIVAR ---
+  reativar(encomenda: EncomendaResponse) {
+    if(confirm('Deseja reativar esta encomenda? Ela voltará para o status "Criada".')) {
+      this.encomendaService.descancelarEncomenda(encomenda.id).subscribe({
+        next: () => {
+          this.snackBar.open('Encomenda reativada com sucesso!', 'OK', { duration: 2000 });
+          this.ngOnInit();
+        },
+        error: () => this.snackBar.open('Erro ao reativar encomenda.', 'Fechar')
       });
     }
   }

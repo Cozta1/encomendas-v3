@@ -18,6 +18,10 @@
         <mat-icon>block</mat-icon> Cancelar
       </button>
 
+      <button mat-stroked-button color="primary" (click)="reativar(e)" *ngIf="e.status === 'Cancelado'">
+        <mat-icon>restore</mat-icon> Reativar Encomenda
+      </button>
+
       <button mat-raised-button color="primary" (click)="avancar(e)" *ngIf="e.status !== 'Concluído' && e.status !== 'Cancelado'">
         Avançar Status <mat-icon>arrow_forward</mat-icon>
       </button>
