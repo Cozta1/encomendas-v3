@@ -1,22 +1,28 @@
-# Etapa 1: Build
+# --- ESTÁGIO 1: BUILD ---
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# 1. Copia APENAS o pom.xml primeiro
+# Copia o pom.xml e baixa dependências (cache layer)
 COPY pom.xml .
+RUN mvn dependency:go-offline
 
-# 2. Baixa as dependências (Isso ficará em cache se o pom.xml não mudar)
-# Isso economiza tempo e memória em builds futuros
-RUN mvn dependency:go-offline -B
-
-# 3. Copia o código fonte e compila
+# Copia o código fonte e compila
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+RUN mvn clean package -DskipTests
 
-# Etapa 2: Runtime
-FROM eclipse-temurin:21-jdk
+# --- ESTÁGIO 2: RUNTIME ---
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+
+# Cria usuário não-root para segurança
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copia apenas o .jar gerado
 COPY --from=build /app/target/*.jar app.jar
 
+# Expõe a porta 8080
 EXPOSE 8080
+
+# Inicia a aplicação
 ENTRYPOINT ["java", "-jar", "app.jar"]

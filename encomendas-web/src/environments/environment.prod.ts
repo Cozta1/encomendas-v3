@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  // A URL deve terminar com /api pois seus serviços (AuthService, etc) esperam isso.
+  // A URL da sua API no Cloud Run (NÃO use localhost aqui)
   apiUrl: 'https://encomendas-api-969073157004.us-central1.run.app/api'
 };
