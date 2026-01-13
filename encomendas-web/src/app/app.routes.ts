@@ -46,7 +46,7 @@ export const routes: Routes = [
 
       // Gestão
       { path: 'equipes', component: EquipesPage },
-      { path: 'minha-equipe', component: GestaoEquipe }
+      { path: 'gestao-equipes', component: GestaoEquipe }
     ]
   },
 

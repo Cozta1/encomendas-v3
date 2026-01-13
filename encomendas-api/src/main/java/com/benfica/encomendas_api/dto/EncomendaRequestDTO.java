@@ -30,8 +30,12 @@ public class EncomendaRequestDTO {
 
     // --- OUTROS ---
     private LocalDateTime dataEstimadaEntrega;
-    private boolean notaFutura;
-    private boolean vendaEstoqueNegativo;
+
+    // --- CORREÇÃO AQUI: Mudado de boolean para Boolean ---
+    private Boolean notaFutura;
+    private Boolean vendaEstoqueNegativo;
+    // -----------------------------------------------------
+
     private BigDecimal valorAdiantamento;
     private String observacoes;
 
@@ -46,7 +50,6 @@ public class EncomendaRequestDTO {
         @NotBlank(message = "Nome do cliente é obrigatório")
         private String nome;
 
-        // --- NOVO CAMPO ADICIONADO ---
         private String codigoInterno;
 
         private String cpf;

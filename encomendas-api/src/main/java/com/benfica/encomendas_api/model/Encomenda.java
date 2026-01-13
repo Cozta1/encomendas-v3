@@ -60,16 +60,16 @@ public class Encomenda {
     @Column(name = "endereco_complemento")
     private String enderecoComplemento;
 
-    // --- NOVOS CAMPOS ---
+    // --- CORREÇÃO AQUI: Mudado de boolean para Boolean ---
     @Column(name = "data_estimada_entrega")
     private LocalDateTime dataEstimadaEntrega;
 
     @Column(name = "nota_futura")
-    private boolean notaFutura;
+    private Boolean notaFutura; // Aceita null agora
 
     @Column(name = "venda_estoque_negativo")
-    private boolean vendaEstoqueNegativo;
-    // --------------------
+    private Boolean vendaEstoqueNegativo; // Aceita null agora
+    // -----------------------------------------------------
 
     @Column(name = "valor_adiantamento", precision = 10, scale = 2)
     private BigDecimal valorAdiantamento;
