@@ -1,18 +1,17 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, EMPTY } from 'rxjs';
 import { AuthService } from './auth.service';
 
 /**
  * Interceptor que adiciona token, team-id e gerencia expiração de sessão.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Injeção de dependências dentro do contexto funcional
   const router = inject(Router);
   const authService = inject(AuthService);
 
-  // 1. Ignorar APIs externas (ViaCEP, etc) para evitar erro CORS
+  // 1. Ignorar APIs externas (ViaCEP, etc)
   if (req.url.includes('viacep.com.br')) {
     return next(req);
   }
@@ -23,33 +22,39 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   let headers = req.headers;
 
-  // 3. Adicionar Token
+  // 3. Adicionar Token de Autenticação se existir
   if (token) {
     headers = headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // 4. Adicionar ID da Equipe
+  // 4. Adicionar ID da Equipe se existir
   if (teamId) {
     headers = headers.set('X-Team-ID', teamId);
   }
 
-  // 5. Clonar requisição
+  // 5. Clonar requisição com os novos headers
   const authReq = req.clone({ headers });
 
   // 6. Processar a requisição e capturar erros (Logout Automático)
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Se o erro for 401 (Não autorizado) ou 403 (Proibido), o token expirou ou é inválido
+
+      // Se a sessão for inválida (401) ou proibida (403)
       if (error.status === 401 || error.status === 403) {
 
-        // Evita loop infinito se o erro acontecer na própria tela de login
+        // Evita loop se o erro ocorrer na própria página de login
         if (!req.url.includes('/auth/login')) {
-          authService.logout(); // Limpa o localStorage
-          router.navigate(['/login']); // Manda pro login
+
+          // Limpa sessão e redireciona
+          authService.logout();
+          router.navigate(['/login']);
+
+          // Retorna EMPTY para "engolir" o erro e não mostrar vermelho no console
+          return EMPTY;
         }
       }
 
-      // Repassa o erro para o componente tratar se necessário (ex: mostrar mensagem)
+      // Outros erros (500, 404) continuam sendo repassados
       return throwError(() => error);
     })
   );
