@@ -11,7 +11,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const authService = inject(AuthService);
 
-  // 1. Ignorar APIs externas (ViaCEP, etc)
+  // 1. Ignorar APIs externas (ViaCEP, etc) para evitar erro de CORS
   if (req.url.includes('viacep.com.br')) {
     return next(req);
   }
@@ -22,39 +22,39 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   let headers = req.headers;
 
-  // 3. Adicionar Token de Autenticação se existir
+  // 3. Adicionar Token
   if (token) {
     headers = headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // 4. Adicionar ID da Equipe se existir
+  // 4. Adicionar ID da Equipe
   if (teamId) {
     headers = headers.set('X-Team-ID', teamId);
   }
 
-  // 5. Clonar requisição com os novos headers
+  // 5. Clonar requisição
   const authReq = req.clone({ headers });
 
-  // 6. Processar a requisição e capturar erros (Logout Automático)
+  // 6. Processar a requisição com tratamento de ERRO
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // Se a sessão for inválida (401) ou proibida (403)
+      // Verifica se o erro é de Autenticação (401) ou Permissão (403)
       if (error.status === 401 || error.status === 403) {
 
-        // Evita loop se o erro ocorrer na própria página de login
+        // Evita loop infinito se o erro acontecer na própria tela de login
         if (!req.url.includes('/auth/login')) {
 
-          // Limpa sessão e redireciona
+          // Desloga o usuário e manda para o login
           authService.logout();
           router.navigate(['/login']);
 
-          // Retorna EMPTY para "engolir" o erro e não mostrar vermelho no console
+          // Retorna EMPTY para "morrer" o erro aqui e não sujar o console
           return EMPTY;
         }
       }
 
-      // Outros erros (500, 404) continuam sendo repassados
+      // Se for outro erro (ex: 500, 404), deixa passar para o componente tratar
       return throwError(() => error);
     })
   );
