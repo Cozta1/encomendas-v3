@@ -1,0 +1,48 @@
+<div class="checklist-container">
+  <header class="page-header">
+    <h1>Meu Checklist Diário</h1>
+    <span class="data-hoje">{{ dataHoje | date:'dd/MM/yyyy' }}</span>
+    <button mat-raised-button color="primary" (click)="carregarChecklist()">
+      <mat-icon>refresh</mat-icon> Atualizar
+    </button>
+  </header>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Carregando suas tarefas...</p>
+  </div>
+
+  <div *ngIf="!loading && boards.length === 0" class="empty-state">
+    <p>Nenhum checklist configurado para esta equipe.</p>
+  </div>
+
+  <div class="boards-list" *ngFor="let board of boards">
+    <h2 class="board-title">{{ board.nome }}</h2>
+
+    <div class="cards-grid">
+      <mat-card *ngFor="let card of board.cards" class="checklist-card" [ngClass]="getStatusClass(card.status)">
+        <div class="card-header">
+          <h3>{{ card.titulo }}</h3>
+          <span class="badge" [ngClass]="getStatusClass(card.status)">
+            {{ getStatusLabel(card.status) }}
+          </span>
+        </div>
+
+        <div class="card-time-info">
+          <small>Horário: {{ card.horarioAbertura }} - {{ card.horarioFechamento }}</small>
+        </div>
+
+        <div class="card-content">
+          <div class="item-row" *ngFor="let item of card.itens">
+            <mat-checkbox
+              [checked]="item.marcado"
+              [disabled]="isBloqueado(card.status)"
+              (change)="onItemChange(item, $event)"
+              color="primary">
+              <span [class.riscado]="item.marcado">{{ item.descricao }}</span>
+            </mat-checkbox>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>

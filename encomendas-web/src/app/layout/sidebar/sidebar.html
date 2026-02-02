@@ -5,15 +5,35 @@
     <span matListItemTitle>Dashboard</span>
   </a>
 
-  <a mat-list-item routerLink="/encomenda-create" routerLinkActive="active-link">
+  <mat-divider style="margin: 8px 0;"></mat-divider>
+  <h3 class="menu-header" style="font-size: 12px; color: #888; padding: 0 16px; margin-bottom: 4px;">OPERACIONAL</h3>
+
+  <a mat-list-item routerLink="/checklists" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>checklist</mat-icon>
+    <span matListItemTitle>Meu Checklist</span>
+  </a>
+
+  <a mat-list-item routerLink="/encomendas/nova" routerLinkActive="active-link">
     <mat-icon matListItemIcon>add_shopping_cart</mat-icon>
     <span matListItemTitle>Nova Encomenda</span>
   </a>
 
-  <mat-divider style="margin: 8px 0;"></mat-divider>
+  <a mat-list-item routerLink="/encomendas" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">
+    <mat-icon matListItemIcon>list_alt</mat-icon>
+    <span matListItemTitle>Minhas Encomendas</span>
+  </a>
 
-  <a mat-list-item routerLink="/gestao-equipes" routerLinkActive="active-link">
-    <mat-icon matListItemIcon>settings_applications</mat-icon>
+  <mat-divider style="margin: 8px 0;"></mat-divider>
+  <h3 class="menu-header" style="font-size: 12px; color: #888; padding: 0 16px; margin-bottom: 4px;">ADMINISTRAÇÃO</h3>
+
+  <a mat-list-item routerLink="/equipes" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>groups</mat-icon>
     <span matListItemTitle>Minhas Equipes</span>
   </a>
+
+  <a mat-list-item routerLink="/perfil" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>account_circle</mat-icon>
+    <span matListItemTitle>Meu Perfil</span>
+  </a>
+
 </mat-nav-list>
