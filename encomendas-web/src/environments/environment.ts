@@ -1,5 +1,5 @@
 export const environment = {
-  production: true,
-  // A URL da sua API no Cloud Run (NÃO use localhost aqui)
-  apiUrl: 'https://encomendas-api-969073157004.us-central1.run.app/api'
+  production: false,
+  // Aponta para o seu backend rodando no computador
+  apiUrl: 'http://localhost:8080/api'
 };

@@ -9,7 +9,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// Importações atualizadas para usar o TeamService e os Dialogs
 import { TeamService, Equipe } from '../../core/team/team.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { InviteDialog } from '../../components/dialogs/invite-dialog/invite-dialog';
@@ -51,14 +50,11 @@ export class GestaoEquipe implements OnInit {
   }
 
   carregarEquipes(): void {
-    // Busca todas as equipes do usuário para listar na tabela
     this.teamService.fetchEquipesDoUsuario().subscribe({
       next: (data) => this.equipes = data,
       error: (err) => console.error('Erro ao carregar equipes', err)
     });
   }
-
-  // --- Ações da Tabela ---
 
   criarEquipe(): void {
     const dialogRef = this.dialog.open(EquipeFormDialog, { width: '500px' });
@@ -75,6 +71,27 @@ export class GestaoEquipe implements OnInit {
     });
   }
 
+  // --- NOVO MÉTODO DE EDIÇÃO ---
+  editarEquipe(equipe: Equipe): void {
+    const dialogRef = this.dialog.open(EquipeFormDialog, {
+      width: '500px',
+      data: equipe // Passa os dados para o modal
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.teamService.atualizarEquipe(equipe.id, result).subscribe({
+          next: () => {
+            this.snackBar.open('Equipe atualizada com sucesso!', 'OK', { duration: 3000 });
+            this.carregarEquipes();
+          },
+          error: () => this.snackBar.open('Erro ao atualizar equipe.', 'Fechar', { duration: 3000 })
+        });
+      }
+    });
+  }
+  // ------------------------------
+
   abrirConviteDialog(equipe: Equipe): void {
     const dialogRef = this.dialog.open(InviteDialog, { width: '400px' });
 
@@ -89,7 +106,6 @@ export class GestaoEquipe implements OnInit {
   }
 
   abrirGestaoMembros(equipe: Equipe): void {
-    // Define a equipe como ativa para garantir que a gestão de membros funcione corretamente
     this.teamService.selecionarEquipe(equipe);
 
     const dialogRef = this.dialog.open(MembrosEquipeDialog, {

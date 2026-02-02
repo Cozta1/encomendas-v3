@@ -9,7 +9,8 @@ import java.util.UUID;
 public class EquipeResponseDTO {
     private UUID id;
     private String nome;
-    private String nomeAdministrador; // <-- Novo campo
-    private boolean isMember; // Para saber se o user logado é admin ou membro
+    private String descricao; // <-- CAMPO ADICIONADO (Essencial)
+    private String nomeAdministrador;
+    private boolean isMember;
     private boolean isAdmin;
 }

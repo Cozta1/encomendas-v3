@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { environment } from '../../../environments/environment'; // IMPORTAR
+import { environment } from '../../../environments/environment';
 
 export interface Equipe {
   id: string;
@@ -23,9 +23,7 @@ export interface Convite {
   providedIn: 'root'
 })
 export class TeamService {
-  // Alterado para usar o environment
   private readonly API_URL = `${environment.apiUrl}/equipes`;
-
   private readonly STORAGE_KEY = 'active_team_id';
 
   private equipeAtivaSubject = new BehaviorSubject<Equipe | null>(null);
@@ -46,6 +44,12 @@ export class TeamService {
   public criarEquipe(dados: { nome: string, descricao: string }): Observable<Equipe> {
     return this.http.post<Equipe>(this.API_URL, dados);
   }
+
+  // --- NOVO MÉTODO PARA ATUALIZAR ---
+  public atualizarEquipe(id: string, dados: { nome: string, descricao: string }): Observable<Equipe> {
+    return this.http.put<Equipe>(`${this.API_URL}/${id}`, dados);
+  }
+  // ----------------------------------
 
   public enviarConvite(equipeId: string, email: string): Observable<any> {
     return this.http.post(

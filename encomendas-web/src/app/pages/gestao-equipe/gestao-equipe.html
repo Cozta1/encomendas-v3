@@ -28,6 +28,12 @@
           <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Gerenciar </th>
           <td mat-cell *matCellDef="let e" style="text-align: right;">
 
+            <button *ngIf="e.isAdmin || isAdminGlobal" mat-icon-button color="primary"
+                    (click)="editarEquipe(e)"
+                    matTooltip="Editar Equipe">
+              <mat-icon>edit</mat-icon>
+            </button>
+
             <button *ngIf="e.isAdmin || isAdminGlobal" mat-icon-button color="accent"
                     (click)="abrirConviteDialog(e)"
                     matTooltip="Convidar novo membro">

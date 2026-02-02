@@ -32,13 +32,23 @@ public class EquipeController {
         return ResponseEntity.ok(equipesDTO);
     }
 
-    // Aceita ADMIN ou SUPER_ADMIN para criar equipes
+    // --- CORREÇÃO: Permite que qualquer usuário logado crie uma equipe ---
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Equipe> criarEquipe(@Valid @RequestBody EquipeDTO dto,
                                               @AuthenticationPrincipal Usuario usuarioLogado) {
         Equipe novaEquipe = equipeService.criarEquipe(dto, usuarioLogado);
         return new ResponseEntity<>(novaEquipe, HttpStatus.CREATED);
+    }
+
+    // --- NOVO: Endpoint para EDITAR equipe ---
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()") // Qualquer um logado tenta, o Service bloqueia se não for dono/admin
+    public ResponseEntity<EquipeResponseDTO> atualizarEquipe(@PathVariable UUID id,
+                                                             @Valid @RequestBody EquipeDTO dto,
+                                                             @AuthenticationPrincipal Usuario usuarioLogado) {
+        EquipeResponseDTO equipeAtualizada = equipeService.atualizarEquipe(id, dto, usuarioLogado);
+        return ResponseEntity.ok(equipeAtualizada);
     }
 
     // --- GESTÃO DE MEMBROS ---
@@ -51,7 +61,6 @@ public class EquipeController {
     @DeleteMapping("/membros/{usuarioId}")
     public ResponseEntity<Void> removerMembro(@PathVariable Long usuarioId,
                                               @AuthenticationPrincipal Usuario usuarioLogado) {
-        // Agora passamos o usuarioLogado para validar se ele tem permissão (Admin da Equipe ou Super Admin)
         equipeService.removerMembro(usuarioId, usuarioLogado);
         return ResponseEntity.noContent().build();
     }
@@ -59,7 +68,7 @@ public class EquipeController {
     // --- CONVITES ---
 
     @PostMapping("/{id}/convidar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Super Admin também pode convidar
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> convidarUsuario(@PathVariable UUID id,
                                              @RequestBody Map<String, String> payload,
                                              @AuthenticationPrincipal Usuario usuarioLogado) {
@@ -72,7 +81,7 @@ public class EquipeController {
     }
 
     @GetMapping("/{id}/convites")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ConviteResponseDTO>> listarConvitesEnviados(@PathVariable UUID id,
                                                                            @AuthenticationPrincipal Usuario usuarioLogado) {
         List<ConviteResponseDTO> convites = equipeService.listarConvitesDaEquipe(id, usuarioLogado);
