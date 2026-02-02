@@ -26,11 +26,10 @@ import { FornecedorService } from '../../core/services/fornecedor.service';
 import { ProdutoResponse } from '../../core/models/produto.interfaces';
 import { FornecedorResponse } from '../../core/models/fornecedor.interfaces';
 
-// Diretivas
+// Diretivas (Removido DateMaskDirective)
 import { CepMaskDirective } from '../../core/directives/cep-mask.directive';
 import { CpfMaskDirective } from '../../core/directives/cpf-mask.directive';
 import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
-import { DateMaskDirective } from '../../core/directives/date-mask.directive';
 
 @Component({
   selector: 'app-encomenda-create',
@@ -40,7 +39,7 @@ import { DateMaskDirective } from '../../core/directives/date-mask.directive';
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatDatepickerModule, MatNativeDateModule,
     MatCheckboxModule, MatDividerModule, MatAutocompleteModule,
-    CepMaskDirective, CpfMaskDirective, PhoneMaskDirective, DateMaskDirective
+    CepMaskDirective, CpfMaskDirective, PhoneMaskDirective
   ],
   templateUrl: './encomenda-create.html',
   styleUrls: ['./encomenda-create.scss']
@@ -78,7 +77,7 @@ export class EncomendaCreate implements OnInit {
       enderecoRua: ['', Validators.required],
       enderecoNumero: ['', Validators.required],
       enderecoComplemento: [''],
-      dataEstimadaEntrega: [null, Validators.required],
+      dataEstimadaEntrega: [null, Validators.required], // Valor será um objeto Date direto do Datepicker
       horaEstimadaEntrega: [''],
       observacoes: [''],
       notaFutura: [false],
@@ -238,23 +237,6 @@ export class EncomendaCreate implements OnInit {
     return valor ? valor.replace(/\D/g, '') : '';
   }
 
-  private parseDataBR(valor: any): Date | null {
-    if (!valor) return null;
-    if (valor instanceof Date) return valor;
-    if (typeof valor === 'string') {
-      if (!isNaN(Date.parse(valor))) return new Date(valor);
-      const partes = valor.split('/');
-      if (partes.length === 3) {
-        const dia = parseInt(partes[0], 10);
-        const mes = parseInt(partes[1], 10) - 1;
-        const ano = parseInt(partes[2], 10);
-        const dataObj = new Date(ano, mes, dia);
-        if (!isNaN(dataObj.getTime())) return dataObj;
-      }
-    }
-    return null;
-  }
-
   salvar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -271,8 +253,11 @@ export class EncomendaCreate implements OnInit {
 
     // Processar Data
     let dataFinal = null;
-    const dataObj = this.parseDataBR(formVal.dataEstimadaEntrega);
-    if (dataObj) {
+
+    // O Datepicker do Angular já retorna um objeto Date, não precisa de parse manual
+    const dataObj = formVal.dataEstimadaEntrega;
+
+    if (dataObj && dataObj instanceof Date) {
       if (formVal.horaEstimadaEntrega) {
         const [horas, minutos] = formVal.horaEstimadaEntrega.split(':');
         dataObj.setHours(+horas);

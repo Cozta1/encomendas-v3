@@ -24,6 +24,6 @@ export const appConfig: ApplicationConfig = {
 
     // --- CONFIGURAÇÃO DE DATAS E IDIOMA ---
     { provide: LOCALE_ID, useValue: 'pt-BR' },      // Para Pipes do Angular (currency, date)
-    { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' } // Para o Datepicker do Material (DD/MM/AAAA)
+    { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' } // Para o Datepicker (formato visual)
   ]
 };
