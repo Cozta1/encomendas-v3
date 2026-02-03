@@ -1,0 +1,90 @@
+<div class="admin-container">
+  <div class="header-page">
+    <h1>Gestão de Escalas</h1>
+    <p>Defina os horários de trabalho, folgas e férias da sua equipe.</p>
+  </div>
+
+  <mat-card class="filtro-card">
+    <mat-card-content>
+      <div class="filtro-row">
+        <mat-icon class="filtro-icon">person_search</mat-icon>
+        <mat-form-field appearance="outline" class="select-func">
+          <mat-label>Selecione o Colaborador</mat-label>
+          <mat-select [(ngModel)]="usuarioSelecionadoId" (selectionChange)="onUsuarioChange()">
+            <mat-option *ngFor="let membro of membros" [value]="membro.id">
+              {{ membro.nomeCompleto }}
+              <span *ngIf="membro.role === 'ROLE_ADMIN'" class="tag-admin">(Admin)</span>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Carregando escala...</p>
+  </div>
+
+  <div class="calendario-wrapper" *ngIf="usuarioSelecionadoId && !loading; else avisoVazio">
+    <div class="cal-header">
+      <button mat-icon-button (click)="mesAnterior()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <h2>{{ mesAnoTitulo | titlecase }}</h2>
+      <button mat-icon-button (click)="proximoMes()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <div class="grid-semana">
+      <div *ngFor="let dia of diasSemana" class="semana-label">{{ dia }}</div>
+    </div>
+
+    <div class="grid-dias">
+      <div *ngFor="let dia of dias"
+           class="celula-dia"
+           [class.outro-mes]="dia.isOutroMes"
+           [class.hoje]="dia.isHoje"
+           [ngClass]="getClasseTipo(dia.escala?.tipo)"
+           (click)="editarDia(dia)"> <div class="dia-numero">{{ dia.diaMes }}</div>
+
+        <div class="dia-conteudo" *ngIf="dia.escala">
+          <div class="tipo-badge" [ngClass]="dia.escala.tipo">
+            <mat-icon *ngIf="dia.escala.tipo === 'TRABALHO'">schedule</mat-icon>
+            <mat-icon *ngIf="dia.escala.tipo === 'FOLGA'">weekend</mat-icon>
+            <mat-icon *ngIf="dia.escala.tipo === 'FERIAS'">beach_access</mat-icon>
+            <mat-icon *ngIf="dia.escala.tipo === 'ATESTADO'">local_hospital</mat-icon>
+          </div>
+
+          <span class="horario-texto" *ngIf="dia.escala.tipo === 'TRABALHO'">
+            {{ dia.escala.horarioInicio?.substring(0,5) }} - {{ dia.escala.horarioFim?.substring(0,5) }}
+          </span>
+          <span class="tipo-texto" *ngIf="dia.escala.tipo !== 'TRABALHO'">
+            {{ dia.escala.tipo }}
+          </span>
+        </div>
+
+        <div class="add-hover" *ngIf="!dia.escala && !dia.isOutroMes">
+          <mat-icon>add</mat-icon>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="legenda">
+      <div class="legenda-item"><span class="dot trabalho"></span>Trabalho</div>
+      <div class="legenda-item"><span class="dot folga"></span>Folga</div>
+      <div class="legenda-item"><span class="dot ferias"></span>Férias</div>
+      <div class="legenda-item"><span class="dot atestado"></span>Atestado</div>
+    </div>
+  </div>
+
+  <ng-template #avisoVazio>
+    <div class="aviso-state" *ngIf="!loading">
+      <mat-icon class="aviso-icon">calendar_today</mat-icon>
+      <h3>Nenhum funcionário selecionado</h3>
+      <p>Escolha um colaborador na lista acima para visualizar e gerenciar sua escala de trabalho.</p>
+    </div>
+  </ng-template>
+</div>

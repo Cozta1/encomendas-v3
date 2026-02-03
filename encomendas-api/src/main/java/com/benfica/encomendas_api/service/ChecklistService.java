@@ -1,9 +1,6 @@
 package com.benfica.encomendas_api.service;
 
-import com.benfica.encomendas_api.dto.ChecklistBoardDTO;
-import com.benfica.encomendas_api.dto.ChecklistCardDTO;
-import com.benfica.encomendas_api.dto.ChecklistItemDTO;
-import com.benfica.encomendas_api.dto.ChecklistLogRequestDTO;
+import com.benfica.encomendas_api.dto.*;
 import com.benfica.encomendas_api.model.*;
 import com.benfica.encomendas_api.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -38,25 +35,20 @@ public class ChecklistService {
     @Autowired
     private EquipeRepository equipeRepository;
 
-    /**
-     * Monta a visão do dia para o funcionário ou adm.
-     * Busca a estrutura estática (Boards/Cards/Itens) e preenche com o estado dinâmico (Logs do dia).
-     */
+    // --- FUNCIONALIDADE 1: Montar a visão do dia (Renovação Diária) ---
     @Transactional(readOnly = true)
     public List<ChecklistBoardDTO> getChecklistDoDia(UUID equipeId, Long usuarioId, LocalDate dataReferencia) {
-        // 1. Busca os quadros da equipe
-        List<ChecklistBoard> boards = boardRepository.findByEquipeId(equipeId);
+        // 1. Busca os quadros da equipe FILTRANDO por usuário (Geral + Individual)
+        // Isso garante que o usuário veja os quadros de todos (null) + os dele (usuarioId)
+        List<ChecklistBoard> boards = boardRepository.findByEquipeAndUsuario(equipeId, usuarioId);
 
-        // 2. Busca o histórico de marcações deste usuário nesta data específica
-        // Isso garante que o checklist "renove" a cada dia (pois buscamos logs apenas da dataReferencia)
+        // 2. Busca o histórico de marcações deste usuário nesta data
         List<ChecklistLog> logsDoDia = logRepository.findByUsuarioIdAndDataReferencia(usuarioId, dataReferencia);
 
         // 3. Monta o DTO combinando estrutura + estado
         return boards.stream().map(board -> {
-
-            // Mapeia os cards usando o método auxiliar corrigido
             List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
-                    .map(card -> mapCardToDTO(card, logsDoDia, dataReferencia))
+                    .map(card -> mapCardToDTO(card, logsDoDia, dataReferencia)) // Método auxiliar
                     .collect(Collectors.toList());
 
             return ChecklistBoardDTO.builder()
@@ -68,18 +60,15 @@ public class ChecklistService {
         }).collect(Collectors.toList());
     }
 
-    /**
-     * Método auxiliar para converter Card em DTO e calcular seu status e itens marcados.
-     */
+    // Método auxiliar para montar o Card com status calculado
     private ChecklistCardDTO mapCardToDTO(ChecklistCard card, List<ChecklistLog> logsDoDia, LocalDate data) {
         String status = calcularStatusCartao(card, data);
 
         List<ChecklistItemDTO> itens = card.getItens().stream().map(item -> {
-            // Verifica se existe log para este item no dia.
-            // Se existir mais de um, o reduce pega o mais recente.
+            // Verifica se está marcado no log do dia
             boolean marcado = logsDoDia.stream()
                     .filter(log -> log.getItem().getId().equals(item.getId()))
-                    .reduce((primeiro, segundo) -> segundo)
+                    .reduce((first, second) -> second) // Pega o último log (mais recente)
                     .map(ChecklistLog::getValor)
                     .orElse(false);
 
@@ -101,91 +90,80 @@ public class ChecklistService {
                 .build();
     }
 
-    /**
-     * Define o status do cartão (Bloqueado, Aberto, Fechado/Atrasado) baseada na hora atual.
-     */
+    // --- Lógica de Status (Cores e Bloqueios) ---
     private String calcularStatusCartao(ChecklistCard card, LocalDate dataReferencia) {
         LocalDate hoje = LocalDate.now();
         LocalTime agora = LocalTime.now();
 
-        // Se for dia passado, é apenas histórico (readonly)
         if (dataReferencia.isBefore(hoje)) {
-            return "HISTORICO";
+            return "HISTORICO"; // Dias passados são apenas leitura
+        } else if (dataReferencia.isAfter(hoje)) {
+            return "PENDENTE"; // Futuro
         }
 
-        // Se for dia futuro, não deve estar liberado
-        if (dataReferencia.isAfter(hoje)) {
-            return "FUTURO";
-        }
-
-        // Lógica para o dia atual (HOJE)
+        // Validação de horário no dia atual
         if (agora.isBefore(card.getHorarioAbertura())) {
-            return "PENDENTE"; // Ainda não abriu (bloqueado, cinza)
+            return "PENDENTE";
         } else if (agora.isAfter(card.getHorarioFechamento())) {
-            return "FECHADO"; // Já fechou (vermelho se incompleto no front)
+            return "FECHADO";
         } else {
-            return "ABERTO"; // Disponível para marcar (verde/azul)
+            return "ABERTO";
         }
     }
 
-    /**
-     * Registra a ação de marcar/desmarcar criando um NOVO log imutável.
-     */
+    // --- FUNCIONALIDADE 2: Marcar/Desmarcar (Log Imutável) ---
     @Transactional
     public void registrarAcao(ChecklistLogRequestDTO request, Long usuarioId) {
-        // 1. Busca o item para ter acesso ao Card e horários
         ChecklistItem item = itemRepository.findById(request.getItemId())
                 .orElseThrow(() -> new EntityNotFoundException("Item não encontrado"));
 
         ChecklistCard card = item.getCard();
         LocalTime agora = LocalTime.now();
 
-        // 2. Validações de Regra de Negócio
-
-        // Só pode editar o checklist de HOJE
+        // Regra: Só pode editar se for o dia atual
         if (!request.getDataReferencia().isEqual(LocalDate.now())) {
-            throw new IllegalArgumentException("Não é possível alterar checklists de datas passadas ou futuras.");
+            throw new IllegalArgumentException("Não é possível alterar checklists de outras datas.");
         }
 
-        // Só pode editar dentro do horário permitido pelo cartão
+        // Regra: Horário
         if (agora.isBefore(card.getHorarioAbertura()) || agora.isAfter(card.getHorarioFechamento())) {
-            throw new IllegalArgumentException("Este cartão não está disponível neste horário (Fora da janela de abertura).");
+            throw new IllegalArgumentException("Este cartão não está disponível neste horário.");
         }
 
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        // 3. Cria o Log (Insert-Only pattern para auditoria)
+        // Cria novo Log (Insert only)
         ChecklistLog log = ChecklistLog.builder()
                 .item(item)
                 .usuario(usuario)
                 .dataReferencia(request.getDataReferencia())
-                // dataHoraAcao é preenchida automaticamente pelo @CreationTimestamp da entidade
                 .valor(request.getValor())
                 .build();
 
         logRepository.save(log);
     }
 
-    // --- Métodos Administrativos (Criação de Estrutura) ---
+    // --- FUNCIONALIDADE 3: Gestão de Estrutura (Admin) ---
 
     @Transactional
-    public ChecklistBoardDTO criarBoard(String nome, UUID equipeId) {
+    public ChecklistBoardDTO criarBoard(String nome, UUID equipeId, Long usuarioIdEspecifico) {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new EntityNotFoundException("Equipe não encontrada"));
+
+        Usuario usuario = null;
+        if (usuarioIdEspecifico != null) {
+            usuario = usuarioRepository.findById(usuarioIdEspecifico)
+                    .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+        }
 
         ChecklistBoard board = ChecklistBoard.builder()
                 .nome(nome)
                 .equipe(equipe)
+                .usuarioEspecifico(usuario) // Define o dono (ou null para geral)
                 .build();
 
-        ChecklistBoard salvo = boardRepository.save(board);
-
-        return ChecklistBoardDTO.builder()
-                .id(salvo.getId())
-                .nome(salvo.getNome())
-                .equipeId(salvo.getEquipe().getId())
-                .build();
+        return mapBoardSimpleDTO(boardRepository.save(board));
     }
 
     @Transactional
@@ -200,13 +178,13 @@ public class ChecklistService {
                 .horarioFechamento(fim)
                 .build();
 
-        ChecklistCard salvo = cardRepository.save(card);
-
+        // Retorno simplificado para o DTO de criação
+        ChecklistCard salva = cardRepository.save(card);
         return ChecklistCardDTO.builder()
-                .id(salvo.getId())
-                .titulo(salvo.getTitulo())
-                .horarioAbertura(salvo.getHorarioAbertura())
-                .horarioFechamento(salvo.getHorarioFechamento())
+                .id(salva.getId())
+                .titulo(salva.getTitulo())
+                .horarioAbertura(salva.getHorarioAbertura())
+                .horarioFechamento(salva.getHorarioFechamento())
                 .build();
     }
 
@@ -222,5 +200,13 @@ public class ChecklistService {
                 .build();
 
         itemRepository.save(item);
+    }
+
+    private ChecklistBoardDTO mapBoardSimpleDTO(ChecklistBoard board) {
+        return ChecklistBoardDTO.builder()
+                .id(board.getId())
+                .nome(board.getNome())
+                .equipeId(board.getEquipe().getId())
+                .build();
     }
 }

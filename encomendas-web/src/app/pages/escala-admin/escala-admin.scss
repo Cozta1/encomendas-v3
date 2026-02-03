@@ -1,0 +1,212 @@
+.admin-container {
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header-page {
+  margin-bottom: 24px;
+  h1 { margin: 0; font-size: 24px; font-weight: 500; color: #333; }
+  p { margin: 4px 0 0; color: #666; }
+}
+
+.filtro-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+
+  .filtro-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+  }
+
+  .filtro-icon {
+    color: #555;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .select-func {
+    flex: 1;
+    max-width: 400px;
+    margin-bottom: -1.25em; // Ajuste fino do Material
+  }
+
+  .tag-admin {
+    font-size: 11px;
+    background: #e0e0e0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    color: #555;
+  }
+}
+
+.loading-container {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3f51b5;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.calendario-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  h2 { margin: 0; font-size: 18px; font-weight: 500; text-transform: capitalize; color: #333; }
+}
+
+.grid-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+  .semana-label {
+    text-align: center;
+    font-weight: 600;
+    color: #888;
+    font-size: 13px;
+    text-transform: uppercase;
+    padding: 8px 0;
+  }
+}
+
+.grid-dias {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid #eee;
+  border-left: 1px solid #eee;
+}
+
+.celula-dia {
+  min-height: 100px;
+  border-right: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  background: white;
+
+  &:hover {
+    background-color: #fafafa;
+    .add-hover { opacity: 1; }
+  }
+
+  &.outro-mes {
+    background-color: #f9f9f9;
+    color: #ccc;
+    pointer-events: none; // Opcional: impede clique em outro mês
+  }
+
+  &.hoje {
+    background-color: #fffde7; // Amarelo claro
+    .dia-numero {
+      background: #3f51b5;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  // Cores de fundo suaves dependendo do tipo
+  &.dia-trabalho { background-color: #f1f8e9; } // Verde claro
+  &.dia-folga { background-color: #f5f5f5; }    // Cinza
+  &.dia-ferias { background-color: #e3f2fd; }   // Azul claro
+  &.dia-atestado { background-color: #ffebee; } // Vermelho claro
+
+  .dia-numero {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .dia-conteudo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tipo-badge {
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    &.TRABALHO { color: #4caf50; }
+    &.FOLGA { color: #9e9e9e; }
+    &.FERIAS { color: #2196f3; }
+    &.ATESTADO { color: #f44336; }
+  }
+
+  .horario-texto { font-size: 12px; font-weight: 600; color: #333; }
+  .tipo-texto { font-size: 11px; font-weight: 600; color: #666; }
+
+  .add-hover {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    color: #ccc;
+    transition: opacity 0.2s;
+  }
+}
+
+.legenda {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  justify-content: center;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+
+  .legenda-item {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #555;
+
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%; margin-right: 8px;
+      &.trabalho { background: #4caf50; }
+      &.folga { background: #9e9e9e; }
+      &.ferias { background: #2196f3; }
+      &.atestado { background: #f44336; }
+    }
+  }
+}
+
+.aviso-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+
+  .aviso-icon { font-size: 64px; width: 64px; height: 64px; color: #ddd; margin-bottom: 16px; }
+  h3 { margin: 0 0 8px; color: #333; }
+  p { margin: 0; color: #888; max-width: 400px; margin: 0 auto; }
+}

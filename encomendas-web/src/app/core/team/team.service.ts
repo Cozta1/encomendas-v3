@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { UsuarioResponse } from '../models/usuario.interfaces'; // Verifique se o import está correto
 
 export interface Equipe {
   id: string;
@@ -79,6 +80,12 @@ export class TeamService {
     localStorage.setItem(this.STORAGE_KEY, equipe.id);
     this.equipeAtivaSubject.next(equipe);
   }
+
+
+  public getMembros(equipeId: string): Observable<UsuarioResponse[]> {
+      return this.http.get<UsuarioResponse[]>(`${this.API_URL}/${equipeId}/membros`);
+    }
+
 
   private carregarEquipeAtivaDoStorage(): void {
     const equipeId = this.getEquipeAtivaId();

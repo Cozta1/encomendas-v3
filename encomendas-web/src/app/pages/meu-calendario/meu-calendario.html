@@ -1,0 +1,44 @@
+<div class="calendario-container">
+  <div class="header">
+    <button mat-icon-button (click)="mesAnterior()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <h2>{{ mesAnoTitulo | titlecase }}</h2>
+    <button mat-icon-button (click)="proximoMes()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <div class="grid-semana">
+    <div *ngFor="let dia of diasSemana" class="header-dia">{{ dia }}</div>
+  </div>
+
+  <div class="grid-dias">
+    <div *ngFor="let dia of dias" class="celula-dia"
+         [class.outro-mes]="dia.isOutroMes"
+         [class.hoje]="dia.isHoje"
+         [ngClass]="getClasseTipo(dia.escala?.tipo)">
+
+      <div class="numero-dia">{{ dia.diaMes }}</div>
+
+      <div class="info-escala" *ngIf="dia.escala">
+        <mat-icon class="icone-tipo">{{ getIcone(dia.escala.tipo) }}</mat-icon>
+
+        <div class="detalhes" *ngIf="dia.escala.tipo === 'TRABALHO'">
+          <span class="horario">{{ dia.escala.horarioInicio }} - {{ dia.escala.horarioFim }}</span>
+        </div>
+
+        <div class="detalhes" *ngIf="dia.escala.tipo !== 'TRABALHO'">
+          <span class="tipo-label">{{ dia.escala.tipo }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legenda">
+    <div class="item"><span class="cor trabalho"></span>Trabalho</div>
+    <div class="item"><span class="cor folga"></span>Folga</div>
+    <div class="item"><span class="cor ferias"></span>Férias</div>
+  </div>
+</div>

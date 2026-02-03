@@ -1,5 +1,6 @@
 package com.benfica.encomendas_api.service;
 
+import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO; // Import novo
 import com.benfica.encomendas_api.dto.EscalaTrabalhoDTO;
 import com.benfica.encomendas_api.model.EscalaTrabalho;
 import com.benfica.encomendas_api.model.Usuario;
@@ -23,13 +24,11 @@ public class EscalaTrabalhoService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // --- FUNCIONALIDADE 1: ADM define a escala ---
     @Transactional
     public EscalaTrabalhoDTO salvarEscala(EscalaTrabalhoDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        // Verifica se já existe escala para este dia (atualização ou criação)
         EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(dto.getUsuarioId(), dto.getData());
 
         if (escala == null) {
@@ -47,13 +46,47 @@ public class EscalaTrabalhoService {
         return mapToDTO(salva);
     }
 
-    // --- FUNCIONALIDADE 2: Listar escala (para o Calendário) ---
+    // --- NOVA FUNCIONALIDADE: REPLICAÇÃO ---
+    @Transactional
+    public void replicarEscala(EscalaReplicacaoDTO dto) {
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+
+        LocalDate dataAtual = dto.getDataInicio();
+
+        // Loop do dia de início até o dia de fim
+        while (!dataAtual.isAfter(dto.getDataFim())) {
+            // Verifica se o dia da semana atual está na lista de dias selecionados
+            // DayOfWeek value: 1 (Mon) a 7 (Sun)
+            if (dto.getDiasSemana().contains(dataAtual.getDayOfWeek().getValue())) {
+
+                // Reaproveita lógica de busca/criação
+                EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(dto.getUsuarioId(), dataAtual);
+
+                if (escala == null) {
+                    escala = new EscalaTrabalho();
+                    escala.setUsuario(usuario);
+                    escala.setData(dataAtual);
+                }
+
+                escala.setHorarioInicio(dto.getHorarioInicio());
+                escala.setHorarioFim(dto.getHorarioFim());
+                escala.setTipo(dto.getTipo());
+                escala.setObservacao(dto.getObservacao());
+
+                escalaRepository.save(escala);
+            }
+
+            dataAtual = dataAtual.plusDays(1);
+        }
+    }
+    // ---------------------------------------
+
     public List<EscalaTrabalhoDTO> buscarEscalaPorPeriodo(Long usuarioId, LocalDate inicio, LocalDate fim) {
         List<EscalaTrabalho> escalas = escalaRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim);
         return escalas.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    // --- Helper de Mapeamento ---
     private EscalaTrabalhoDTO mapToDTO(EscalaTrabalho entity) {
         return EscalaTrabalhoDTO.builder()
                 .id(entity.getId())

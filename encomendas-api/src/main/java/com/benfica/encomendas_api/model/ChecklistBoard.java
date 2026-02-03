@@ -31,6 +31,12 @@ public class ChecklistBoard {
     @JoinColumn(name = "equipe_id", nullable = false)
     private Equipe equipe;
 
+    // --- NOVO: Se estiver preenchido, é exclusivo deste usuário. Se null, é geral da equipe. ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_especifico_id", nullable = true)
+    private Usuario usuarioEspecifico;
+    // -----------------------------------------------------------------------------------------
+
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistCard> cards = new ArrayList<>();
 

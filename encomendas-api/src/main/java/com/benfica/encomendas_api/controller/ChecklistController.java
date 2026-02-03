@@ -26,7 +26,7 @@ public class ChecklistController {
     private ChecklistService checklistService;
 
     // --- LEITURA DO DIA (Funcionário ou Admin) ---
-    // Retorna a estrutura completa + status (marcado/desmarcado) para o dia solicitado
+    // Retorna a estrutura completa + status para o dia solicitado
     @GetMapping("/dia")
     public ResponseEntity<List<ChecklistBoardDTO>> getChecklistDoDia(
             @RequestParam UUID equipeId,
@@ -37,9 +37,10 @@ public class ChecklistController {
         // Se data não for passada, assume hoje
         LocalDate dataRef = (data != null) ? data : LocalDate.now();
 
-        // Se usuarioIdAlvo não for passado, vê o próprio
+        // Se usuarioIdAlvo não for passado, vê o próprio logado
         Long idFinal = (usuarioIdAlvo != null) ? usuarioIdAlvo : usuarioLogado.getId();
 
+        // O Service agora filtra por boards gerais E boards específicos desse usuário
         List<ChecklistBoardDTO> result = checklistService.getChecklistDoDia(equipeId, idFinal, dataRef);
         return ResponseEntity.ok(result);
     }
@@ -62,7 +63,14 @@ public class ChecklistController {
         String nome = (String) payload.get("nome");
         UUID equipeId = UUID.fromString((String) payload.get("equipeId"));
 
-        ChecklistBoardDTO board = checklistService.criarBoard(nome, equipeId);
+        // Extrai usuarioId se existir (para checklist individual)
+        Long usuarioId = null;
+        if (payload.containsKey("usuarioId") && payload.get("usuarioId") != null) {
+            // Trata conversão de Integer (comum em JSON) para Long
+            usuarioId = ((Number) payload.get("usuarioId")).longValue();
+        }
+
+        ChecklistBoardDTO board = checklistService.criarBoard(nome, equipeId, usuarioId);
         return ResponseEntity.ok(board);
     }
 
@@ -71,6 +79,8 @@ public class ChecklistController {
     public ResponseEntity<ChecklistCardDTO> adicionarCard(@RequestBody Map<String, Object> payload) {
         UUID boardId = UUID.fromString((String) payload.get("boardId"));
         String titulo = (String) payload.get("titulo");
+
+        // Parse de horário (Ex: "08:00")
         LocalTime inicio = LocalTime.parse((String) payload.get("horarioAbertura"));
         LocalTime fim = LocalTime.parse((String) payload.get("horarioFechamento"));
 

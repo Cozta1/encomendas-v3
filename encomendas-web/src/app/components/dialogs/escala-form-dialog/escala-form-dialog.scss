@@ -1,0 +1,57 @@
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 350px;
+  padding-top: 10px;
+}
+.row {
+  display: flex;
+  gap: 16px;
+  mat-form-field { flex: 1; }
+}
+.full-width { width: 100%; }
+
+.repl-panel {
+  background: #f5f5f5;
+  box-shadow: none !important;
+  border: 1px solid #ddd;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.label-dias {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.dias-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .dia-check {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background: white;
+    transition: all 0.2s;
+
+    &:hover { background: #eee; }
+
+    &.selected {
+      background: #3f51b5;
+      color: white;
+      border-color: #3f51b5;
+    }
+  }
+}

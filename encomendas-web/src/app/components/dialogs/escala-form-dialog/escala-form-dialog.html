@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>Gerenciar Escala: {{ data.data | date:'dd/MM/yyyy' }}</h2>
+
+<mat-dialog-content [formGroup]="form">
+  <div class="form-column">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo</mat-label>
+      <mat-select formControlName="tipo">
+        <mat-option *ngFor="let t of tipos" [value]="t">{{ t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="row" *ngIf="form.get('tipo')?.value === 'TRABALHO'">
+      <mat-form-field appearance="outline">
+        <mat-label>Entrada</mat-label>
+        <input matInput type="time" formControlName="horarioInicio">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Saída</mat-label>
+        <input matInput type="time" formControlName="horarioFim">
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Observação</mat-label>
+      <input matInput formControlName="observacao">
+    </mat-form-field>
+
+    <mat-expansion-panel class="repl-panel" [expanded]="form.get('replicar')?.value === true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-checkbox formControlName="replicar" (click)="$event.stopPropagation()">
+            Replicar Escala
+          </mat-checkbox>
+        </mat-panel-title>
+        <mat-panel-description>
+          Repetir em dias futuros
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="repl-content" *ngIf="form.get('replicar')?.value">
+        <p class="hint">Preencha até quando essa escala se repete.</p>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Replicar até (DD/MM/AAAA)</mat-label>
+          <input matInput
+                 [matDatepicker]="picker"
+                 formControlName="dataFimReplicacao"
+                 appDateMask
+                 placeholder="DD/MM/AAAA">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <label class="label-dias">Repetir nos dias:</label>
+        <div class="dias-grid">
+          <div *ngFor="let d of diasOpcoes"
+               class="dia-check"
+               [class.selected]="isDiaMarcado(d.value)"
+               (click)="toggleDia(d.value)">
+            {{ d.label }}
+          </div>
+        </div>
+      </div>
+    </mat-expansion-panel>
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="fechar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="salvar()">
+    {{ form.get('replicar')?.value ? 'Salvar e Replicar' : 'Salvar' }}
+  </button>
+</mat-dialog-actions>

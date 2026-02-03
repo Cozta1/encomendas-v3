@@ -34,6 +34,9 @@ import { GestaoEquipe } from './pages/gestao-equipe/gestao-equipe';
 // Checklist (Novo componente criado hoje)
 import { ChecklistDiaComponent } from './pages/checklist-dia/checklist-dia';
 
+import { MeuCalendarioComponent } from './pages/meu-calendario/meu-calendario';
+import { EscalaAdminComponent } from './pages/escala-admin/escala-admin';
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -117,7 +120,17 @@ export const routes: Routes = [
         path: 'perfil',
         component: PerfilPage, // Classe corrigida
         title: 'Meu Perfil'
-      }
+      },
+      {
+        path: 'meu-calendario',
+        component: MeuCalendarioComponent,
+        title: 'Minha Escala'
+      },
+      {
+        path: 'admin/escalas',
+        component: EscalaAdminComponent,
+        title: 'Gestão de Escalas'
+      },
     ]
   },
 

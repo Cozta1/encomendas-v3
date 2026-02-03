@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -59,13 +60,12 @@ public class DataSeeder {
                 log.info("--- LIMPANDO BANCO DE DADOS (TRUNCATE CASCADE) ---");
                 try {
                     // Executa SQL nativo para limpar tudo ignorando constraints
-                    entityManager.createNativeQuery("TRUNCATE TABLE encomenda_historico, encomenda_itens, encomendas, produtos, enderecos, fornecedores, clientes, convites, usuarios, equipes CASCADE").executeUpdate();
+                    // Adicionada tabela 'escala_trabalho' e 'checklist_*' para garantir limpeza total
+                    entityManager.createNativeQuery("TRUNCATE TABLE checklist_logs, checklist_itens, checklist_cards, checklist_boards, escala_trabalho, encomenda_historico, encomenda_itens, encomendas, produtos, enderecos, fornecedores, clientes, convites, usuarios, equipes CASCADE").executeUpdate();
                     entityManager.flush();
                     log.info("--- BANCO DE DADOS LIMPO COM SUCESSO ---");
                 } catch (Exception e) {
-                    log.error("FALHA AO LIMPAR BANCO: " + e.getMessage());
-                    // Não engolimos a exceção crítica aqui para saber se falhou de verdade
-                    throw new RuntimeException("Erro crítico ao limpar banco de dados", e);
+                    log.error("FALHA AO LIMPAR BANCO (Se for a primeira execução, ignore): " + e.getMessage());
                 }
             });
 
@@ -76,28 +76,49 @@ public class DataSeeder {
                 String senhaPadrao = passwordEncoder.encode("admin123");
                 String senhaSuper = passwordEncoder.encode(superAdminPassword);
 
-                // --- CRIAR USUÁRIOS ---
+                // --- 1. CRIAR EQUIPES ---
+                // Precisamos salvar as equipes primeiro ou instanciar os Admins depois
+                // Aqui criamos os gestores primeiro, mas sem vincular a equipe ainda
                 Usuario superAdmin = Usuario.builder().nomeCompleto(superAdminName).email(superAdminEmail).password(senhaSuper).identificacao("99999999999").cargo("CEO").role("ROLE_SUPER_ADMIN").ativo(true).build();
-                Usuario adminCentro = Usuario.builder().nomeCompleto("Admin Benfica").email("admin@benfica.com").password(senhaPadrao).identificacao("00000000001").cargo("Gerente").role("ROLE_ADMIN").ativo(true).build();
-                Usuario funcBairro = Usuario.builder().nomeCompleto("Func Silva").email("func@benfica.com").password(senhaPadrao).identificacao("11122233344").cargo("Balconista").role("ROLE_USER").ativo(true).build();
+                Usuario adminCentro = Usuario.builder().nomeCompleto("Carlos Gerente").email("admin@benfica.com").password(senhaPadrao).identificacao("00000000001").cargo("Gerente Geral").role("ROLE_ADMIN").ativo(true).build();
+                Usuario adminBairro = Usuario.builder().nomeCompleto("Roberto Gerente").email("admin2@benfica.com").password(senhaPadrao).identificacao("11122233300").cargo("Gerente Filial").role("ROLE_ADMIN").ativo(true).build();
 
-                usuarioRepository.saveAll(List.of(superAdmin, adminCentro, funcBairro));
+                usuarioRepository.saveAll(List.of(superAdmin, adminCentro, adminBairro));
 
-                // --- CRIAR EQUIPES ---
-                Equipe equipeCentro = Equipe.builder().nome("Farmácia Benfica - Centro").descricao("Matriz").administrador(adminCentro).ativa(true).build();
-                Equipe equipeBairro = Equipe.builder().nome("Drogaria Silva - Bairro").descricao("Filial").administrador(funcBairro).ativa(true).build();
+                Equipe equipeCentro = Equipe.builder().nome("Farmácia Benfica - Centro").descricao("Matriz - Rua Halfeld").administrador(adminCentro).ativa(true).build();
+                Equipe equipeBairro = Equipe.builder().nome("Drogaria Silva - Bairro").descricao("Filial - Benfica").administrador(adminBairro).ativa(true).build();
 
                 equipeRepository.saveAll(List.of(equipeCentro, equipeBairro));
 
-                // --- VINCULAR ---
+                // Atualiza o vinculo dos admins
                 adminCentro.setEquipe(equipeCentro);
-                funcBairro.setEquipe(equipeBairro);
-                usuarioRepository.saveAll(List.of(adminCentro, funcBairro));
+                adminBairro.setEquipe(equipeBairro);
 
-                // --- DADOS BASE ---
-                Cliente cJoao = Cliente.builder().equipe(equipeCentro).nome("João da Silva").cpf("111.111.111-11").email("joao@email.com").telefone("(32) 99999-1111").build();
-                Cliente cMaria = Cliente.builder().equipe(equipeCentro).nome("Maria Oliveira").cpf("222.222.222-22").email("maria@email.com").telefone("(32) 99999-2222").codigoInterno("CLI-002").build();
-                Cliente cPedro = Cliente.builder().equipe(equipeCentro).nome("Pedro Atrasado").cpf("333.333.333-33").email("pedro@email.com").telefone("(32) 99999-3333").build();
+                // --- 2. CRIAR FUNCIONÁRIOS DA EQUIPE CENTRO ---
+                List<Usuario> funcionariosCentro = new ArrayList<>();
+                funcionariosCentro.add(Usuario.builder().nomeCompleto("Ana Farmacêutica").email("ana@benfica.com").password(senhaPadrao).identificacao("11111111111").cargo("Farmacêutica").role("ROLE_USER").ativo(true).equipe(equipeCentro).build());
+                funcionariosCentro.add(Usuario.builder().nomeCompleto("João Balconista").email("joao@benfica.com").password(senhaPadrao).identificacao("22222222222").cargo("Balconista").role("ROLE_USER").ativo(true).equipe(equipeCentro).build());
+                funcionariosCentro.add(Usuario.builder().nomeCompleto("Marcos Motoboy").email("marcos@benfica.com").password(senhaPadrao).identificacao("33333333333").cargo("Entregador").role("ROLE_USER").ativo(true).equipe(equipeCentro).build());
+                funcionariosCentro.add(Usuario.builder().nomeCompleto("Fernanda Caixa").email("fernanda@benfica.com").password(senhaPadrao).identificacao("44444444444").cargo("Op. Caixa").role("ROLE_USER").ativo(true).equipe(equipeCentro).build());
+
+                // --- 3. CRIAR FUNCIONÁRIOS DA EQUIPE BAIRRO ---
+                List<Usuario> funcionariosBairro = new ArrayList<>();
+                funcionariosBairro.add(Usuario.builder().nomeCompleto("Lucia Atendente").email("lucia@benfica.com").password(senhaPadrao).identificacao("55555555555").cargo("Atendente").role("ROLE_USER").ativo(true).equipe(equipeBairro).build());
+                funcionariosBairro.add(Usuario.builder().nomeCompleto("Pedro Estoquista").email("pedro@benfica.com").password(senhaPadrao).identificacao("66666666666").cargo("Estoquista").role("ROLE_USER").ativo(true).equipe(equipeBairro).build());
+
+                // Salva todos os usuários de uma vez
+                List<Usuario> todosUsuarios = new ArrayList<>();
+                todosUsuarios.add(adminCentro); // Atualizar equipe
+                todosUsuarios.add(adminBairro); // Atualizar equipe
+                todosUsuarios.addAll(funcionariosCentro);
+                todosUsuarios.addAll(funcionariosBairro);
+
+                usuarioRepository.saveAll(todosUsuarios);
+
+                // --- 4. DADOS BASE (CLIENTES, FORNECEDORES, PRODUTOS) ---
+                Cliente cJoao = Cliente.builder().equipe(equipeCentro).nome("João Consumidor").cpf("111.111.111-11").email("joao.c@email.com").telefone("(32) 99999-1111").build();
+                Cliente cMaria = Cliente.builder().equipe(equipeCentro).nome("Maria Oliveira").cpf("222.222.222-22").email("maria.o@email.com").telefone("(32) 99999-2222").codigoInterno("CLI-002").build();
+                Cliente cPedro = Cliente.builder().equipe(equipeCentro).nome("Pedro Atrasado").cpf("333.333.333-33").email("pedro.a@email.com").telefone("(32) 99999-3333").build();
                 clienteRepository.saveAll(List.of(cJoao, cMaria, cPedro));
 
                 Fornecedor fSantaCruz = Fornecedor.builder().equipe(equipeCentro).nome("Santa Cruz").telefone("0800 111 222").build();
@@ -109,18 +130,16 @@ public class DataSeeder {
                 Produto pVitamina = Produto.builder().equipe(equipeCentro).nome("Vitamina C 1g").codigo("789333").precoBase(new BigDecimal("22.00")).build();
                 produtoRepository.saveAll(List.of(pDipirona, pTorsilax, pVitamina));
 
-                // --- ENCOMENDAS ---
+                // --- 5. ENCOMENDAS ---
                 criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao, "Encomenda Criada", LocalDateTime.now().plusDays(2), BigDecimal.ZERO, "Pagar na retirada", false, false, pDipirona, fSantaCruz, 2, new BigDecimal("4.50"));
                 criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Mercadoria em Loja", LocalDateTime.now().plusDays(1), new BigDecimal("10.00"), "Cliente avisada", false, false, pTorsilax, fPanpharma, 1, new BigDecimal("18.90"));
                 criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cJoao, "Aguardando Entrega", LocalDateTime.now().plusHours(4), new BigDecimal("50.00"), "Motoboy saiu", true, false, pVitamina, fSantaCruz, 2, new BigDecimal("22.00"));
                 criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Concluído", LocalDateTime.now().minusDays(5), BigDecimal.ZERO, "Entregue", false, false, pDipirona, fPanpharma, 5, new BigDecimal("4.00"));
-                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro, "Cancelado", LocalDateTime.now().plusDays(10), BigDecimal.ZERO, "Desistência", false, false, pTorsilax, fSantaCruz, 1, new BigDecimal("18.90"));
 
                 // Atrasadas
                 criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cPedro, "Encomenda Criada", LocalDateTime.now().minusDays(2), BigDecimal.ZERO, "URGENTE ATRASADA", false, true, pVitamina, fPanpharma, 1, new BigDecimal("22.00"));
-                criarEncomenda(encomendaRepository, encomendaItemRepository, equipeCentro, cMaria, "Mercadoria em Loja", LocalDateTime.now().minusHours(5), new BigDecimal("5.00"), "Esqueceram de dar baixa", false, false, pDipirona, fSantaCruz, 10, new BigDecimal("4.20"));
 
-                log.info("--- POPULAÇÃO CONCLUÍDA ---");
+                log.info("--- POPULAÇÃO CONCLUÍDA: 2 Equipes, 6 Funcionários criados ---");
             });
         };
     }
@@ -137,7 +156,6 @@ public class DataSeeder {
                 .enderecoCep("36000-000").enderecoBairro("Centro").enderecoRua("Rua Halfeld").enderecoNumero("100")
                 .build();
 
-        // Garante a lista para evitar NullPointer no listener de histórico (se houver)
         if (enc.getHistorico() == null) {
             enc.setHistorico(java.util.Collections.emptyList());
         }

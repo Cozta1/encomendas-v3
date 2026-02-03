@@ -33,8 +33,16 @@ export class ChecklistService {
 
   // --- Métodos Administrativos (Criação de Estrutura) ---
 
-  criarBoard(nome: string, equipeId: string): Observable<ChecklistBoard> {
-    return this.http.post<ChecklistBoard>(`${this.apiUrl}/boards`, { nome, equipeId });
+  // CORREÇÃO AQUI: Adicionado parâmetro opcional usuarioId
+  criarBoard(nome: string, equipeId: string, usuarioId?: number | null): Observable<ChecklistBoard> {
+    const payload: any = { nome, equipeId };
+
+    // Só envia se tiver valor
+    if (usuarioId) {
+      payload.usuarioId = usuarioId;
+    }
+
+    return this.http.post<ChecklistBoard>(`${this.apiUrl}/boards`, payload);
   }
 
   adicionarCard(boardId: string, titulo: string, horarioAbertura: string, horarioFechamento: string): Observable<ChecklistCard> {

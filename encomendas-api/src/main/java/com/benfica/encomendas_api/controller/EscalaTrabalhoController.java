@@ -1,5 +1,6 @@
 package com.benfica.encomendas_api.controller;
 
+import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO; // Import novo
 import com.benfica.encomendas_api.dto.EscalaTrabalhoDTO;
 import com.benfica.encomendas_api.service.EscalaTrabalhoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,6 @@ public class EscalaTrabalhoController {
     @Autowired
     private EscalaTrabalhoService escalaService;
 
-    // --- 1. Definir/Atualizar Escala (Apenas ADMIN) ---
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EscalaTrabalhoDTO> salvarEscala(@RequestBody EscalaTrabalhoDTO dto) {
@@ -26,8 +26,15 @@ public class EscalaTrabalhoController {
         return ResponseEntity.ok(salva);
     }
 
-    // --- 2. Buscar Escala por Período ---
-    // Exemplo de chamada: GET /api/escala?usuarioId=1&inicio=2025-01-01&fim=2025-01-31
+    // --- NOVO ENDPOINT ---
+    @PostMapping("/replicar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> replicarEscala(@RequestBody EscalaReplicacaoDTO dto) {
+        escalaService.replicarEscala(dto);
+        return ResponseEntity.ok().build();
+    }
+    // ---------------------
+
     @GetMapping
     public ResponseEntity<List<EscalaTrabalhoDTO>> buscarEscala(
             @RequestParam Long usuarioId,

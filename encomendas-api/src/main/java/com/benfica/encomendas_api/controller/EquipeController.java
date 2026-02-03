@@ -4,6 +4,7 @@ import com.benfica.encomendas_api.dto.ConviteResponseDTO;
 import com.benfica.encomendas_api.dto.EquipeDTO;
 import com.benfica.encomendas_api.dto.EquipeResponseDTO;
 import com.benfica.encomendas_api.dto.MembroEquipeResponseDTO;
+import com.benfica.encomendas_api.dto.UsuarioResponseDTO; // <--- Import Adicionado
 import com.benfica.encomendas_api.model.Equipe;
 import com.benfica.encomendas_api.model.Usuario;
 import com.benfica.encomendas_api.service.EquipeService;
@@ -32,35 +33,34 @@ public class EquipeController {
         return ResponseEntity.ok(equipesDTO);
     }
 
-    // --- CORREÇÃO: Permite que qualquer usuário logado crie uma equipe ---
+    // Aceita ADMIN ou SUPER_ADMIN para criar equipes
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Equipe> criarEquipe(@Valid @RequestBody EquipeDTO dto,
                                               @AuthenticationPrincipal Usuario usuarioLogado) {
         Equipe novaEquipe = equipeService.criarEquipe(dto, usuarioLogado);
         return new ResponseEntity<>(novaEquipe, HttpStatus.CREATED);
     }
 
-    // --- NOVO: Endpoint para EDITAR equipe ---
-    @PutMapping("/{id}")
-    @PreAuthorize("isAuthenticated()") // Qualquer um logado tenta, o Service bloqueia se não for dono/admin
-    public ResponseEntity<EquipeResponseDTO> atualizarEquipe(@PathVariable UUID id,
-                                                             @Valid @RequestBody EquipeDTO dto,
-                                                             @AuthenticationPrincipal Usuario usuarioLogado) {
-        EquipeResponseDTO equipeAtualizada = equipeService.atualizarEquipe(id, dto, usuarioLogado);
-        return ResponseEntity.ok(equipeAtualizada);
-    }
-
     // --- GESTÃO DE MEMBROS ---
 
+    // Endpoint 1: Membros da equipe ATIVA (Contexto)
     @GetMapping("/membros")
     public ResponseEntity<List<MembroEquipeResponseDTO>> listarMembros() {
         return ResponseEntity.ok(equipeService.listarMembrosEquipeAtiva());
     }
 
+    // Endpoint 2: Membros de uma equipe ESPECÍFICA (ID na URL)
+    // Usado na Gestão de Escalas e no Criador de Checklists
+    @GetMapping("/{id}/membros")
+    public ResponseEntity<List<UsuarioResponseDTO>> getMembrosPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(equipeService.listarMembrosPorId(id));
+    }
+
     @DeleteMapping("/membros/{usuarioId}")
     public ResponseEntity<Void> removerMembro(@PathVariable Long usuarioId,
                                               @AuthenticationPrincipal Usuario usuarioLogado) {
+        // Agora passamos o usuarioLogado para validar se ele tem permissão (Admin da Equipe ou Super Admin)
         equipeService.removerMembro(usuarioId, usuarioLogado);
         return ResponseEntity.noContent().build();
     }
@@ -68,7 +68,7 @@ public class EquipeController {
     // --- CONVITES ---
 
     @PostMapping("/{id}/convidar")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')") // Super Admin também pode convidar
     public ResponseEntity<?> convidarUsuario(@PathVariable UUID id,
                                              @RequestBody Map<String, String> payload,
                                              @AuthenticationPrincipal Usuario usuarioLogado) {
@@ -81,7 +81,7 @@ public class EquipeController {
     }
 
     @GetMapping("/{id}/convites")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<ConviteResponseDTO>> listarConvitesEnviados(@PathVariable UUID id,
                                                                            @AuthenticationPrincipal Usuario usuarioLogado) {
         List<ConviteResponseDTO> convites = equipeService.listarConvitesDaEquipe(id, usuarioLogado);

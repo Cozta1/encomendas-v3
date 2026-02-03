@@ -9,8 +9,20 @@ export interface EscalaTrabalho {
   id?: number;
   usuarioId: number;
   nomeUsuario?: string;
-  data: string; // LocalDate vem como string 'yyyy-MM-dd'
-  horarioInicio?: string; // LocalTime vem como string 'HH:mm:ss'
+  data: string;
+  horarioInicio?: string;
+  horarioFim?: string;
+  tipo: TipoEscala;
+  observacao?: string;
+}
+
+// Nova interface
+export interface EscalaReplicacao {
+  usuarioId: number;
+  dataInicio: string;
+  dataFim: string;
+  diasSemana: number[]; // 1=Seg, 7=Dom
+  horarioInicio?: string;
   horarioFim?: string;
   tipo: TipoEscala;
   observacao?: string;
