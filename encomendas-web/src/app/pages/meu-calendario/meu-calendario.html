@@ -25,7 +25,7 @@
         <mat-icon class="icone-tipo">{{ getIcone(dia.escala.tipo) }}</mat-icon>
 
         <div class="detalhes" *ngIf="dia.escala.tipo === 'TRABALHO'">
-          <span class="horario">{{ dia.escala.horarioInicio }} - {{ dia.escala.horarioFim }}</span>
+          <span class="horario">{{ dia.escala.horarioInicio?.substring(0,5) }} - {{ dia.escala.horarioFim?.substring(0,5) }}</span>
         </div>
 
         <div class="detalhes" *ngIf="dia.escala.tipo !== 'TRABALHO'">
@@ -40,5 +40,6 @@
     <div class="item"><span class="cor trabalho"></span>Trabalho</div>
     <div class="item"><span class="cor folga"></span>Folga</div>
     <div class="item"><span class="cor ferias"></span>Férias</div>
+    <div class="item"><span class="cor atestado"></span>Atestado</div>
   </div>
 </div>

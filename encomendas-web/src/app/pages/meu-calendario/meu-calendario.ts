@@ -8,7 +8,6 @@ import { EscalaService } from '../../core/services/escala.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { EscalaTrabalho } from '../../core/models/escala.interfaces';
 
-// ... interface DiaCalendario mantida ...
 interface DiaCalendario {
   data: Date;
   diaMes: number;
@@ -30,6 +29,7 @@ export class MeuCalendarioComponent implements OnInit {
   dias: DiaCalendario[] = [];
   escalas: EscalaTrabalho[] = [];
   diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  loading = false;
 
   constructor(
     private escalaService: EscalaService,
@@ -40,15 +40,12 @@ export class MeuCalendarioComponent implements OnInit {
     this.atualizarVisualizacao();
   }
 
-  // --- CORREÇÃO AQUI: Lógica de Navegação ---
   mesAnterior() {
-    // Subtrai 1 mês mantendo o dia 1 para evitar bugs de virada de mês (31/Jan -> Fev)
     this.dataAtual = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() - 1, 1);
     this.atualizarVisualizacao();
   }
 
   proximoMes() {
-    // Soma 1 mês
     this.dataAtual = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() + 1, 1);
     this.atualizarVisualizacao();
   }
@@ -57,7 +54,6 @@ export class MeuCalendarioComponent implements OnInit {
     this.gerarCalendario();
     this.carregarEscalas();
   }
-  // ------------------------------------------
 
   get mesAnoTitulo(): string {
     return this.dataAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -65,27 +61,34 @@ export class MeuCalendarioComponent implements OnInit {
 
   carregarEscalas() {
     const user = this.authService.getUser();
-    if (!user) return;
+    if (!user) {
+      console.error('Usuário não autenticado ou não encontrado no AuthService');
+      return;
+    }
 
+    this.loading = true;
+
+    // Define intervalo para busca (Mês completo)
     const inicio = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth(), 1);
     const fim = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() + 1, 0);
 
-    // Ajuste de fuso horário para garantir que a string enviada seja correta
     const inicioStr = this.formatDate(inicio);
     const fimStr = this.formatDate(fim);
 
-    this.escalaService.getEscalas(user.id, inicioStr, fimStr).subscribe(dados => {
-      this.escalas = dados;
-      this.atualizarDiasComEscala();
-    });
-  }
+    console.log(`Buscando escalas para User ${user.id} de ${inicioStr} até ${fimStr}`);
 
-  // Helper para formatar YYYY-MM-DD
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    this.escalaService.getEscalas(user.id, inicioStr, fimStr).subscribe({
+      next: (dados) => {
+        console.log('Escalas recebidas:', dados);
+        this.escalas = dados;
+        this.atualizarDiasComEscala();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Erro ao buscar escalas:', err);
+        this.loading = false;
+      }
+    });
   }
 
   gerarCalendario() {
@@ -98,13 +101,11 @@ export class MeuCalendarioComponent implements OnInit {
 
     const diaSemanaInicio = primeiroDiaDoMes.getDay();
 
-    // Dias do mês anterior
     for (let i = diaSemanaInicio; i > 0; i--) {
       const d = new Date(ano, mes, 1 - i);
       this.dias.push(this.criarDia(d, true));
     }
 
-    // Dias do mês atual
     for (let i = 1; i <= ultimoDiaDoMes.getDate(); i++) {
       const d = new Date(ano, mes, i);
       this.dias.push(this.criarDia(d, false));
@@ -125,12 +126,41 @@ export class MeuCalendarioComponent implements OnInit {
 
   atualizarDiasComEscala() {
     this.dias.forEach(dia => {
+      // Formato String esperado: "YYYY-MM-DD"
       const dataStr = this.formatDate(dia.data);
-      const escala = this.escalas.find(e => e.data === dataStr);
+
+      // Tenta encontrar escala compatível
+      const escala = this.escalas.find(e => {
+        // Caso 1: Data vem como string "2026-02-04" (Com @JsonFormat)
+        if (typeof e.data === 'string') {
+          return e.data === dataStr;
+        }
+        // Caso 2: Data vem como Array [2026, 2, 4] (Sem @JsonFormat ou erro de config)
+        if (Array.isArray(e.data)) {
+          const ano = e.data[0];
+          const mes = e.data[1]; // No Java Array, mês 1 = Janeiro? Geralmente sim no LocalDate
+          const diaMes = e.data[2];
+
+          return ano === dia.data.getFullYear() &&
+                 mes === (dia.data.getMonth() + 1) &&
+                 diaMes === dia.data.getDate();
+        }
+        return false;
+      });
+
       if (escala) {
         dia.escala = escala;
+      } else {
+        dia.escala = undefined;
       }
     });
+  }
+
+  private formatDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   getClasseTipo(tipo?: string): string {
