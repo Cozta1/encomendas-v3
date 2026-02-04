@@ -10,9 +10,10 @@ import java.util.UUID;
 
 public interface ChecklistBoardRepository extends JpaRepository<ChecklistBoard, UUID> {
 
-    // Busca boards da equipe que:
-    // 1. Não têm usuário específico (Gerais)
-    // 2. OU têm o ID do usuário solicitante (Individuais)
+    // Método existente para o funcionário (filtrado)
     @Query("SELECT b FROM ChecklistBoard b WHERE b.equipe.id = :equipeId AND (b.usuarioEspecifico IS NULL OR b.usuarioEspecifico.id = :usuarioId)")
     List<ChecklistBoard> findByEquipeAndUsuario(@Param("equipeId") UUID equipeId, @Param("usuarioId") Long usuarioId);
+
+    // --- NOVO: Método para o Admin (Traz tudo da equipe) ---
+    List<ChecklistBoard> findByEquipeId(UUID equipeId);
 }

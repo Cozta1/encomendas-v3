@@ -1,0 +1,108 @@
+<div class="trello-card-container">
+
+  <div class="card-header">
+    <mat-icon class="header-icon">video_label</mat-icon> <div class="header-content">
+    <h2>{{ card.titulo }}</h2>
+    <p class="subtext">Na lista <strong>Checklist Diário</strong></p>
+  </div>
+    <button mat-icon-button (click)="fechar()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div class="card-body">
+
+    <div class="main-col">
+
+      <div class="section description-section">
+        <div class="section-header">
+          <mat-icon>subject</mat-icon>
+          <h3>Descrição</h3>
+          <button mat-button *ngIf="card.descricao && !editandoDescricao" (click)="editandoDescricao = true">Editar</button>
+        </div>
+
+        <div class="desc-content" *ngIf="!editandoDescricao">
+          <p *ngIf="card.descricao" [innerHTML]="card.descricao"></p> <button class="btn-fake-input" *ngIf="!card.descricao" (click)="editandoDescricao = true">
+          Adicionar uma descrição mais detalhada...
+        </button>
+        </div>
+
+        <div class="desc-editor" *ngIf="editandoDescricao">
+          <textarea [(ngModel)]="novaDescricao" placeholder="Adicionar uma descrição mais detalhada..." rows="4"></textarea>
+          <div class="editor-actions">
+            <button mat-raised-button color="primary" (click)="salvarDescricao()">Salvar</button>
+            <button mat-button (click)="editandoDescricao = false">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section attachments-section">
+        <div class="section-header">
+          <mat-icon>attach_file</mat-icon>
+          <h3>Anexos</h3>
+        </div>
+
+        <div class="anexos-list" *ngIf="card.anexos && card.anexos.length > 0">
+          <div class="anexo-item" *ngFor="let anexo of card.anexos">
+            <div class="anexo-thumb">DOC</div>
+            <div class="anexo-info">
+              <span class="anexo-name">{{ anexo.nomeArquivo }}</span>
+              <span class="anexo-meta">Adicionado recentemente</span>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="!card.anexos?.length" class="empty-msg">Nenhum anexo.</p>
+      </div>
+
+      <div class="section checklist-section">
+        <div class="section-header">
+          <mat-icon>check_box</mat-icon>
+          <div class="header-text">
+            <h3>Checklist</h3>
+          </div>
+        </div>
+
+        <div class="progress-area">
+          <span class="percent">{{ progresso | number:'1.0-0' }}%</span>
+          <mat-progress-bar mode="determinate" [value]="progresso"></mat-progress-bar>
+        </div>
+
+        <div class="checklist-items">
+          <div class="item-row" *ngFor="let item of card.itens">
+            <mat-checkbox [checked]="item.marcado" (change)="toggleItem(item)" color="primary">
+              <span [class.riscado]="item.marcado">{{ item.descricao }}</span>
+            </mat-checkbox>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="sidebar-col">
+      <div class="sidebar-group">
+        <h4>Adicionar ao cartão</h4>
+        <button mat-button class="sidebar-btn" (click)="editandoDescricao = true">
+          <mat-icon>person</mat-icon> Membros
+        </button>
+        <button mat-button class="sidebar-btn">
+          <mat-icon>label</mat-icon> Etiquetas
+        </button>
+        <button mat-button class="sidebar-btn">
+          <mat-icon>schedule</mat-icon> Datas
+        </button>
+        <button mat-button class="sidebar-btn" (click)="adicionarAnexo()">
+          <mat-icon>attach_file</mat-icon> Anexo
+        </button>
+      </div>
+
+      <div class="sidebar-group">
+        <h4>Ações</h4>
+        <button mat-button class="sidebar-btn">
+          <mat-icon>arrow_forward</mat-icon> Mover
+        </button>
+        <button mat-button class="sidebar-btn">
+          <mat-icon>content_copy</mat-icon> Copiar
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

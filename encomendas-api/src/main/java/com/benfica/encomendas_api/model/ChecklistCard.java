@@ -1,5 +1,6 @@
 package com.benfica.encomendas_api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,18 +27,28 @@ public class ChecklistCard {
     @Column(nullable = false)
     private String titulo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "board_id", nullable = false)
-    private ChecklistBoard board;
+    // --- CAMPO NOVO: Descrição detalhada (estilo Trello) ---
+    @Column(columnDefinition = "TEXT")
+    private String descricao;
+    // -------------------------------------------------------
 
-    // Horário que o checklist fica disponível para marcação
-    @Column(name = "horario_abertura", nullable = false)
+    @Column(nullable = false)
     private LocalTime horarioAbertura;
 
-    // Horário limite. Se passar daqui e não estiver completo, fica vermelho no histórico.
-    @Column(name = "horario_fechamento", nullable = false)
+    @Column(nullable = false)
     private LocalTime horarioFechamento;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id", nullable = false)
+    @JsonIgnore
+    private ChecklistBoard board;
 
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistItem> itens = new ArrayList<>();
+
+    // --- CAMPO NOVO: Lista de Anexos ---
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ChecklistAnexo> anexos = new ArrayList<>();
+    // -----------------------------------
 }

@@ -1,0 +1,159 @@
+.trello-card-container {
+  // Ajuste para parecer um modal do Trello
+  color: #172b4d; // Texto escuro padrão (ou claro se for dark mode)
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+
+  // Header
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px 20px 10px;
+    gap: 16px;
+
+    .header-icon { margin-top: 4px; color: #42526e; }
+
+    .header-content {
+      flex: 1;
+      h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 24px; }
+      .subtext { margin: 4px 0 0; font-size: 14px; color: #5e6c84; }
+    }
+  }
+
+  // Corpo (Colunas)
+  .card-body {
+    display: flex;
+    padding: 0 20px 20px;
+    gap: 32px;
+
+    @media (max-width: 700px) { flex-direction: column; }
+  }
+
+  .main-col { flex: 3; }
+  .sidebar-col { flex: 1; min-width: 160px; }
+
+  // Seções (Descrição, Anexos, etc)
+  .section {
+    margin-bottom: 24px;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+
+      mat-icon { color: #42526e; }
+      h3 { margin: 0; font-size: 16px; font-weight: 600; color: #172b4d; }
+    }
+  }
+
+  // Descrição
+  .desc-content {
+    margin-left: 40px;
+    p { margin-top: 0; font-size: 14px; color: #172b4d; }
+
+    .btn-fake-input {
+      background: #eaecf0;
+      border: none;
+      border-radius: 3px;
+      color: #172b4d;
+      padding: 8px 12px;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      height: 60px;
+
+      &:hover { background: #dfe1e6; }
+    }
+  }
+
+  .desc-editor {
+    margin-left: 40px;
+    textarea {
+      width: 100%;
+      border: 2px solid #0079bf;
+      border-radius: 3px;
+      padding: 8px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 108px;
+      outline: none;
+    }
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  }
+
+  // Anexos
+  .anexos-list { margin-left: 40px; }
+  .anexo-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+
+    .anexo-thumb {
+      width: 80px; height: 60px;
+      background: #e4e6ea;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; color: #5e6c84;
+    }
+    .anexo-info {
+      display: flex; flex-direction: column; justify-content: center;
+      .anexo-name { font-weight: 700; font-size: 14px; }
+      .anexo-meta { font-size: 12px; color: #5e6c84; }
+    }
+  }
+
+  // Checklist
+  .progress-area {
+    margin-left: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .percent { font-size: 11px; color: #5e6c84; width: 30px; }
+    mat-progress-bar { flex: 1; border-radius: 4px; height: 6px; }
+  }
+
+  .checklist-items {
+    margin-left: 40px;
+    .item-row {
+      margin-bottom: 6px;
+      &:hover { background: #f4f5f7; border-radius: 3px; }
+
+      .riscado { text-decoration: line-through; color: #5e6c84; }
+    }
+  }
+
+  // Sidebar (Direita)
+  .sidebar-group {
+    margin-bottom: 24px;
+    h4 {
+      font-size: 12px;
+      color: #5e6c84;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-btn {
+      width: 100%;
+      justify-content: flex-start;
+      background: #eaecf0;
+      color: #172b4d;
+      margin-bottom: 8px;
+      font-size: 14px;
+      height: 32px;
+      border-radius: 3px;
+
+      mat-icon { margin-right: 8px; font-size: 16px; height: 16px; width: 16px; }
+      &:hover { background: #dfe1e6; }
+    }
+  }
+}

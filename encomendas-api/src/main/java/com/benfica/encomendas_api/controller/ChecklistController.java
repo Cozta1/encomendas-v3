@@ -1,19 +1,13 @@
 package com.benfica.encomendas_api.controller;
 
-import com.benfica.encomendas_api.dto.ChecklistBoardDTO;
-import com.benfica.encomendas_api.dto.ChecklistCardDTO;
-import com.benfica.encomendas_api.dto.ChecklistLogRequestDTO;
-import com.benfica.encomendas_api.model.Usuario;
+import com.benfica.encomendas_api.dto.*;
 import com.benfica.encomendas_api.service.ChecklistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,48 +19,45 @@ public class ChecklistController {
     @Autowired
     private ChecklistService checklistService;
 
-    // --- LEITURA DO DIA (Funcionário ou Admin) ---
-    // Retorna a estrutura completa + status para o dia solicitado
+    // --- VISÃO FUNCIONÁRIO (Depende da Escala) ---
     @GetMapping("/dia")
     public ResponseEntity<List<ChecklistBoardDTO>> getChecklistDoDia(
             @RequestParam UUID equipeId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
-            @RequestParam(required = false) Long usuarioIdAlvo, // Para Admin ver de outro
-            @AuthenticationPrincipal Usuario usuarioLogado
-    ) {
-        // Se data não for passada, assume hoje
-        LocalDate dataRef = (data != null) ? data : LocalDate.now();
+            @RequestParam(required = false) Long usuarioId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
 
-        // Se usuarioIdAlvo não for passado, vê o próprio logado
-        Long idFinal = (usuarioIdAlvo != null) ? usuarioIdAlvo : usuarioLogado.getId();
-
-        // O Service agora filtra por boards gerais E boards específicos desse usuário
-        List<ChecklistBoardDTO> result = checklistService.getChecklistDoDia(equipeId, idFinal, dataRef);
-        return ResponseEntity.ok(result);
+        if (data == null) data = LocalDate.now();
+        List<ChecklistBoardDTO> boards = checklistService.getChecklistDoDia(equipeId, usuarioId, data);
+        return ResponseEntity.ok(boards);
     }
 
-    // --- AÇÃO: Marcar/Desmarcar (Qualquer funcionário) ---
+    // --- VISÃO ADMIN (Lista tudo) ---
+    @GetMapping("/boards")
+    public ResponseEntity<List<ChecklistBoardDTO>> listarBoardsAdmin(@RequestParam UUID equipeId) {
+        List<ChecklistBoardDTO> boards = checklistService.listarTodosBoards(equipeId);
+        return ResponseEntity.ok(boards);
+    }
+
+    // --- AÇÕES (Logs) ---
     @PostMapping("/log")
     public ResponseEntity<Void> registrarAcao(
             @RequestBody ChecklistLogRequestDTO request,
-            @AuthenticationPrincipal Usuario usuarioLogado
-    ) {
-        checklistService.registrarAcao(request, usuarioLogado.getId());
+            @RequestParam(required = false) Long usuarioId) {
+
+        if (usuarioId == null) throw new IllegalArgumentException("Usuario ID é obrigatório");
+        checklistService.registrarAcao(request, usuarioId);
         return ResponseEntity.ok().build();
     }
 
-    // --- GESTÃO DA ESTRUTURA (Apenas ADMIN) ---
+    // --- ESTRUTURA (Admin) ---
 
     @PostMapping("/boards")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ChecklistBoardDTO> criarBoard(@RequestBody Map<String, Object> payload) {
         String nome = (String) payload.get("nome");
         UUID equipeId = UUID.fromString((String) payload.get("equipeId"));
 
-        // Extrai usuarioId se existir (para checklist individual)
         Long usuarioId = null;
         if (payload.containsKey("usuarioId") && payload.get("usuarioId") != null) {
-            // Trata conversão de Integer (comum em JSON) para Long
             usuarioId = ((Number) payload.get("usuarioId")).longValue();
         }
 
@@ -75,21 +66,32 @@ public class ChecklistController {
     }
 
     @PostMapping("/cards")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ChecklistCardDTO> adicionarCard(@RequestBody Map<String, Object> payload) {
         UUID boardId = UUID.fromString((String) payload.get("boardId"));
         String titulo = (String) payload.get("titulo");
+        String abre = (String) payload.get("horarioAbertura");
+        String fecha = (String) payload.get("horarioFechamento");
 
-        // Parse de horário (Ex: "08:00")
-        LocalTime inicio = LocalTime.parse((String) payload.get("horarioAbertura"));
-        LocalTime fim = LocalTime.parse((String) payload.get("horarioFechamento"));
+        ChecklistCardDTO card = checklistService.adicionarCard(boardId, titulo,
+                java.time.LocalTime.parse(abre),
+                java.time.LocalTime.parse(fecha));
 
-        ChecklistCardDTO card = checklistService.adicionarCard(boardId, titulo, inicio, fim);
         return ResponseEntity.ok(card);
     }
 
+    @PatchMapping("/cards/{id}")
+    public ResponseEntity<Void> atualizarCard(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> payload) {
+
+        if (payload.containsKey("descricao")) {
+            String descricao = (String) payload.get("descricao");
+            checklistService.atualizarDescricaoCard(id, descricao);
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/itens")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> adicionarItem(@RequestBody Map<String, Object> payload) {
         UUID cardId = UUID.fromString((String) payload.get("cardId"));
         String descricao = (String) payload.get("descricao");

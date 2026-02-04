@@ -1,86 +1,176 @@
-.checklist-container {
+.board-wrapper {
+  height: calc(100vh - 64px); // Ajuste conforme a altura da sua Toolbar
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background-color: #f4f5f7; // Cor de fundo estilo Jira/Trello
+  overflow: hidden; // Scroll interno no container kanban
+}
+
+.page-header {
+  padding: 20px 24px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+
+  h1 { margin: 0; font-size: 22px; color: #172b4d; font-weight: 600; }
+  .data-hoje { margin: 4px 0 0; color: #5e6c84; font-size: 14px; }
+}
+
+.kanban-container {
+  flex: 1;
+  display: flex;
+  overflow-x: auto; // Scroll horizontal
+  overflow-y: hidden;
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 24px;
+  align-items: flex-start; // Colunas alinham ao topo
 
-  .page-header {
+  // Scrollbar bonita
+  &::-webkit-scrollbar { height: 12px; }
+  &::-webkit-scrollbar-thumb { background: #bfc4ce; border-radius: 6px; }
+  &::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+}
+
+.kanban-column {
+  min-width: 300px;
+  max-width: 300px;
+  background-color: #ebecf0; // Cinza claro das colunas
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.column-header {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h2 { margin: 0; font-size: 14px; font-weight: 600; color: #172b4d; text-transform: uppercase; }
+  .card-count { font-size: 12px; color: #5e6c84; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; }
+}
+
+.cards-list {
+  padding: 0 8px 8px 8px;
+  overflow-y: auto; // Scroll vertical dentro da coluna
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 50px; // Área de drop mínima
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background: #dcdfe4; border-radius: 3px; }
+}
+
+.kanban-card {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  overflow: hidden;
+
+  &:hover {
+    background-color: #f4f5f7;
+    box-shadow: 0 2px 4px rgba(9, 30, 66, 0.3);
+  }
+
+  &.card-concluido {
+    opacity: 0.8;
+    background-color: #f0fff4; // Verde bem claro
+  }
+
+  .status-indicator {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: #ccc;
+
+    &.ABERTO { background: #0079bf; } // Azul
+    &.PENDENTE { background: #ff9800; } // Laranja
+    &.FECHADO { background: #ebecf0; } // Cinza
+    &.ATRASADO { background: #eb5a46; } // Vermelho
+  }
+
+  .card-content {
+    padding: 10px 10px 10px 14px; // Esquerda maior por causa da barra lateral
+  }
+
+  .card-title {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #172b4d;
+    line-height: 1.4;
+  }
+
+  .card-meta {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    gap: 4px;
+    font-size: 11px;
+    color: #5e6c84;
+    margin-bottom: 8px;
 
-    h1 { margin: 0; font-size: 24px; }
-    .data-hoje { font-size: 18px; color: #666; }
+    .clock-icon { font-size: 12px; width: 12px; height: 12px; }
   }
 
-  .board-title {
-    margin-top: 32px;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
-    color: #333;
-  }
-
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
-  }
-
-  .checklist-card {
-    border-left: 5px solid transparent;
-    transition: all 0.3s ease;
-
-    &.status-aberto { border-left-color: #4caf50; }     // Verde
-    &.status-pendente { border-left-color: #9e9e9e; opacity: 0.8; } // Cinza
-    &.status-fechado { border-left-color: #f44336; opacity: 0.9; }  // Vermelho
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 16px 8px 16px;
-
-      h3 { margin: 0; font-size: 18px; font-weight: 500; }
-    }
+  .card-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
 
     .badge {
-      padding: 4px 8px;
-      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #5e6c84;
       font-size: 12px;
-      font-weight: bold;
-      color: white;
+      padding: 2px 4px;
+      border-radius: 3px;
 
-      &.status-aberto { background-color: #4caf50; }
-      &.status-pendente { background-color: #9e9e9e; }
-      &.status-fechado { background-color: #f44336; }
-    }
+      &:hover { background-color: rgba(9, 30, 66, 0.08); color: #172b4d; }
 
-    .card-time-info {
-      padding: 0 16px;
-      color: #666;
-      font-size: 13px;
-      margin-bottom: 12px;
-    }
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
-    .card-content {
-      padding: 8px 16px 16px 16px;
-
-      .item-row {
-        margin-bottom: 8px;
-
-        .riscado {
-          text-decoration: line-through;
-          color: #888;
+      &.checkbox-badge {
+        &.done {
+          background-color: #61bd4f;
+          color: white;
         }
       }
     }
   }
 
-  .loading-state, .empty-state {
-    text-align: center;
-    padding: 48px;
-    color: #666;
-    font-size: 18px;
+  .mini-progress {
+    height: 4px;
+    border-radius: 2px;
   }
 }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #5e6c84;
+
+  h3 { margin-bottom: 8px; color: #172b4d; }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #5e6c84;
+
+  .spin { animation: rotate 1s linear infinite; font-size: 32px; height: 32px; width: 32px; margin-bottom: 8px; }
+}
+
+@keyframes rotate { 100% { transform: rotate(360deg); } }

@@ -16,5 +16,9 @@ public class ChecklistBoardDTO {
     private UUID id;
     private String nome;
     private UUID equipeId;
+
+    // Campo novo para identificar dono do quadro (null = Todos)
+    private Long usuarioEspecificoId;
+
     private List<ChecklistCardDTO> cards;
 }

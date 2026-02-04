@@ -11,33 +11,32 @@ import { Login } from './login/login';
 import { Register } from './login/register/register';
 import { ForgotPassword } from './login/forgot-password/forgot-password';
 
-// Dashboard e Cadastros (Nomes assumidos como corretos pois não deram erro no último log)
+// Dashboard e Cadastros
 import { Dashboard } from './dashboard/dashboard';
 import { Clientes } from './pages/clientes/clientes';
 import { Fornecedores } from './pages/fornecedores/fornecedores';
 import { Produtos } from './pages/produtos/produtos';
-
-// --- CORREÇÃO AQUI: PerfilPage ---
-import { PerfilPage } from './pages/perfil/perfil'; //
+import { PerfilPage } from './pages/perfil/perfil';
 
 // Encomendas
 import { Encomendas } from './pages/encomendas/encomendas';
 import { EncomendaCreate } from './pages/encomenda-create/encomenda-create';
-// --- CORREÇÃO AQUI: EncomendaDetalhesComponent ---
-import { EncomendaDetalhesComponent } from './pages/encomenda-detalhes/encomenda-detalhes'; //
+import { EncomendaDetalhesComponent } from './pages/encomenda-detalhes/encomenda-detalhes';
 
 // Equipes
-// --- CORREÇÃO AQUI: EquipesPage ---
-import { EquipesPage } from './pages/equipes/equipes'; //
+import { EquipesPage } from './pages/equipes/equipes';
 import { GestaoEquipe } from './pages/gestao-equipe/gestao-equipe';
 
-// Checklist (Novo componente criado hoje)
+// Operacional (Funcionário)
 import { ChecklistDiaComponent } from './pages/checklist-dia/checklist-dia';
-
 import { MeuCalendarioComponent } from './pages/meu-calendario/meu-calendario';
+
+// Administração (Gestor) - NOVAS IMPORTAÇÕES
 import { EscalaAdminComponent } from './pages/escala-admin/escala-admin';
+import { ChecklistCriadorComponent } from './pages/checklist-criador/checklist-criador';
 
 export const routes: Routes = [
+  // Rotas Públicas
   {
     path: 'login',
     component: Login
@@ -51,6 +50,7 @@ export const routes: Routes = [
     component: ForgotPassword
   },
 
+  // Rotas Protegidas (Layout Principal)
   {
     path: '',
     component: Main,
@@ -67,6 +67,7 @@ export const routes: Routes = [
         title: 'Dashboard - Encomendas'
       },
 
+      // --- CADASTROS ---
       {
         path: 'clientes',
         component: Clientes,
@@ -83,6 +84,7 @@ export const routes: Routes = [
         title: 'Catálogo de Produtos'
       },
 
+      // --- ENCOMENDAS ---
       {
         path: 'encomendas',
         component: Encomendas,
@@ -95,13 +97,14 @@ export const routes: Routes = [
       },
       {
         path: 'encomendas/:id',
-        component: EncomendaDetalhesComponent, // Classe corrigida
+        component: EncomendaDetalhesComponent,
         title: 'Detalhes da Encomenda'
       },
 
+      // --- EQUIPES ---
       {
         path: 'equipes',
-        component: EquipesPage, // Classe corrigida
+        component: EquipesPage,
         title: 'Minhas Equipes'
       },
       {
@@ -110,30 +113,40 @@ export const routes: Routes = [
         title: 'Gerenciar Membros'
       },
 
+      // --- OPERACIONAL (FUNCIONÁRIO) ---
       {
         path: 'checklists',
         component: ChecklistDiaComponent,
         title: 'Meu Checklist Diário'
-      },
-
-      {
-        path: 'perfil',
-        component: PerfilPage, // Classe corrigida
-        title: 'Meu Perfil'
       },
       {
         path: 'meu-calendario',
         component: MeuCalendarioComponent,
         title: 'Minha Escala'
       },
+
+      // --- ADMINISTRAÇÃO (GESTOR) ---
       {
         path: 'admin/escalas',
         component: EscalaAdminComponent,
         title: 'Gestão de Escalas'
       },
+      {
+        path: 'admin/checklists',
+        component: ChecklistCriadorComponent,
+        title: 'Gestor de Checklists'
+      },
+
+      // --- CONTA ---
+      {
+        path: 'perfil',
+        component: PerfilPage,
+        title: 'Meu Perfil'
+      }
     ]
   },
 
+  // Wildcard: Se a rota não existe, manda pro login
   {
     path: '**',
     redirectTo: 'login'

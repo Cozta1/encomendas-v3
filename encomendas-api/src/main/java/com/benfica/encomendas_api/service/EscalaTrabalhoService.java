@@ -1,6 +1,6 @@
 package com.benfica.encomendas_api.service;
 
-import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO; // Import novo
+import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO;
 import com.benfica.encomendas_api.dto.EscalaTrabalhoDTO;
 import com.benfica.encomendas_api.model.EscalaTrabalho;
 import com.benfica.encomendas_api.model.Usuario;
@@ -24,70 +24,76 @@ public class EscalaTrabalhoService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    // --- LEITURA ---
+    public List<EscalaTrabalhoDTO> getEscalas(Long usuarioId, LocalDate inicio, LocalDate fim) {
+        List<EscalaTrabalho> escalas = escalaRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim);
+        return escalas.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    // --- SALVAR (Upsert: Cria ou Atualiza) ---
     @Transactional
     public EscalaTrabalhoDTO salvarEscala(EscalaTrabalhoDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
+        // VERIFICAÇÃO IMPORTANTE: Busca se já existe escala neste dia
         EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(dto.getUsuarioId(), dto.getData());
 
         if (escala == null) {
+            // Se não existe, cria nova
             escala = new EscalaTrabalho();
             escala.setUsuario(usuario);
             escala.setData(dto.getData());
         }
 
+        // Atualiza os dados (seja nova ou existente)
+        escala.setTipo(dto.getTipo());
         escala.setHorarioInicio(dto.getHorarioInicio());
         escala.setHorarioFim(dto.getHorarioFim());
-        escala.setTipo(dto.getTipo());
         escala.setObservacao(dto.getObservacao());
 
         EscalaTrabalho salva = escalaRepository.save(escala);
-        return mapToDTO(salva);
+        return toDTO(salva);
     }
 
-    // --- NOVA FUNCIONALIDADE: REPLICAÇÃO ---
+    // --- REPLICAÇÃO (Upsert em lote) ---
     @Transactional
     public void replicarEscala(EscalaReplicacaoDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
-        LocalDate dataAtual = dto.getDataInicio();
+        LocalDate atual = dto.getDataInicio();
 
-        // Loop do dia de início até o dia de fim
-        while (!dataAtual.isAfter(dto.getDataFim())) {
-            // Verifica se o dia da semana atual está na lista de dias selecionados
-            // DayOfWeek value: 1 (Mon) a 7 (Sun)
-            if (dto.getDiasSemana().contains(dataAtual.getDayOfWeek().getValue())) {
+        // Loop dia a dia
+        while (!atual.isAfter(dto.getDataFim())) {
+            // Verifica se o dia da semana está na lista de dias selecionados
+            // getDayOfWeek().getValue(): 1=Segunda ... 7=Domingo
+            // O front envia: 1=Seg ... 7=Dom (compatível)
+            if (dto.getDiasSemana().contains(atual.getDayOfWeek().getValue())) {
 
-                // Reaproveita lógica de busca/criação
-                EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(dto.getUsuarioId(), dataAtual);
+                // Busca se já existe escala no dia
+                EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(usuario.getId(), atual);
 
                 if (escala == null) {
                     escala = new EscalaTrabalho();
                     escala.setUsuario(usuario);
-                    escala.setData(dataAtual);
+                    escala.setData(atual);
                 }
 
+                // Atualiza campos
+                escala.setTipo(dto.getTipo());
                 escala.setHorarioInicio(dto.getHorarioInicio());
                 escala.setHorarioFim(dto.getHorarioFim());
-                escala.setTipo(dto.getTipo());
                 escala.setObservacao(dto.getObservacao());
 
                 escalaRepository.save(escala);
             }
-
-            dataAtual = dataAtual.plusDays(1);
+            atual = atual.plusDays(1);
         }
     }
-    // ---------------------------------------
 
-    public List<EscalaTrabalhoDTO> buscarEscalaPorPeriodo(Long usuarioId, LocalDate inicio, LocalDate fim) {
-        List<EscalaTrabalho> escalas = escalaRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim);
-        return escalas.stream().map(this::mapToDTO).collect(Collectors.toList());
-    }
-
-    private EscalaTrabalhoDTO mapToDTO(EscalaTrabalho entity) {
+    // --- MAPPER ---
+    private EscalaTrabalhoDTO toDTO(EscalaTrabalho entity) {
         return EscalaTrabalhoDTO.builder()
                 .id(entity.getId())
                 .usuarioId(entity.getUsuario().getId())

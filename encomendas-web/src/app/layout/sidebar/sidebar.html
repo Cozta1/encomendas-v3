@@ -13,6 +13,11 @@
     <span matListItemTitle>Meu Checklist</span>
   </a>
 
+  <a mat-list-item routerLink="/meu-calendario" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>calendar_month</mat-icon>
+    <span matListItemTitle>Minha Escala</span>
+  </a>
+
   <a mat-list-item routerLink="/encomendas/nova" routerLinkActive="active-link">
     <mat-icon matListItemIcon>add_shopping_cart</mat-icon>
     <span matListItemTitle>Nova Encomenda</span>
@@ -24,23 +29,44 @@
   </a>
 
   <mat-divider style="margin: 8px 0;"></mat-divider>
-  <h3 class="menu-header" style="font-size: 12px; color: #888; padding: 0 16px; margin-bottom: 4px;">ADMINISTRAÇÃO</h3>
+  <h3 class="menu-header" style="font-size: 12px; color: #888; padding: 0 16px; margin-bottom: 4px;">CADASTROS</h3>
+
+  <a mat-list-item routerLink="/clientes" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>people</mat-icon>
+    <span matListItemTitle>Clientes</span>
+  </a>
+
+  <a mat-list-item routerLink="/fornecedores" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>local_shipping</mat-icon>
+    <span matListItemTitle>Fornecedores</span>
+  </a>
+
+  <a mat-list-item routerLink="/produtos" routerLinkActive="active-link">
+    <mat-icon matListItemIcon>inventory_2</mat-icon>
+    <span matListItemTitle>Produtos</span>
+  </a>
 
   <a mat-list-item routerLink="/equipes" routerLinkActive="active-link">
     <mat-icon matListItemIcon>groups</mat-icon>
     <span matListItemTitle>Minhas Equipes</span>
   </a>
 
+  <ng-container *ngIf="isAdmin">
+    <mat-divider style="margin: 8px 0;"></mat-divider>
+    <h3 class="menu-header" style="font-size: 12px; color: #888; padding: 0 16px; margin-bottom: 4px;">ADMINISTRAÇÃO</h3>
 
-  <a mat-list-item routerLink="/meu-calendario" routerLinkActive="active-link">
-    <mat-icon matListItemIcon>calendar_month</mat-icon>
-    <span matListItemTitle>Minha Escala</span>
-  </a>
+    <a mat-list-item routerLink="/admin/escalas" routerLinkActive="active-link">
+      <mat-icon matListItemIcon>edit_calendar</mat-icon>
+      <span matListItemTitle>Gestão de Escalas</span>
+    </a>
 
-  <a mat-list-item routerLink="/admin/escalas" routerLinkActive="active-link">
-    <mat-icon matListItemIcon>edit_calendar</mat-icon>
-    <span matListItemTitle>Gestão de Escalas</span>
-  </a>
+    <a mat-list-item routerLink="/admin/checklists" routerLinkActive="active-link">
+      <mat-icon matListItemIcon>playlist_add_check</mat-icon>
+      <span matListItemTitle>Gestor de Checklists</span>
+    </a>
+  </ng-container>
+
+  <mat-divider style="margin: 8px 0;"></mat-divider>
 
   <a mat-list-item routerLink="/perfil" routerLinkActive="active-link">
     <mat-icon matListItemIcon>account_circle</mat-icon>

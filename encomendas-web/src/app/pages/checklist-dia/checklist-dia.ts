@@ -1,110 +1,120 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
 import { ChecklistService } from '../../core/services/checklist.service';
 import { TeamService } from '../../core/team/team.service';
-import { ChecklistBoard, ChecklistItem, ChecklistLogRequest } from '../../core/models/checklist.interfaces';
-import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../core/auth/auth.service';
+import { ChecklistBoard, ChecklistCard } from '../../core/models/checklist.interfaces';
+import { ChecklistCardDialog } from '../../components/dialogs/checklist-card-dialog/checklist-card-dialog';
 
 @Component({
   selector: 'app-checklist-dia',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     MatCardModule,
-    MatCheckboxModule,
+    MatButtonModule,
     MatIconModule,
-    MatButtonModule
+    MatChipsModule,
+    MatProgressBarModule,
+    MatDialogModule,
+    MatTooltipModule
   ],
   templateUrl: './checklist-dia.html',
   styleUrls: ['./checklist-dia.scss']
 })
 export class ChecklistDiaComponent implements OnInit {
+
   boards: ChecklistBoard[] = [];
-  loading = true;
-  equipeId: string | null = null;
-  dataHoje: Date = new Date();
+  loading = false;
+  dataAtual = new Date(); // Hoje
 
   constructor(
     private checklistService: ChecklistService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private authService: AuthService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    // --- CORREÇÃO AQUI ---
-    // Usamos getEquipeAtivaId() que existe no seu TeamService
-    const id = this.teamService.getEquipeAtivaId();
-
-    if (id) {
-      this.equipeId = id;
-      this.carregarChecklist();
-    } else {
-      console.error('Nenhuma equipe selecionada');
-      this.loading = false;
-    }
+    this.carregarDados();
   }
 
-  carregarChecklist(): void {
-    if (!this.equipeId) return;
+  carregarDados() {
+    const equipeId = this.teamService.getEquipeAtivaId();
+    const user = this.authService.getUser();
 
-    this.loading = true;
-    this.checklistService.getChecklistDoDia(this.equipeId)
-      .subscribe({
-        next: (data) => {
-          this.boards = data;
+    if (equipeId && user) {
+      this.loading = true;
+      const hojeStr = this.formatDate(this.dataAtual);
+
+      // Passa o usuarioId para o backend filtrar pela Escala e Checklists Individuais
+      this.checklistService.getChecklistDoDia(equipeId, hojeStr, user.id).subscribe({
+        next: (dados) => {
+          this.boards = dados;
           this.loading = false;
         },
         error: (err) => {
-          console.error('Erro ao carregar checklist', err);
+          console.error('Erro ao carregar checklists', err);
           this.loading = false;
         }
       });
+    }
   }
 
-  onItemChange(item: ChecklistItem, event: any): void {
-    const novoValor = event.checked;
+  // Abre o Modal estilo Trello
+  abrirCardDetalhado(card: ChecklistCard) {
+    const user = this.authService.getUser();
+    if (!user) return;
 
-    const valorOriginal = item.marcado;
-    item.marcado = novoValor;
-
-    const request: ChecklistLogRequest = {
-      itemId: item.id,
-      dataReferencia: new Date().toISOString().split('T')[0],
-      valor: novoValor
-    };
-
-    this.checklistService.registrarAcao(request).subscribe({
-      error: (err) => {
-        console.error('Erro ao marcar item', err);
-        item.marcado = valorOriginal;
-        alert('Erro ao salvar alteração. Tente novamente.');
+    const dialogRef = this.dialog.open(ChecklistCardDialog, {
+      width: '768px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'trello-dialog-container', // Estilize globalmente se necessário
+      data: {
+        card: card,
+        usuarioId: user.id
       }
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      // Recarrega os dados ao fechar para atualizar progresso e checks
+      this.carregarDados();
     });
   }
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'ABERTO': return 'status-aberto';
-      case 'FECHADO': return 'status-fechado';
-      case 'PENDENTE': return 'status-pendente';
-      default: return '';
-    }
+  // --- HELPERS VISUAIS ---
+
+  countMarcados(card: ChecklistCard): number {
+    if (!card.itens) return 0;
+    return card.itens.filter(i => i.marcado).length;
   }
 
-  getStatusLabel(status: string): string {
-    switch (status) {
-      case 'ABERTO': return 'Disponível';
-      case 'FECHADO': return 'Encerrado';
-      case 'PENDENTE': return 'Aguardando Horário';
-      default: return status;
-    }
+  getProgresso(card: ChecklistCard): number {
+    if (!card.itens || card.itens.length === 0) return 0;
+    const marcados = this.countMarcados(card);
+    return (marcados / card.itens.length) * 100;
   }
 
-  isBloqueado(status: string): boolean {
-    return status !== 'ABERTO';
+  getStatusColor(card: ChecklistCard): string {
+    // Retorna classes CSS baseadas no status/progresso
+    if (this.getProgresso(card) === 100) return 'completed-badge';
+    if (card.status === 'FECHADO') return 'closed-badge';
+    return 'open-badge';
+  }
+
+  private formatDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

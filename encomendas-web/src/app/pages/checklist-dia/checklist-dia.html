@@ -1,48 +1,65 @@
-<div class="checklist-container">
-  <header class="page-header">
-    <h1>Meu Checklist Diário</h1>
-    <span class="data-hoje">{{ dataHoje | date:'dd/MM/yyyy' }}</span>
-    <button mat-raised-button color="primary" (click)="carregarChecklist()">
-      <mat-icon>refresh</mat-icon> Atualizar
-    </button>
-  </header>
+<div class="board-wrapper">
+
+  <div class="page-header">
+    <h1>Meu Trabalho Hoje</h1>
+    <p class="data-hoje">{{ dataAtual | date:"EEEE, d 'de' MMMM" : '' : 'pt-BR' | titlecase }}</p>
+  </div>
 
   <div *ngIf="loading" class="loading-state">
-    <p>Carregando suas tarefas...</p>
+    <mat-icon class="spin">sync</mat-icon>
+    <p>Sincronizando tarefas...</p>
   </div>
 
-  <div *ngIf="!loading && boards.length === 0" class="empty-state">
-    <p>Nenhum checklist configurado para esta equipe.</p>
+  <div class="empty-state" *ngIf="!loading && boards.length === 0">
+    <img src="assets/images/relax.svg" alt="Folga" style="width: 150px; opacity: 0.6; margin-bottom: 20px;"> <h3>Tudo tranquilo por aqui!</h3>
+    <p>Você não possui tarefas agendadas para hoje ou está de folga na escala.</p>
   </div>
 
-  <div class="boards-list" *ngFor="let board of boards">
-    <h2 class="board-title">{{ board.nome }}</h2>
+  <div class="kanban-container" *ngIf="!loading && boards.length > 0">
 
-    <div class="cards-grid">
-      <mat-card *ngFor="let card of board.cards" class="checklist-card" [ngClass]="getStatusClass(card.status)">
-        <div class="card-header">
-          <h3>{{ card.titulo }}</h3>
-          <span class="badge" [ngClass]="getStatusClass(card.status)">
-            {{ getStatusLabel(card.status) }}
-          </span>
-        </div>
+    <div class="kanban-column" *ngFor="let board of boards">
+      <div class="column-header">
+        <h2>{{ board.nome }}</h2>
+        <span class="card-count">{{ board.cards.length }} blocos</span>
+      </div>
 
-        <div class="card-time-info">
-          <small>Horário: {{ card.horarioAbertura }} - {{ card.horarioFechamento }}</small>
-        </div>
+      <div class="cards-list">
+        <div class="kanban-card"
+             *ngFor="let card of board.cards"
+             (click)="abrirCardDetalhado(card)"
+             [class.card-concluido]="getProgresso(card) === 100">
 
-        <div class="card-content">
-          <div class="item-row" *ngFor="let item of card.itens">
-            <mat-checkbox
-              [checked]="item.marcado"
-              [disabled]="isBloqueado(card.status)"
-              (change)="onItemChange(item, $event)"
-              color="primary">
-              <span [class.riscado]="item.marcado">{{ item.descricao }}</span>
-            </mat-checkbox>
+          <div class="status-indicator" [ngClass]="card.status"></div>
+
+          <div class="card-content">
+            <h3 class="card-title">{{ card.titulo }}</h3>
+
+            <div class="card-meta">
+              <mat-icon class="clock-icon">schedule</mat-icon>
+              <span>{{ card.horarioAbertura }} - {{ card.horarioFechamento }}</span>
+            </div>
+
+            <div class="card-badges">
+              <div class="badge" *ngIf="card.descricao" matTooltip="Possui descrição">
+                <mat-icon>subject</mat-icon>
+              </div>
+
+              <div class="badge" *ngIf="card.anexos && card.anexos.length > 0" matTooltip="Possui anexos">
+                <mat-icon>attach_file</mat-icon>
+                <span class="badge-text">{{ card.anexos.length }}</span>
+              </div>
+
+              <div class="badge checkbox-badge" [class.done]="getProgresso(card) === 100">
+                <mat-icon>check_box</mat-icon>
+                <span class="badge-text">{{ countMarcados(card) }}/{{ card.itens.length }}</span>
+              </div>
+            </div>
+
+            <mat-progress-bar mode="determinate" [value]="getProgresso(card)" class="mini-progress"></mat-progress-bar>
           </div>
         </div>
-      </mat-card>
+      </div>
     </div>
+
   </div>
 </div>
