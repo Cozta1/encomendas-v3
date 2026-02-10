@@ -51,8 +51,8 @@ export class MeuCalendarioComponent implements OnInit {
   }
 
   atualizarVisualizacao() {
-    this.gerarCalendario();
-    this.carregarEscalas();
+    this.gerarCalendario(); // Gera a grade vazia
+    this.carregarEscalas(); // Busca os dados
   }
 
   get mesAnoTitulo(): string {
@@ -61,14 +61,11 @@ export class MeuCalendarioComponent implements OnInit {
 
   carregarEscalas() {
     const user = this.authService.getUser();
-    if (!user) {
-      console.error('Usuário não autenticado ou não encontrado no AuthService');
-      return;
-    }
+    if (!user) return;
 
     this.loading = true;
 
-    // Define intervalo para busca (Mês completo)
+    // Intervalo (Primeiro ao último dia do mês)
     const inicio = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth(), 1);
     const fim = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() + 1, 0);
 
@@ -85,31 +82,36 @@ export class MeuCalendarioComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Erro ao buscar escalas:', err);
+        console.error('Erro ao buscar escalas', err);
         this.loading = false;
       }
     });
   }
 
   gerarCalendario() {
-    this.dias = [];
+    // Importante: Reinicia o array
+    const novosDias: DiaCalendario[] = [];
+
     const ano = this.dataAtual.getFullYear();
     const mes = this.dataAtual.getMonth();
 
     const primeiroDiaDoMes = new Date(ano, mes, 1);
     const ultimoDiaDoMes = new Date(ano, mes + 1, 0);
-
     const diaSemanaInicio = primeiroDiaDoMes.getDay();
 
+    // Dias do mês anterior
     for (let i = diaSemanaInicio; i > 0; i--) {
       const d = new Date(ano, mes, 1 - i);
-      this.dias.push(this.criarDia(d, true));
+      novosDias.push(this.criarDia(d, true));
     }
 
+    // Dias do mês atual
     for (let i = 1; i <= ultimoDiaDoMes.getDate(); i++) {
       const d = new Date(ano, mes, i);
-      this.dias.push(this.criarDia(d, false));
+      novosDias.push(this.criarDia(d, false));
     }
+
+    this.dias = novosDias;
   }
 
   criarDia(data: Date, isOutroMes: boolean): DiaCalendario {
@@ -125,35 +127,56 @@ export class MeuCalendarioComponent implements OnInit {
   }
 
   atualizarDiasComEscala() {
-    this.dias.forEach(dia => {
-      // Formato String esperado: "YYYY-MM-DD"
-      const dataStr = this.formatDate(dia.data);
+    // Vamos iterar e atualizar.
+    // Usamos map para criar um novo array e forçar o Angular a detectar a mudança.
+    this.dias = this.dias.map(dia => {
 
-      // Tenta encontrar escala compatível
-      const escala = this.escalas.find(e => {
-        // Caso 1: Data vem como string "2026-02-04" (Com @JsonFormat)
-        if (typeof e.data === 'string') {
-          return e.data === dataStr;
-        }
-        // Caso 2: Data vem como Array [2026, 2, 4] (Sem @JsonFormat ou erro de config)
-        if (Array.isArray(e.data)) {
-          const ano = e.data[0];
-          const mes = e.data[1]; // No Java Array, mês 1 = Janeiro? Geralmente sim no LocalDate
-          const diaMes = e.data[2];
+      const escalaEncontrada = this.escalas.find(e => this.datasIguais(dia.data, e.data));
 
-          return ano === dia.data.getFullYear() &&
-                 mes === (dia.data.getMonth() + 1) &&
-                 diaMes === dia.data.getDate();
-        }
-        return false;
-      });
-
-      if (escala) {
-        dia.escala = escala;
-      } else {
-        dia.escala = undefined;
+      // Debug apenas no dia 1 para não poluir o console
+      if (dia.diaMes === 1 && !dia.isOutroMes) {
+         console.log('Comparando dia 1:', dia.data, 'Escala encontrada:', escalaEncontrada);
       }
+
+      return {
+        ...dia,
+        escala: escalaEncontrada
+      };
     });
+  }
+
+  // --- COMPARADOR ROBUSTO ---
+  // Compara Date do calendário com (String ou Array ou Date) da API
+  datasIguais(dataCalendario: Date, dataApi: any): boolean {
+    if (!dataApi) return false;
+
+    const anoCal = dataCalendario.getFullYear();
+    const mesCal = dataCalendario.getMonth() + 1; // 0-11 vira 1-12
+    const diaCal = dataCalendario.getDate();
+
+    // Caso 1: String "YYYY-MM-DD"
+    if (typeof dataApi === 'string') {
+      const partes = dataApi.split('-'); // [2026, 02, 01]
+      return parseInt(partes[0]) === anoCal &&
+             parseInt(partes[1]) === mesCal &&
+             parseInt(partes[2]) === diaCal;
+    }
+
+    // Caso 2: Array [2026, 2, 1]
+    if (Array.isArray(dataApi)) {
+      return dataApi[0] === anoCal &&
+             dataApi[1] === mesCal &&
+             dataApi[2] === diaCal;
+    }
+
+    // Caso 3: Objeto Date (improvável vir do JSON, mas possível se tratado antes)
+    if (dataApi instanceof Date) {
+      return dataApi.getFullYear() === anoCal &&
+             (dataApi.getMonth() + 1) === mesCal &&
+             dataApi.getDate() === diaCal;
+    }
+
+    return false;
   }
 
   private formatDate(date: Date): string {
