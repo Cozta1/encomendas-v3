@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,20 +62,25 @@ public class ChecklistService {
                 ? logRepository.findByUsuarioIdAndDataReferencia(usuarioId, dataReferencia)
                 : List.of();
 
-        // 4. Monta o DTO com status calculado
-        return boards.stream().map(board -> {
-            List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
-                    .map(card -> mapCardToDTO(card, logsDoDia, dataReferencia, true)) // true = calcula status
-                    .collect(Collectors.toList());
+        // 4. Monta o DTO com status calculado e ORDENAÇÃO
+        return boards.stream()
+                // Garante que a lista venha ordenada do backend
+                .sorted(Comparator.comparingInt(b -> b.getOrdem() != null ? b.getOrdem() : 9999))
+                .map(board -> {
+                    List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
+                            // Garante que os cards venham ordenados
+                            .sorted(Comparator.comparingInt(c -> c.getOrdem() != null ? c.getOrdem() : 9999))
+                            .map(card -> mapCardToDTO(card, logsDoDia, dataReferencia, true)) // true = calcula status
+                            .collect(Collectors.toList());
 
-            return ChecklistBoardDTO.builder()
-                    .id(board.getId())
-                    .nome(board.getNome())
-                    .equipeId(board.getEquipe().getId())
-                    .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
-                    .cards(cardsDTO)
-                    .build();
-        }).collect(Collectors.toList());
+                    return ChecklistBoardDTO.builder()
+                            .id(board.getId())
+                            .nome(board.getNome())
+                            .equipeId(board.getEquipe().getId())
+                            .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
+                            .cards(cardsDTO)
+                            .build();
+                }).collect(Collectors.toList());
     }
 
     // --- VISÃO ADMIN: LISTAR TUDO (Ignora Escala) ---
@@ -82,19 +89,22 @@ public class ChecklistService {
         // Busca TODOS os boards da equipe
         List<ChecklistBoard> boards = boardRepository.findByEquipeId(equipeId);
 
-        return boards.stream().map(board -> {
-            List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
-                    .map(card -> mapCardToDTO(card, List.of(), LocalDate.now(), false)) // false = modo edição (sem logs)
-                    .collect(Collectors.toList());
+        return boards.stream()
+                .sorted(Comparator.comparingInt(b -> b.getOrdem() != null ? b.getOrdem() : 9999))
+                .map(board -> {
+                    List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
+                            .sorted(Comparator.comparingInt(c -> c.getOrdem() != null ? c.getOrdem() : 9999))
+                            .map(card -> mapCardToDTO(card, List.of(), LocalDate.now(), false)) // false = modo edição (sem logs)
+                            .collect(Collectors.toList());
 
-            return ChecklistBoardDTO.builder()
-                    .id(board.getId())
-                    .nome(board.getNome())
-                    .equipeId(board.getEquipe().getId())
-                    .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
-                    .cards(cardsDTO)
-                    .build();
-        }).collect(Collectors.toList());
+                    return ChecklistBoardDTO.builder()
+                            .id(board.getId())
+                            .nome(board.getNome())
+                            .equipeId(board.getEquipe().getId())
+                            .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
+                            .cards(cardsDTO)
+                            .build();
+                }).collect(Collectors.toList());
     }
 
     // --- HELPER DE MAPEAMENTO ---
@@ -105,23 +115,26 @@ public class ChecklistService {
         }
 
         // Mapeia Itens
-        List<ChecklistItemDTO> itens = card.getItens().stream().map(item -> {
-            boolean marcado = false;
-            if (calcularStatus) {
-                marcado = logsDoDia.stream()
-                        .filter(log -> log.getItem().getId().equals(item.getId()))
-                        .reduce((first, second) -> second)
-                        .map(ChecklistLog::getValor)
-                        .orElse(false);
-            }
+        List<ChecklistItemDTO> itens = card.getItens().stream()
+                // Garante ordenação dos itens também
+                .sorted(Comparator.comparingInt(i -> i.getOrdem() != null ? i.getOrdem() : 9999))
+                .map(item -> {
+                    boolean marcado = false;
+                    if (calcularStatus) {
+                        marcado = logsDoDia.stream()
+                                .filter(log -> log.getItem().getId().equals(item.getId()))
+                                .reduce((first, second) -> second)
+                                .map(ChecklistLog::getValor)
+                                .orElse(false);
+                    }
 
-            return ChecklistItemDTO.builder()
-                    .id(item.getId())
-                    .descricao(item.getDescricao())
-                    .ordem(item.getOrdem())
-                    .marcado(marcado)
-                    .build();
-        }).collect(Collectors.toList());
+                    return ChecklistItemDTO.builder()
+                            .id(item.getId())
+                            .descricao(item.getDescricao())
+                            .ordem(item.getOrdem())
+                            .marcado(marcado)
+                            .build();
+                }).collect(Collectors.toList());
 
         // Mapeia Anexos
         List<ChecklistAnexoDTO> anexosDTO = card.getAnexos().stream()
@@ -192,6 +205,7 @@ public class ChecklistService {
                 .nome(nome)
                 .equipe(equipe)
                 .usuarioEspecifico(usuario)
+                .ordem(9999) // Coloca no final por padrão
                 .build();
 
         ChecklistBoard salvo = boardRepository.save(board);
@@ -215,6 +229,7 @@ public class ChecklistService {
                 .board(board)
                 .horarioAbertura(inicio)
                 .horarioFechamento(fim)
+                .ordem(9999) // Coloca no final por padrão
                 .build();
 
         ChecklistCard salvo = cardRepository.save(card);
@@ -250,5 +265,40 @@ public class ChecklistService {
                 .build();
 
         itemRepository.save(item);
+    }
+
+    // --- MÉTODOS DE REORDENAÇÃO (PERSISTÊNCIA) ---
+
+    @Transactional
+    public void atualizarOrdemBoards(List<Map<String, Object>> lista) {
+        for (Map<String, Object> item : lista) {
+            String idStr = (String) item.get("id");
+            // Se o frontend enviar como número, converte, se string usa direto
+            if (idStr == null) continue;
+
+            UUID id = UUID.fromString(idStr);
+            Integer novaOrdem = (Integer) item.get("ordem");
+
+            boardRepository.findById(id).ifPresent(board -> {
+                board.setOrdem(novaOrdem);
+                boardRepository.save(board);
+            });
+        }
+    }
+
+    @Transactional
+    public void atualizarOrdemCards(List<Map<String, Object>> lista) {
+        for (Map<String, Object> item : lista) {
+            String idStr = (String) item.get("id");
+            if (idStr == null) continue;
+
+            UUID id = UUID.fromString(idStr);
+            Integer novaOrdem = (Integer) item.get("ordem");
+
+            cardRepository.findById(id).ifPresent(card -> {
+                card.setOrdem(novaOrdem);
+                cardRepository.save(card);
+            });
+        }
     }
 }

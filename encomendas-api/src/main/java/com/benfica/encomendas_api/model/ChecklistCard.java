@@ -27,16 +27,19 @@ public class ChecklistCard {
     @Column(nullable = false)
     private String titulo;
 
-    // --- CAMPO NOVO: Descrição detalhada (estilo Trello) ---
     @Column(columnDefinition = "TEXT")
     private String descricao;
-    // -------------------------------------------------------
 
     @Column(nullable = false)
     private LocalTime horarioAbertura;
 
     @Column(nullable = false)
     private LocalTime horarioFechamento;
+
+    // --- CAMPO DE ORDENAÇÃO (ADICIONADO) ---
+    @Column(name = "ordem")
+    private Integer ordem;
+    // ---------------------------------------
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id", nullable = false)
@@ -46,9 +49,7 @@ public class ChecklistCard {
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistItem> itens = new ArrayList<>();
 
-    // --- CAMPO NOVO: Lista de Anexos ---
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ChecklistAnexo> anexos = new ArrayList<>();
-    // -----------------------------------
 }

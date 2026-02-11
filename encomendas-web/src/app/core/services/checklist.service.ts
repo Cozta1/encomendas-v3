@@ -75,4 +75,24 @@ export class ChecklistService {
       ordem
     });
   }
+
+  // --- PERSISTÊNCIA DE ORDEM (DRAG & DROP) ---
+
+  reordenarBoards(boards: ChecklistBoard[]): Observable<void> {
+    // Mapeia apenas o ID e a nova posição (índice no array)
+    const payload = boards.map((b, index) => ({
+      id: b.id,
+      ordem: index
+    }));
+    return this.http.put<void>(`${this.apiUrl}/boards/reordenar`, payload);
+  }
+
+  reordenarCards(cards: ChecklistCard[]): Observable<void> {
+    // Mapeia apenas o ID e a nova posição
+    const payload = cards.map((c, index) => ({
+      id: c.id,
+      ordem: index
+    }));
+    return this.http.put<void>(`${this.apiUrl}/cards/reordenar`, payload);
+  }
 }

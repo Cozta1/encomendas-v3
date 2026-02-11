@@ -100,4 +100,18 @@ public class ChecklistController {
         checklistService.adicionarItem(cardId, descricao, ordem);
         return ResponseEntity.ok().build();
     }
+
+    // --- REORDENAÇÃO (Endpoints Novos) ---
+
+    @PutMapping("/boards/reordenar")
+    public ResponseEntity<Void> reordenarBoards(@RequestBody List<Map<String, Object>> ordemBoards) {
+        checklistService.atualizarOrdemBoards(ordemBoards);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/cards/reordenar")
+    public ResponseEntity<Void> reordenarCards(@RequestBody List<Map<String, Object>> ordemCards) {
+        checklistService.atualizarOrdemCards(ordemCards);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -11,77 +11,79 @@
   </div>
 
   <div class="status-state folga" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FOLGA">
-    <div class="icon-circle">
-      <mat-icon>weekend</mat-icon>
-    </div>
+    <div class="icon-circle"><mat-icon>weekend</mat-icon></div>
     <h2>Bom descanso!</h2>
-    <p>Hoje é sua folga. Aproveite para recarregar as energias.</p>
+    <p>Hoje é sua folga. Aproveite.</p>
   </div>
 
   <div class="status-state ferias" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FERIAS">
-    <div class="icon-circle">
-      <mat-icon>beach_access</mat-icon>
-    </div>
+    <div class="icon-circle"><mat-icon>beach_access</mat-icon></div>
     <h2>Boas Férias!</h2>
-    <p>O sistema aguarda o seu retorno. Divirta-se!</p>
+    <p>Divirta-se!</p>
   </div>
 
   <div class="status-state atestado" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.ATESTADO">
-    <div class="icon-circle">
-      <mat-icon>medical_services</mat-icon>
-    </div>
-    <h2>Afastamento Médico</h2>
-    <p>Estimo as melhoras. Cuide da sua saúde.</p>
+    <div class="icon-circle"><mat-icon>medical_services</mat-icon></div>
+    <h2>Afastamento</h2>
+    <p>Cuide da sua saúde.</p>
   </div>
 
   <div class="empty-state" *ngIf="!loading && boards.length === 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
     <img src="assets/images/relax.svg" alt="Sem Tarefas" style="width: 150px; opacity: 0.6; margin-bottom: 20px;">
     <h3>Tudo limpo por aqui!</h3>
-    <p>Nenhuma checklist atribuída para o seu turno hoje.</p>
-    <p class="horario-turno" *ngIf="escalaHoje?.horarioInicio">
-      Seu turno: {{ escalaHoje?.horarioInicio }} - {{ escalaHoje?.horarioFim }}
-    </p>
+    <p>Nenhuma checklist hoje.</p>
   </div>
 
   <div class="kanban-container"
+       cdkDropList
+       cdkDropListOrientation="horizontal"
+       (cdkDropListDropped)="dropBoard($event)"
        *ngIf="!loading && boards.length > 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
 
-    <div class="kanban-column" *ngFor="let board of boards">
+    <div class="kanban-column" *ngFor="let board of boards" cdkDrag>
+
+      <div class="custom-column-placeholder" *cdkDragPlaceholder></div>
+
       <div class="column-header">
-        <h2>{{ board.nome }}</h2>
+        <div class="header-title">
+          <mat-icon class="drag-handle" cdkDragHandle>drag_indicator</mat-icon>
+          <h2>{{ board.nome }}</h2>
+        </div>
         <span class="card-count">{{ board.cards.length }}</span>
       </div>
 
-      <div class="cards-list">
+      <div class="cards-list"
+           cdkDropList
+           [cdkDropListData]="board.cards"
+           (cdkDropListDropped)="dropCard($event)">
+
         <div class="kanban-card"
              *ngFor="let card of board.cards"
+             cdkDrag
              (click)="abrirCardDetalhado(card)"
              [class.card-concluido]="getProgresso(card) === 100">
+
+          <div class="custom-card-placeholder" *cdkDragPlaceholder></div>
 
           <div class="status-indicator" [ngClass]="card.status"></div>
 
           <div class="card-content">
             <h3 class="card-title">{{ card.titulo }}</h3>
-
             <div class="card-meta">
               <mat-icon class="clock-icon">schedule</mat-icon>
               <span>{{ card.horarioAbertura }} - {{ card.horarioFechamento }}</span>
             </div>
-
             <div class="card-badges">
-              <div class="badge" *ngIf="card.descricao" matTooltip="Possui descrição">
-                <mat-icon>subject</mat-icon>
-              </div>
-
+              <div class="badge" *ngIf="card.descricao"><mat-icon>subject</mat-icon></div>
               <div class="badge checkbox-badge" [class.done]="getProgresso(card) === 100">
                 <mat-icon>check_box</mat-icon>
                 <span class="badge-text">{{ countMarcados(card) }}/{{ card.itens.length }}</span>
               </div>
             </div>
-
             <mat-progress-bar mode="determinate" [value]="getProgresso(card)" class="mini-progress"></mat-progress-bar>
           </div>
         </div>
+
       </div>
     </div>
 
