@@ -1,26 +1,55 @@
 <div class="board-wrapper">
 
   <div class="page-header">
-    <h1>Meu Trabalho Hoje</h1>
+    <h1>Meu Dia</h1>
     <p class="data-hoje">{{ dataAtual | date:"EEEE, d 'de' MMMM" : '' : 'pt-BR' | titlecase }}</p>
   </div>
 
   <div *ngIf="loading" class="loading-state">
     <mat-icon class="spin">sync</mat-icon>
-    <p>Sincronizando tarefas...</p>
+    <p>Verificando sua agenda...</p>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && boards.length === 0">
-    <img src="assets/images/relax.svg" alt="Folga" style="width: 150px; opacity: 0.6; margin-bottom: 20px;"> <h3>Tudo tranquilo por aqui!</h3>
-    <p>Você não possui tarefas agendadas para hoje ou está de folga na escala.</p>
+  <div class="status-state folga" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FOLGA">
+    <div class="icon-circle">
+      <mat-icon>weekend</mat-icon>
+    </div>
+    <h2>Bom descanso!</h2>
+    <p>Hoje é sua folga. Aproveite para recarregar as energias.</p>
   </div>
 
-  <div class="kanban-container" *ngIf="!loading && boards.length > 0">
+  <div class="status-state ferias" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FERIAS">
+    <div class="icon-circle">
+      <mat-icon>beach_access</mat-icon>
+    </div>
+    <h2>Boas Férias!</h2>
+    <p>O sistema aguarda o seu retorno. Divirta-se!</p>
+  </div>
+
+  <div class="status-state atestado" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.ATESTADO">
+    <div class="icon-circle">
+      <mat-icon>medical_services</mat-icon>
+    </div>
+    <h2>Afastamento Médico</h2>
+    <p>Estimo as melhoras. Cuide da sua saúde.</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && boards.length === 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
+    <img src="assets/images/relax.svg" alt="Sem Tarefas" style="width: 150px; opacity: 0.6; margin-bottom: 20px;">
+    <h3>Tudo limpo por aqui!</h3>
+    <p>Nenhuma checklist atribuída para o seu turno hoje.</p>
+    <p class="horario-turno" *ngIf="escalaHoje?.horarioInicio">
+      Seu turno: {{ escalaHoje?.horarioInicio }} - {{ escalaHoje?.horarioFim }}
+    </p>
+  </div>
+
+  <div class="kanban-container"
+       *ngIf="!loading && boards.length > 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
 
     <div class="kanban-column" *ngFor="let board of boards">
       <div class="column-header">
         <h2>{{ board.nome }}</h2>
-        <span class="card-count">{{ board.cards.length }} blocos</span>
+        <span class="card-count">{{ board.cards.length }}</span>
       </div>
 
       <div class="cards-list">
@@ -42,11 +71,6 @@
             <div class="card-badges">
               <div class="badge" *ngIf="card.descricao" matTooltip="Possui descrição">
                 <mat-icon>subject</mat-icon>
-              </div>
-
-              <div class="badge" *ngIf="card.anexos && card.anexos.length > 0" matTooltip="Possui anexos">
-                <mat-icon>attach_file</mat-icon>
-                <span class="badge-text">{{ card.anexos.length }}</span>
               </div>
 
               <div class="badge checkbox-badge" [class.done]="getProgresso(card) === 100">

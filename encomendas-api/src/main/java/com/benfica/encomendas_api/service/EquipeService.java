@@ -99,6 +99,8 @@ public class EquipeService {
         List<MembroEquipeResponseDTO> membrosDTO = new ArrayList<>();
 
         Usuario admin = equipe.getAdministrador();
+
+        // 1. Adiciona o Dono (Admin) Explicitamente
         membrosDTO.add(MembroEquipeResponseDTO.builder()
                 .id(admin.getId())
                 .nomeCompleto(admin.getNomeCompleto())
@@ -107,16 +109,19 @@ public class EquipeService {
                 .role("ROLE_ADMIN")
                 .build());
 
+        // 2. Adiciona os Membros (FILTRANDO O ADMIN para evitar duplicação)
         if (equipe.getMembros() != null) {
-            equipe.getMembros().forEach(membro -> {
-                membrosDTO.add(MembroEquipeResponseDTO.builder()
-                        .id(membro.getId())
-                        .nomeCompleto(membro.getNomeCompleto())
-                        .email(membro.getEmail())
-                        .cargo(membro.getCargo())
-                        .role("ROLE_USER")
-                        .build());
-            });
+            equipe.getMembros().stream()
+                    .filter(m -> !m.getId().equals(admin.getId())) // <--- CORREÇÃO AQUI
+                    .forEach(membro -> {
+                        membrosDTO.add(MembroEquipeResponseDTO.builder()
+                                .id(membro.getId())
+                                .nomeCompleto(membro.getNomeCompleto())
+                                .email(membro.getEmail())
+                                .cargo(membro.getCargo())
+                                .role("ROLE_USER")
+                                .build());
+                    });
         }
         return membrosDTO;
     }
@@ -130,11 +135,14 @@ public class EquipeService {
         List<UsuarioResponseDTO> dtos = new ArrayList<>();
 
         // Adiciona Admin
-        dtos.add(UsuarioResponseDTO.fromEntity(equipe.getAdministrador()));
+        Usuario admin = equipe.getAdministrador();
+        dtos.add(UsuarioResponseDTO.fromEntity(admin));
 
-        // Adiciona Membros
+        // Adiciona Membros (FILTRANDO O ADMIN)
         if (equipe.getMembros() != null) {
-            equipe.getMembros().forEach(m -> dtos.add(UsuarioResponseDTO.fromEntity(m)));
+            equipe.getMembros().stream()
+                    .filter(m -> !m.getId().equals(admin.getId())) // <--- CORREÇÃO AQUI TAMBÉM
+                    .forEach(m -> dtos.add(UsuarioResponseDTO.fromEntity(m)));
         }
 
         return dtos;

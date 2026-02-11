@@ -1,165 +1,15 @@
 .board-wrapper {
-  height: calc(100vh - 64px); // Ajuste conforme a altura da sua Toolbar
+  padding: 24px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  background-color: #f4f5f7; // Cor de fundo estilo Jira/Trello
-  overflow: hidden; // Scroll interno no container kanban
+  box-sizing: border-box;
 }
 
 .page-header {
-  padding: 20px 24px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
-
-  h1 { margin: 0; font-size: 22px; color: #172b4d; font-weight: 600; }
-  .data-hoje { margin: 4px 0 0; color: #5e6c84; font-size: 14px; }
-}
-
-.kanban-container {
-  flex: 1;
-  display: flex;
-  overflow-x: auto; // Scroll horizontal
-  overflow-y: hidden;
-  padding: 24px;
-  gap: 24px;
-  align-items: flex-start; // Colunas alinham ao topo
-
-  // Scrollbar bonita
-  &::-webkit-scrollbar { height: 12px; }
-  &::-webkit-scrollbar-thumb { background: #bfc4ce; border-radius: 6px; }
-  &::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-}
-
-.kanban-column {
-  min-width: 300px;
-  max-width: 300px;
-  background-color: #ebecf0; // Cinza claro das colunas
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  max-height: 100%;
-}
-
-.column-header {
-  padding: 14px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  h2 { margin: 0; font-size: 14px; font-weight: 600; color: #172b4d; text-transform: uppercase; }
-  .card-count { font-size: 12px; color: #5e6c84; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; }
-}
-
-.cards-list {
-  padding: 0 8px 8px 8px;
-  overflow-y: auto; // Scroll vertical dentro da coluna
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 50px; // Área de drop mínima
-
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-thumb { background: #dcdfe4; border-radius: 3px; }
-}
-
-.kanban-card {
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s;
-  overflow: hidden;
-
-  &:hover {
-    background-color: #f4f5f7;
-    box-shadow: 0 2px 4px rgba(9, 30, 66, 0.3);
-  }
-
-  &.card-concluido {
-    opacity: 0.8;
-    background-color: #f0fff4; // Verde bem claro
-  }
-
-  .status-indicator {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 4px;
-    background: #ccc;
-
-    &.ABERTO { background: #0079bf; } // Azul
-    &.PENDENTE { background: #ff9800; } // Laranja
-    &.FECHADO { background: #ebecf0; } // Cinza
-    &.ATRASADO { background: #eb5a46; } // Vermelho
-  }
-
-  .card-content {
-    padding: 10px 10px 10px 14px; // Esquerda maior por causa da barra lateral
-  }
-
-  .card-title {
-    margin: 0 0 6px 0;
-    font-size: 14px;
-    font-weight: 500;
-    color: #172b4d;
-    line-height: 1.4;
-  }
-
-  .card-meta {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: #5e6c84;
-    margin-bottom: 8px;
-
-    .clock-icon { font-size: 12px; width: 12px; height: 12px; }
-  }
-
-  .card-badges {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-
-    .badge {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: #5e6c84;
-      font-size: 12px;
-      padding: 2px 4px;
-      border-radius: 3px;
-
-      &:hover { background-color: rgba(9, 30, 66, 0.08); color: #172b4d; }
-
-      mat-icon { font-size: 16px; width: 16px; height: 16px; }
-
-      &.checkbox-badge {
-        &.done {
-          background-color: #61bd4f;
-          color: white;
-        }
-      }
-    }
-  }
-
-  .mini-progress {
-    height: 4px;
-    border-radius: 2px;
-  }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #5e6c84;
-
-  h3 { margin-bottom: 8px; color: #172b4d; }
+  margin-bottom: 24px;
+  h1 { margin: 0; font-size: 1.8rem; color: #333; }
+  .data-hoje { color: #666; margin: 4px 0 0; font-size: 1rem; }
 }
 
 .loading-state {
@@ -167,10 +17,196 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  color: #5e6c84;
+  height: 300px;
+  color: #777;
 
-  .spin { animation: rotate 1s linear infinite; font-size: 32px; height: 32px; width: 32px; margin-bottom: 8px; }
+  .spin {
+    animation: spin 2s linear infinite;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    margin-bottom: 12px;
+  }
 }
 
-@keyframes rotate { 100% { transform: rotate(360deg); } }
+// --- ESTADOS DE ESCALA (Novos) ---
+.status-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  max-width: 500px;
+  margin: 40px auto;
+
+  .icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+
+    mat-icon {
+      font-size: 40px;
+      width: 40px;
+      height: 40px;
+      color: white;
+    }
+  }
+
+  h2 { margin: 0 0 10px; font-size: 1.5rem; }
+  p { color: #666; margin: 0; font-size: 1rem; line-height: 1.5; }
+
+  // Cores específicas
+  &.folga {
+    .icon-circle { background-color: #8bc34a; } // Verde suave
+    h2 { color: #558b2f; }
+  }
+
+  &.ferias {
+    .icon-circle { background-color: #03a9f4; } // Azul piscina
+    h2 { color: #0277bd; }
+  }
+
+  &.atestado {
+    .icon-circle { background-color: #e57373; } // Vermelho suave
+    h2 { color: #c62828; }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  margin-top: 60px;
+  color: #9e9e9e;
+
+  .horario-turno {
+    margin-top: 10px;
+    font-weight: 500;
+    color: #673ab7;
+    background: #ede7f6;
+    padding: 6px 12px;
+    border-radius: 16px;
+    display: inline-block;
+  }
+}
+
+// ... (Resto do estilo Kanban existente mantém-se igual) ...
+.kanban-container {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  flex: 1;
+}
+
+.kanban-column {
+  min-width: 300px;
+  max-width: 350px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0 4px;
+
+  h2 { margin: 0; font-size: 1rem; font-weight: 600; color: #444; }
+  .card-count { background: #e0e0e0; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; color: #666; }
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.kanban-card {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+
+  &.card-concluido {
+    opacity: 0.7;
+    background-color: #fafafa;
+
+    .card-title { text-decoration: line-through; color: #888; }
+  }
+
+  .status-indicator {
+    height: 4px;
+    width: 100%;
+
+    &.ABERTO { background-color: #2196f3; }
+    &.FECHADO { background-color: #4caf50; }
+    &.ATRASADO { background-color: #f44336; }
+  }
+
+  .card-content { padding: 12px; }
+
+  .card-title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 10px;
+
+    .clock-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+
+  .card-badges {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #757575;
+
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+      .badge-text { font-size: 0.8rem; }
+
+      &.checkbox-badge.done {
+        color: #4caf50;
+      }
+    }
+  }
+
+  .mini-progress { height: 4px; border-radius: 2px; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

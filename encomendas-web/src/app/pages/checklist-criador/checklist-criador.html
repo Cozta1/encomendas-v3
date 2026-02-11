@@ -1,120 +1,121 @@
 <div class="page-container">
-  <div class="header">
-    <h1>Configuração de Checklists</h1>
-    <p>Crie rotinas e tarefas. Elas aparecerão automaticamente para o funcionário nos dias em que ele estiver escalado para TRABALHO.</p>
+
+  <div class="header-action">
+    <h1>Gestão de Checklists</h1>
+    <button mat-raised-button color="primary" (click)="showNovoBoardForm = !showNovoBoardForm">
+      <mat-icon>add</mat-icon> Novo Quadro
+    </button>
   </div>
 
-  <mat-card class="create-card">
-    <mat-card-header>
-      <mat-card-title>Novo Quadro de Tarefas</mat-card-title>
-    </mat-card-header>
-    <mat-card-content [formGroup]="novoBoardForm">
-      <div class="form-row">
-        <mat-form-field appearance="outline" class="flex-2">
-          <mat-label>Nome do Checklist (Ex: Abertura de Loja)</mat-label>
-          <input matInput formControlName="nome">
-        </mat-form-field>
+  <div class="novo-board-container mat-elevation-z2" *ngIf="showNovoBoardForm">
+    <h3>Criar Novo Quadro</h3>
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Nome do Quadro (Ex: Rotina Matinal)</mat-label>
+        <input matInput [(ngModel)]="novoBoard.nome">
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="flex-1">
-          <mat-label>Atribuir a</mat-label>
-          <mat-select formControlName="usuarioId">
-            <mat-option [value]="null">Todos da Equipe</mat-option>
-            <mat-divider></mat-divider>
-            <mat-option *ngFor="let m of membros" [value]="m.id">
-              {{ m.nomeCompleto }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Atribuir a Funcionário (Opcional)</mat-label>
+        <mat-select [(ngModel)]="novoBoard.usuarioId">
+          <mat-option [value]="null">-- Geral (Toda a Equipe) --</mat-option>
+          <mat-option *ngFor="let m of membros" [value]="m.id">
+            {{ m.nomeCompleto }}
+          </mat-option>
+        </mat-select>
+        <mat-hint>Deixe vazio para ser visível a todos</mat-hint>
+      </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="criarBoard()" [disabled]="novoBoardForm.invalid" style="height: 56px; margin-top: 4px;">
-          <mat-icon>add_task</mat-icon> Criar
-        </button>
-      </div>
-    </mat-card-content>
-  </mat-card>
+      <button mat-flat-button color="accent" (click)="criarBoard()" [disabled]="!novoBoard.nome">
+        Salvar
+      </button>
+    </div>
+  </div>
 
-  <mat-divider style="margin: 32px 0"></mat-divider>
+  <div class="loading-shade" *ngIf="loading">
+    <p>A carregar processos...</p>
+  </div>
 
-  <h2 class="section-title">Checklists Ativos</h2>
+  <mat-accordion multi>
+    <mat-expansion-panel *ngFor="let board of boards" class="board-panel">
 
-  <div class="boards-container">
-    <mat-accordion multi>
-      <mat-expansion-panel *ngFor="let board of boards" class="board-panel" expanded>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon class="panel-icon">dashboard</mat-icon>
+          {{ board.nome }}
+        </mat-panel-title>
+        <mat-panel-description>
+          <span class="tag-owner" *ngIf="board.usuarioEspecificoId">
+            <mat-icon>person</mat-icon> {{ getNomeResponsavel(board.usuarioEspecificoId) }}
+          </span>
+          <span class="tag-general" *ngIf="!board.usuarioEspecificoId">
+            <mat-icon>groups</mat-icon> Equipe Geral
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
 
-        <mat-expansion-panel-header>
-          <mat-panel-title class="board-header">
-            <mat-icon class="board-icon">assignment</mat-icon>
-            <span class="board-name">{{ board.nome }}</span>
-          </mat-panel-title>
-          <mat-panel-description>
-            {{ board.cards.length }} blocos de horário • Atribuído a: <strong>{{ getNomeUsuario(board.usuarioEspecificoId) }}</strong>
-          </mat-panel-description>
-        </mat-expansion-panel-header>
+      <div class="cards-grid">
 
-        <div class="panel-actions" *ngIf="boardAtivoId !== board.id">
-          <button mat-stroked-button color="primary" (click)="prepararNovoCard(board.id)">
-            <mat-icon>alarm_add</mat-icon> Adicionar Bloco de Horário
+        <mat-card *ngFor="let card of board.cards" class="checklist-card">
+          <mat-card-header>
+            <mat-card-title>{{ card.titulo }}</mat-card-title>
+            <mat-card-subtitle>
+              {{ card.horarioAbertura }} - {{ card.horarioFechamento }}
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-divider></mat-divider>
+
+          <mat-card-content>
+            <div class="item-list">
+              <div class="item-row" *ngFor="let item of card.itens">
+                <mat-icon class="bullet">check_small</mat-icon>
+                <span>{{ item.descricao }}</span>
+              </div>
+              <div *ngIf="!card.itens?.length" class="empty-items">Sem itens ainda.</div>
+            </div>
+
+            <div class="add-item-box">
+              <input #newItemInput placeholder="Novo item..." (keyup.enter)="adicionarItem(card, newItemInput.value); newItemInput.value=''">
+              <button mat-icon-button color="primary" (click)="adicionarItem(card, newItemInput.value); newItemInput.value=''">
+                <mat-icon>add_circle</mat-icon>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div class="new-card-placeholder">
+          <h4>Adicionar Tarefa/Cartão</h4>
+          <mat-form-field appearance="fill" class="full-width">
+            <mat-label>Título</mat-label>
+            <input matInput #newCardTitle>
+          </mat-form-field>
+
+          <div class="time-inputs">
+            <mat-form-field appearance="fill">
+              <mat-label>Início</mat-label>
+              <input matInput type="time" #newCardStart value="08:00">
+            </mat-form-field>
+            <mat-form-field appearance="fill">
+              <mat-label>Fim</mat-label>
+              <input matInput type="time" #newCardEnd value="18:00">
+            </mat-form-field>
+          </div>
+
+          <button mat-stroked-button color="primary"
+                  (click)="adicionarCard(board, newCardTitle.value, newCardStart.value, newCardEnd.value); newCardTitle.value=''">
+            <mat-icon>save</mat-icon> Criar Tarefa
           </button>
         </div>
 
-        <div class="card-form-box" *ngIf="boardAtivoId === board.id">
-          <h4>Novo Bloco de Horário</h4>
-          <form [formGroup]="novoCardForm" class="inline-form">
-            <mat-form-field appearance="outline" class="small-input">
-              <mat-label>Título (Ex: Manhã)</mat-label>
-              <input matInput formControlName="titulo">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="time-input">
-              <mat-label>Abre</mat-label>
-              <input matInput type="time" formControlName="horarioAbertura">
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="time-input">
-              <mat-label>Fecha</mat-label>
-              <input matInput type="time" formControlName="horarioFechamento">
-            </mat-form-field>
-            <div class="actions">
-              <button mat-mini-fab color="primary" (click)="salvarCard()"><mat-icon>check</mat-icon></button>
-              <button mat-icon-button color="warn" (click)="boardAtivoId = null"><mat-icon>close</mat-icon></button>
-            </div>
-          </form>
-        </div>
+      </div>
 
-        <div class="cards-list">
-          <div class="card-wrapper" *ngFor="let card of board.cards">
-            <div class="card-header">
-              <div class="card-title">
-                <mat-icon>schedule</mat-icon>
-                <span>{{ card.titulo }}</span>
-                <small>({{ card.horarioAbertura }} - {{ card.horarioFechamento }})</small>
-              </div>
-              <button mat-icon-button color="accent" (click)="prepararNovoItem(card.id)" matTooltip="Adicionar Tarefa">
-                <mat-icon>playlist_add</mat-icon>
-              </button>
-            </div>
+    </mat-expansion-panel>
+  </mat-accordion>
 
-            <div class="itens-container">
-              <div class="item-row" *ngFor="let item of card.itens">
-                <mat-icon class="check-icon">check_box_outline_blank</mat-icon>
-                <span>{{ item.descricao }}</span>
-              </div>
-              <div class="no-itens" *ngIf="card.itens.length === 0">Sem tarefas ainda.</div>
-            </div>
-
-            <div class="item-form" *ngIf="cardAtivoId === card.id">
-              <form [formGroup]="novoItemForm" class="item-inline">
-                <mat-form-field appearance="outline" class="full-width" density="-2">
-                  <mat-label>Nova tarefa...</mat-label>
-                  <input matInput formControlName="descricao" (keyup.enter)="salvarItem()" autoFocus>
-                </mat-form-field>
-                <button mat-icon-button color="primary" (click)="salvarItem()"><mat-icon>save</mat-icon></button>
-                <button mat-icon-button (click)="cardAtivoId = null"><mat-icon>close</mat-icon></button>
-              </form>
-            </div>
-
-          </div>
-        </div>
-
-      </mat-expansion-panel>
-    </mat-accordion>
+  <div *ngIf="!loading && boards.length === 0" class="empty-state">
+    <mat-icon>playlist_add</mat-icon>
+    <h3>Nenhum quadro de checklist encontrado.</h3>
+    <p>Crie o primeiro para organizar a rotina.</p>
   </div>
 </div>

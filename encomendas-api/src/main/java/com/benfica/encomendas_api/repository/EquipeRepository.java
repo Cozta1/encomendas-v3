@@ -6,15 +6,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional; // Importante adicionar este import
 import java.util.UUID;
 
 @Repository
 public interface EquipeRepository extends JpaRepository<Equipe, UUID> {
 
-    // Método antigo (pode manter ou remover se não usar mais diretamente)
+    // Método necessário para o DataSeeder encontrar a equipa pelo nome
+    Optional<Equipe> findByNome(String nome);
+
+    // Busca equipas onde o utilizador é Admin (método antigo)
     List<Equipe> findByAdministrador(Usuario usuario);
 
-    // --- NOVO MÉTODO ---
     // Busca equipas onde o utilizador é Admin OU está na lista de Membros
     List<Equipe> findByAdministradorOrMembrosContaining(Usuario admin, Usuario membro);
 }

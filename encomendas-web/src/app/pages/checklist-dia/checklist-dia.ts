@@ -13,6 +13,9 @@ import { TeamService } from '../../core/team/team.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ChecklistBoard, ChecklistCard } from '../../core/models/checklist.interfaces';
 import { ChecklistCardDialog } from '../../components/dialogs/checklist-card-dialog/checklist-card-dialog';
+// Novos imports
+import { EscalaService } from '../../core/services/escala.service';
+import { EscalaTrabalho, TipoEscala } from '../../core/models/escala.interfaces';
 
 @Component({
   selector: 'app-checklist-dia',
@@ -34,12 +37,17 @@ export class ChecklistDiaComponent implements OnInit {
 
   boards: ChecklistBoard[] = [];
   loading = false;
-  dataAtual = new Date(); // Hoje
+  dataAtual = new Date();
+
+  // Estado da Escala do dia
+  escalaHoje: EscalaTrabalho | null = null;
+  tipoEscalaEnum = TipoEscala; // Para usar no HTML
 
   constructor(
     private checklistService: ChecklistService,
     private teamService: TeamService,
     private authService: AuthService,
+    private escalaService: EscalaService, // Injeção do serviço de escala
     private dialog: MatDialog
   ) {}
 
@@ -55,18 +63,42 @@ export class ChecklistDiaComponent implements OnInit {
       this.loading = true;
       const hojeStr = this.formatDate(this.dataAtual);
 
-      // Passa o usuarioId para o backend filtrar pela Escala e Checklists Individuais
-      this.checklistService.getChecklistDoDia(equipeId, hojeStr, user.id).subscribe({
-        next: (dados) => {
-          this.boards = dados;
-          this.loading = false;
+      // 1. Busca a Escala do dia primeiro
+      this.escalaService.getEscalas(user.id, hojeStr, hojeStr).subscribe({
+        next: (escalas) => {
+          // Pega a primeira escala encontrada (deve haver apenas uma por dia por usuário)
+          this.escalaHoje = escalas.length > 0 ? escalas[0] : null;
+
+          // 2. Decide se carrega os checklists baseando-se na escala
+          if (this.escalaHoje && this.escalaHoje.tipo !== TipoEscala.TRABALHO) {
+            // Se for Folga, Férias ou Atestado, não precisa carregar tarefas
+            this.loading = false;
+            this.boards = [];
+          } else {
+            // Se for TRABALHO ou sem escala definida (assume trabalho), carrega os checklists
+            this.carregarChecklists(equipeId, hojeStr, user.id);
+          }
         },
         error: (err) => {
-          console.error('Erro ao carregar checklists', err);
-          this.loading = false;
+          console.error('Erro ao verificar escala', err);
+          // Em caso de erro na escala, tenta carregar checklists por segurança
+          this.carregarChecklists(equipeId, hojeStr, user.id);
         }
       });
     }
+  }
+
+  private carregarChecklists(equipeId: string, data: string, userId: number) {
+    this.checklistService.getChecklistDoDia(equipeId, data, userId).subscribe({
+      next: (dados) => {
+        this.boards = dados;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Erro ao carregar checklists', err);
+        this.loading = false;
+      }
+    });
   }
 
   // Abre o Modal estilo Trello
@@ -78,7 +110,7 @@ export class ChecklistDiaComponent implements OnInit {
       width: '768px',
       maxWidth: '95vw',
       maxHeight: '90vh',
-      panelClass: 'trello-dialog-container', // Estilize globalmente se necessário
+      panelClass: 'trello-dialog-container',
       data: {
         card: card,
         usuarioId: user.id
@@ -86,7 +118,6 @@ export class ChecklistDiaComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(() => {
-      // Recarrega os dados ao fechar para atualizar progresso e checks
       this.carregarDados();
     });
   }
@@ -105,7 +136,6 @@ export class ChecklistDiaComponent implements OnInit {
   }
 
   getStatusColor(card: ChecklistCard): string {
-    // Retorna classes CSS baseadas no status/progresso
     if (this.getProgresso(card) === 100) return 'completed-badge';
     if (card.status === 'FECHADO') return 'closed-badge';
     return 'open-badge';

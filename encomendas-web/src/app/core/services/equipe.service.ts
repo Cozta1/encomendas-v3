@@ -3,13 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// Interface ajustada para bater com o DTO do Backend e a Entidade Usuario original
 export interface MembroEquipe {
-  id: number;           // Backend é Long (numérico)
-  nomeCompleto: string; // Backend usa 'nomeCompleto'
+  id: number;
+  nomeCompleto: string;
   email: string;
-  cargo: string;        // Novo campo
-  role: string;         // ROLE_ADMIN, ROLE_USER, etc.
+  cargo: string;
+  role: string;
 }
 
 @Injectable({
@@ -20,9 +19,6 @@ export class EquipeService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Lista todos os membros da equipe ativa.
-   */
   listarMembros(): Observable<MembroEquipe[]> {
     return this.http.get<MembroEquipe[]>(`${this.apiUrl}/membros`);
   }
