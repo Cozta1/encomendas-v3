@@ -36,8 +36,6 @@ export class ChecklistCardDialog {
     private checklistService: ChecklistService,
     private snackBar: MatSnackBar
   ) {
-    // Usamos o objeto diretamente. Como em JS objetos são passados por referência,
-    // atualizações visuais refletem no pai, mas para persistir precisamos chamar a API.
     this.card = data.card;
     this.novaDescricao = this.card.descricao || '';
   }
@@ -49,17 +47,20 @@ export class ChecklistCardDialog {
   }
 
   toggleItem(item: ChecklistItem) {
+    // Optimistic Update: Atualiza a UI imediatamente
     const novoValor = !item.marcado;
     item.marcado = novoValor;
 
+    // Envia para o backend em background
     this.checklistService.registrarAcao({
       itemId: item.id,
       dataReferencia: new Date().toISOString().split('T')[0],
       valor: novoValor
     }, this.data.usuarioId).subscribe({
       error: () => {
-        item.marcado = !novoValor; // Reverte visualmente
-        this.snackBar.open('Erro ao salvar item. Tente novamente.', 'Fechar');
+        // Rollback visual em caso de erro
+        item.marcado = !novoValor;
+        this.snackBar.open('Erro de conexão. Ação desfeita.', 'Fechar', { duration: 3000 });
       }
     });
   }
@@ -71,7 +72,8 @@ export class ChecklistCardDialog {
         this.card.descricao = this.novaDescricao;
         this.editandoDescricao = false;
         this.saving = false;
-        this.snackBar.open('Descrição atualizada!', 'OK', { duration: 2000 });
+        // Feedback visual sutil
+        this.snackBar.open('Salvo', '', { duration: 1000 });
       },
       error: (err) => {
         console.error(err);
@@ -82,7 +84,6 @@ export class ChecklistCardDialog {
   }
 
   adicionarAnexo() {
-    // Futura implementação com input type="file"
     this.snackBar.open('Upload de arquivos em breve!', 'OK');
   }
 

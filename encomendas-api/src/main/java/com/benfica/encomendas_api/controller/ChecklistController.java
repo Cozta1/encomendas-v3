@@ -101,16 +101,16 @@ public class ChecklistController {
         return ResponseEntity.ok().build();
     }
 
-    // --- REORDENAÇÃO (Endpoints Novos) ---
+    // --- REORDENAÇÃO (Endpoints Otimizados com DTO) ---
 
     @PutMapping("/boards/reordenar")
-    public ResponseEntity<Void> reordenarBoards(@RequestBody List<Map<String, Object>> ordemBoards) {
+    public ResponseEntity<Void> reordenarBoards(@RequestBody List<ReorderRequestDTO> ordemBoards) {
         checklistService.atualizarOrdemBoards(ordemBoards);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/cards/reordenar")
-    public ResponseEntity<Void> reordenarCards(@RequestBody List<Map<String, Object>> ordemCards) {
+    public ResponseEntity<Void> reordenarCards(@RequestBody List<ReorderRequestDTO> ordemCards) {
         checklistService.atualizarOrdemCards(ordemCards);
         return ResponseEntity.ok().build();
     }

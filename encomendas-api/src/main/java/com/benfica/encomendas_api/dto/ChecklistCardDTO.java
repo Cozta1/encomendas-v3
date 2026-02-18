@@ -19,5 +19,6 @@ public class ChecklistCardDTO {
     private LocalTime horarioFechamento;
     private List<ChecklistItemDTO> itens;
     private List<ChecklistAnexoDTO> anexos; // <--- NOVO (Crie o DTO simples para anexo tbm)
+    private Integer ordem;
     private String status;
 }

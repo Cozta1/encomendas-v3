@@ -1,7 +1,7 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError, EMPTY } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
 /**
@@ -39,22 +39,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
 
-      // Verifica se o erro é de Autenticação (401) ou Permissão (403)
-      if (error.status === 401 || error.status === 403) {
-
-        // Evita loop infinito se o erro acontecer na própria tela de login
+      // 401 = sessão expirada → desloga e redireciona, mas PROPAGA o erro
+      // para que o componente chamador possa fazer rollback de mudanças otimistas.
+      if (error.status === 401) {
         if (!req.url.includes('/auth/login')) {
-
-          // Desloga o usuário e manda para o login
           authService.logout();
           router.navigate(['/login']);
-
-          // Retorna EMPTY para "morrer" o erro aqui e não sujar o console
-          return EMPTY;
         }
       }
 
-      // Se for outro erro (ex: 500, 404), deixa passar para o componente tratar
+      // 403 = permissão negada → NÃO redireciona. Deixa o componente tratar.
+      // Todos os erros (401, 403, 500, 404, etc.) são propagados para o componente.
       return throwError(() => error);
     })
   );

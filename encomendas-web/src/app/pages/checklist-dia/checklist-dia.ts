@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { finalize } from 'rxjs/operators';
@@ -30,6 +31,7 @@ import { EscalaTrabalho, TipoEscala } from '../../core/models/escala.interfaces'
     MatProgressBarModule,
     MatDialogModule,
     MatTooltipModule,
+    MatSnackBarModule,
     DragDropModule
   ],
   templateUrl: './checklist-dia.html',
@@ -40,6 +42,7 @@ export class ChecklistDiaComponent implements OnInit {
   boards: ChecklistBoard[] = [];
   loading = false;
   dataAtual = new Date();
+  private dadosCarregados = false;
 
   escalaHoje: EscalaTrabalho | null = null;
   tipoEscalaEnum = TipoEscala;
@@ -49,21 +52,24 @@ export class ChecklistDiaComponent implements OnInit {
     private teamService: TeamService,
     private authService: AuthService,
     private escalaService: EscalaService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
     this.carregarDadosIniciais();
   }
 
-  // Renomeado para indicar que é carregamento completo
+  // Carrega apenas na inicialização. Não deve ser chamado após fechar Modais.
   carregarDadosIniciais() {
+    if (this.dadosCarregados) return;
+
     const equipeId = this.teamService.getEquipeAtivaId();
     const user = this.authService.getUser();
 
     if (!equipeId || !user) return;
 
-    this.loading = true; // Só ativa o loading aqui
+    this.loading = true;
     const hojeStr = this.formatDate(this.dataAtual);
 
     this.escalaService.getEscalas(user.id, hojeStr, hojeStr).subscribe({
@@ -89,11 +95,12 @@ export class ChecklistDiaComponent implements OnInit {
       .pipe(finalize(() => this.loading = false))
       .subscribe({
         next: (dados) => {
-          // O backend deve retornar os dados ordenados por 'ordem' ASC
+          // Ordenação inicial vinda do backend
           this.boards = dados.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
           this.boards.forEach(b => {
             if(b.cards) b.cards.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
           });
+          this.dadosCarregados = true;
         },
         error: (err) => console.error(err)
       });
@@ -102,24 +109,42 @@ export class ChecklistDiaComponent implements OnInit {
   // --- DRAG & DROP OTIMIZADO ---
 
   dropBoard(event: CdkDragDrop<ChecklistBoard[]>) {
-    // 1. Atualiza visualmente instantaneamente
+    if (event.previousIndex === event.currentIndex) return;
+
+    // 1. Atualiza o array visualmente
     moveItemInArray(this.boards, event.previousIndex, event.currentIndex);
 
-    // 2. Envia para o backend silenciosamente (sem loading screen)
+    // 2. CRUCIAL: Atualiza a propriedade 'ordem' dos objetos locais para refletir a nova posição do array
+    // Isso garante que se o usuário mover outro item em seguida, o estado local esteja correto.
+    this.boards.forEach((board, index) => {
+      board.ordem = index;
+    });
+
+    // 3. Envia para o backend
     this.checklistService.reordenarBoards(this.boards).subscribe({
-      error: () => console.error('Erro ao salvar ordem dos boards')
+      error: () => this.snackBar.open('Erro ao salvar ordem. Recarregue a página.', 'Fechar', { duration: 4000 })
     });
   }
 
   dropCard(event: CdkDragDrop<ChecklistCard[]>) {
     if (event.previousContainer === event.container) {
+      if (event.previousIndex === event.currentIndex) return;
+
       // 1. Atualiza visualmente
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
 
-      // 2. Envia para o backend silenciosamente
-      this.checklistService.reordenarCards(event.container.data).subscribe({
-        error: () => console.error('Erro ao salvar ordem dos cards')
+      // 2. Atualiza modelo local
+      event.container.data.forEach((card, index) => {
+        card.ordem = index;
       });
+
+      // 3. Persiste
+      this.checklistService.reordenarCards(event.container.data).subscribe({
+        error: () => this.snackBar.open('Erro ao salvar ordem. Recarregue a página.', 'Fechar', { duration: 4000 })
+      });
+    } else {
+      // Caso queira implementar mover entre colunas no futuro
+      // transferArrayItem(...)
     }
   }
 
@@ -127,21 +152,22 @@ export class ChecklistDiaComponent implements OnInit {
     const user = this.authService.getUser();
     if (!user) return;
 
+    // Abrimos o modal passando o objeto 'card' por referência.
+    // Qualquer alteração feita lá dentro (marcar checkbox) reflete aqui imediatamente.
     const dialogRef = this.dialog.open(ChecklistCardDialog, {
       width: '768px',
       maxWidth: '95vw',
       maxHeight: '90vh',
       panelClass: 'trello-dialog-container',
-      data: { card: card, usuarioId: user.id } // Passamos o objeto por referência
+      data: { card: card, usuarioId: user.id },
+      disableClose: false // Permite clicar fora pra fechar
     });
 
-    // CORREÇÃO DE PERFORMANCE:
-    // Removemos o 'this.carregarDados()' daqui.
-    // Como 'card' é um objeto, as alterações feitas no Dialog (marcar checkbox)
-    // refletem automaticamente na tela de fundo devido à referência de memória do JS.
+    // PERFORMANCE: NÃO recarregamos a página inteira ao fechar.
+    // O Angular detecta mudanças nos objetos e atualiza a view (barras de progresso, etc).
     dialogRef.afterClosed().subscribe(() => {
-      // Apenas forçamos o Angular a verificar mudanças visuais se necessário,
-      // mas sem recarregar tudo do servidor.
+       // Apenas lógica local se necessário, mas NUNCA this.carregarDadosIniciais()
+       // a menos que seja uma mudança estrutural crítica (ex: deletar card)
     });
   }
 

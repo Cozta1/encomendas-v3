@@ -20,5 +20,7 @@ public class ChecklistBoardDTO {
     // Campo novo para identificar dono do quadro (null = Todos)
     private Long usuarioEspecificoId;
 
+    private Integer ordem;
+
     private List<ChecklistCardDTO> cards;
 }

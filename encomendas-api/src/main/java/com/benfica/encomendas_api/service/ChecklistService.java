@@ -10,10 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,6 +75,7 @@ public class ChecklistService {
                             .nome(board.getNome())
                             .equipeId(board.getEquipe().getId())
                             .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
+                            .ordem(board.getOrdem())
                             .cards(cardsDTO)
                             .build();
                 }).collect(Collectors.toList());
@@ -86,7 +84,6 @@ public class ChecklistService {
     // --- VISÃO ADMIN: LISTAR TUDO (Ignora Escala) ---
     @Transactional(readOnly = true)
     public List<ChecklistBoardDTO> listarTodosBoards(UUID equipeId) {
-        // Busca TODOS os boards da equipe
         List<ChecklistBoard> boards = boardRepository.findByEquipeId(equipeId);
 
         return boards.stream()
@@ -94,7 +91,7 @@ public class ChecklistService {
                 .map(board -> {
                     List<ChecklistCardDTO> cardsDTO = board.getCards().stream()
                             .sorted(Comparator.comparingInt(c -> c.getOrdem() != null ? c.getOrdem() : 9999))
-                            .map(card -> mapCardToDTO(card, List.of(), LocalDate.now(), false)) // false = modo edição (sem logs)
+                            .map(card -> mapCardToDTO(card, List.of(), LocalDate.now(), false))
                             .collect(Collectors.toList());
 
                     return ChecklistBoardDTO.builder()
@@ -102,6 +99,7 @@ public class ChecklistService {
                             .nome(board.getNome())
                             .equipeId(board.getEquipe().getId())
                             .usuarioEspecificoId(board.getUsuarioEspecifico() != null ? board.getUsuarioEspecifico().getId() : null)
+                            .ordem(board.getOrdem())
                             .cards(cardsDTO)
                             .build();
                 }).collect(Collectors.toList());
@@ -114,9 +112,7 @@ public class ChecklistService {
             status = calcularStatusCartao(card, data);
         }
 
-        // Mapeia Itens
         List<ChecklistItemDTO> itens = card.getItens().stream()
-                // Garante ordenação dos itens também
                 .sorted(Comparator.comparingInt(i -> i.getOrdem() != null ? i.getOrdem() : 9999))
                 .map(item -> {
                     boolean marcado = false;
@@ -136,7 +132,6 @@ public class ChecklistService {
                             .build();
                 }).collect(Collectors.toList());
 
-        // Mapeia Anexos
         List<ChecklistAnexoDTO> anexosDTO = card.getAnexos().stream()
                 .map(ChecklistAnexoDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -149,6 +144,7 @@ public class ChecklistService {
                 .horarioAbertura(card.getHorarioAbertura())
                 .horarioFechamento(card.getHorarioFechamento())
                 .itens(itens)
+                .ordem(card.getOrdem())
                 .status(status)
                 .build();
     }
@@ -165,7 +161,7 @@ public class ChecklistService {
         return "ABERTO";
     }
 
-    // --- AÇÕES (LOGS) ---
+    // --- AÇÕES E CRUD (Sem Alterações na Lógica) ---
     @Transactional
     public void registrarAcao(ChecklistLogRequestDTO request, Long usuarioId) {
         ChecklistItem item = itemRepository.findById(request.getItemId())
@@ -188,8 +184,6 @@ public class ChecklistService {
         logRepository.save(log);
     }
 
-    // --- CRIAÇÃO E ATUALIZAÇÃO (ADMIN) ---
-
     @Transactional
     public ChecklistBoardDTO criarBoard(String nome, UUID equipeId, Long usuarioIdEspecifico) {
         Equipe equipe = equipeRepository.findById(equipeId)
@@ -205,7 +199,7 @@ public class ChecklistService {
                 .nome(nome)
                 .equipe(equipe)
                 .usuarioEspecifico(usuario)
-                .ordem(9999) // Coloca no final por padrão
+                .ordem(9999)
                 .build();
 
         ChecklistBoard salvo = boardRepository.save(board);
@@ -215,6 +209,7 @@ public class ChecklistService {
                 .nome(salvo.getNome())
                 .equipeId(salvo.getEquipe().getId())
                 .usuarioEspecificoId(usuario != null ? usuario.getId() : null)
+                .ordem(salvo.getOrdem())
                 .cards(List.of())
                 .build();
     }
@@ -229,7 +224,7 @@ public class ChecklistService {
                 .board(board)
                 .horarioAbertura(inicio)
                 .horarioFechamento(fim)
-                .ordem(9999) // Coloca no final por padrão
+                .ordem(9999)
                 .build();
 
         ChecklistCard salvo = cardRepository.save(card);
@@ -241,6 +236,7 @@ public class ChecklistService {
                 .horarioFechamento(salvo.getHorarioFechamento())
                 .itens(List.of())
                 .anexos(List.of())
+                .ordem(salvo.getOrdem())
                 .build();
     }
 
@@ -267,38 +263,41 @@ public class ChecklistService {
         itemRepository.save(item);
     }
 
-    // --- MÉTODOS DE REORDENAÇÃO (PERSISTÊNCIA) ---
+    // --- REORDENAÇÃO CORRIGIDA (PERSISTÊNCIA GARANTIDA) ---
 
     @Transactional
-    public void atualizarOrdemBoards(List<Map<String, Object>> lista) {
-        for (Map<String, Object> item : lista) {
-            String idStr = (String) item.get("id");
-            // Se o frontend enviar como número, converte, se string usa direto
-            if (idStr == null) continue;
+    public void atualizarOrdemBoards(List<ReorderRequestDTO> lista) {
+        List<ChecklistBoard> boardsParaSalvar = new ArrayList<>();
 
-            UUID id = UUID.fromString(idStr);
-            Integer novaOrdem = (Integer) item.get("ordem");
+        for (ReorderRequestDTO item : lista) {
+            if (item.getId() == null) continue;
 
-            boardRepository.findById(id).ifPresent(board -> {
-                board.setOrdem(novaOrdem);
-                boardRepository.save(board);
+            boardRepository.findById(item.getId()).ifPresent(board -> {
+                board.setOrdem(item.getOrdem());
+                boardsParaSalvar.add(board);
             });
+        }
+        // Salva todos de uma vez
+        if (!boardsParaSalvar.isEmpty()) {
+            boardRepository.saveAll(boardsParaSalvar);
         }
     }
 
     @Transactional
-    public void atualizarOrdemCards(List<Map<String, Object>> lista) {
-        for (Map<String, Object> item : lista) {
-            String idStr = (String) item.get("id");
-            if (idStr == null) continue;
+    public void atualizarOrdemCards(List<ReorderRequestDTO> lista) {
+        List<ChecklistCard> cardsParaSalvar = new ArrayList<>();
 
-            UUID id = UUID.fromString(idStr);
-            Integer novaOrdem = (Integer) item.get("ordem");
+        for (ReorderRequestDTO item : lista) {
+            if (item.getId() == null) continue;
 
-            cardRepository.findById(id).ifPresent(card -> {
-                card.setOrdem(novaOrdem);
-                cardRepository.save(card);
+            cardRepository.findById(item.getId()).ifPresent(card -> {
+                card.setOrdem(item.getOrdem());
+                cardsParaSalvar.add(card);
             });
+        }
+
+        if (!cardsParaSalvar.isEmpty()) {
+            cardRepository.saveAll(cardsParaSalvar);
         }
     }
 }

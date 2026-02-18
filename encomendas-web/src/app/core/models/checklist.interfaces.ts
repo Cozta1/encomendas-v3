@@ -1,76 +1,40 @@
-// DTOs para Anexos
-export interface ChecklistAnexo {
-  id: string;
-  nomeArquivo: string;
-  tipoArquivo: string;
-  url: string;
-}
-
-export interface ChecklistAnexoDTO {
-  id: string;
-  nomeArquivo: string;
-  tipoArquivo: string;
-  url: string;
-}
-
-// Item do Checklist (Tarefa)
-export interface ChecklistItem {
-  id: string;
-  descricao: string;
-  ordem: number;
-  marcado: boolean;
-}
-
-export interface ChecklistItemDTO {
-  id: string;
-  descricao: string;
-  ordem: number;
-  marcado: boolean;
-}
-
-// Card (Bloco de Horário / Tarefa Principal)
-export interface ChecklistCard {
-  id: string;
-  titulo: string;
-  descricao?: string;
-  horarioAbertura: string;
-  horarioFechamento: string;
-  itens: ChecklistItem[];
-  anexos?: ChecklistAnexo[];
-  status: 'PENDENTE' | 'ABERTO' | 'FECHADO' | 'HISTORICO' | 'ATRASADO';
-}
-
-export interface ChecklistCardDTO {
-  id: string;
-  titulo: string;
-  descricao?: string;
-  horarioAbertura: string;
-  horarioFechamento: string;
-  itens: ChecklistItemDTO[];
-  anexos?: ChecklistAnexoDTO[];
-  status: string;
-}
-
-// Board (Lista de Cards)
 export interface ChecklistBoard {
   id: string;
   nome: string;
   equipeId: string;
-  usuarioEspecificoId?: number | null;
+  usuarioEspecificoId?: number;
   cards: ChecklistCard[];
+  ordem?: number; // Campo adicionado
 }
 
-export interface ChecklistBoardDTO {
-  id: string; // UUID vira string no front
-  nome: string;
-  equipeId: string;
-  usuarioEspecificoId?: number | null;
-  cards: ChecklistCardDTO[];
+export interface ChecklistCard {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  horarioAbertura: string;   // "HH:mm"
+  horarioFechamento: string; // "HH:mm"
+  status: 'ABERTO' | 'FECHADO' | 'PENDENTE' | 'HISTORICO' | 'CONFIG'; // Status calculado no backend
+  itens: ChecklistItem[];
+  anexos: ChecklistAnexo[];
+  ordem?: number; // Campo adicionado
 }
 
-// Payload para Logs
+export interface ChecklistItem {
+  id: string;
+  descricao: string;
+  marcado: boolean;
+  ordem?: number; // Campo adicionado (caso queira ordenar itens também)
+}
+
+export interface ChecklistAnexo {
+  id: string;
+  nomeArquivo: string;
+  url: string;
+  tipo: string;
+}
+
 export interface ChecklistLogRequest {
   itemId: string;
-  dataReferencia: string;
+  dataReferencia: string; // "YYYY-MM-DD"
   valor: boolean;
 }
