@@ -14,7 +14,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "checklist_anexos")
+@Table(name = "checklist_anexos", indexes = {
+    @Index(name = "idx_checklist_anexos_card_id", columnList = "card_id")
+})
 public class ChecklistAnexo {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,7 +26,7 @@ public class ChecklistAnexo {
     private String tipoArquivo; // ex: 'PDF', 'IMG', 'LINK'
     private String url; // URL ou caminho do arquivo
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "card_id")
     @JsonIgnore
     private ChecklistCard card;

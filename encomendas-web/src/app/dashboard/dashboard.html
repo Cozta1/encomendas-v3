@@ -37,6 +37,9 @@
       <button mat-stroked-button color="primary" routerLink="/encomendas" class="full-width-btn">
         <mat-icon>list_alt</mat-icon> Gerenciar Encomendas
       </button>
+      <button *ngIf="isAdmin" mat-stroked-button color="accent" (click)="abrirEnviarNotificacao()" class="full-width-btn">
+        <mat-icon>notifications_active</mat-icon> Enviar Notificação
+      </button>
     </div>
 
     <mat-card class="table-card" *ngIf="(encomendasAtrasadas$ | async)?.length">
@@ -103,16 +106,21 @@
 
       <mat-grid-tile colspan="1" rowspan="1">
         <mat-card class="stat-card info-card">
-          <mat-card-content class="shortcuts-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; height: 100%;">
+          <mat-card-content class="shortcuts-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%;">
 
-            <button mat-flat-button color="primary" routerLink="/encomenda-create" style="width: 100%; height: 48px; font-size: 1rem;">
+            <button mat-flat-button color="primary" routerLink="/encomenda-create" style="width: 100%; height: 44px; font-size: 1rem;">
               <mat-icon style="margin-right: 8px;">add_shopping_cart</mat-icon>
               Nova Encomenda
             </button>
 
-            <button mat-stroked-button color="primary" routerLink="/encomendas" style="width: 100%; height: 48px; font-size: 1rem;">
+            <button mat-stroked-button color="primary" routerLink="/encomendas" style="width: 100%; height: 44px; font-size: 1rem;">
               <mat-icon style="margin-right: 8px;">list_alt</mat-icon>
               Gerenciar Encomendas
+            </button>
+
+            <button *ngIf="isAdmin" mat-stroked-button color="accent" (click)="abrirEnviarNotificacao()" style="width: 100%; height: 44px; font-size: 1rem;">
+              <mat-icon style="margin-right: 8px;">notifications_active</mat-icon>
+              Enviar Notificação
             </button>
 
           </mat-card-content>

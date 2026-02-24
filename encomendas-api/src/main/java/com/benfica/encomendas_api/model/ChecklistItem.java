@@ -13,7 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "checklist_itens")
+@Table(name = "checklist_itens", indexes = {
+    @Index(name = "idx_checklist_itens_card_id", columnList = "card_id")
+})
 public class ChecklistItem {
 
     @Id

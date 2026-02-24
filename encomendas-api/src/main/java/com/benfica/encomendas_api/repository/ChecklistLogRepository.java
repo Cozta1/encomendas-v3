@@ -17,5 +17,15 @@ public interface ChecklistLogRepository extends JpaRepository<ChecklistLog, UUID
     // Busca histórico de um item específico (para auditoria)
     List<ChecklistLog> findByItemIdOrderByDataHoraAcaoDesc(UUID itemId);
 
-    // Para relatórios: buscar logs de uma equipe num dia (query mais complexa, faremos via service ou spec futuramente se precisar)
+    // Para relatórios: todos os logs de uma equipe num dia específico
+    @Query("SELECT l FROM ChecklistLog l " +
+           "JOIN FETCH l.usuario " +
+           "JOIN FETCH l.item i " +
+           "JOIN FETCH i.card c " +
+           "JOIN FETCH c.board b " +
+           "WHERE b.equipe.id = :equipeId AND l.dataReferencia = :data " +
+           "ORDER BY l.dataHoraAcao ASC")
+    List<ChecklistLog> findByEquipeIdAndDataReferencia(
+            @Param("equipeId") UUID equipeId,
+            @Param("data") LocalDate data);
 }

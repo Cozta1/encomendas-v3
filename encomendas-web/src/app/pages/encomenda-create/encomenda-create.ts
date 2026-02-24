@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { startWith, map, filter } from 'rxjs/operators';
 
 // Material
@@ -103,8 +103,11 @@ export class EncomendaCreate implements OnInit {
   }
 
   carregarDadosAuxiliares() {
-    this.produtoService.getProdutos().subscribe(dados => {
-      this.allProdutos = dados;
+    forkJoin({
+      produtos: this.produtoService.getProdutos(),
+      fornecedores: this.fornecedorService.getFornecedores()
+    }).subscribe(({ produtos, fornecedores }) => {
+      this.allProdutos = produtos;
       this.filteredProdutos$ = this.itemForm.get('produto')!.valueChanges.pipe(
         startWith(''),
         map(value => {
@@ -112,10 +115,8 @@ export class EncomendaCreate implements OnInit {
           return nome ? this._filterProdutos(nome as string) : this.allProdutos.slice();
         })
       );
-    });
 
-    this.fornecedorService.getFornecedores().subscribe(dados => {
-      this.allFornecedores = dados;
+      this.allFornecedores = fornecedores;
       this.filteredFornecedores$ = this.itemForm.get('fornecedor')!.valueChanges.pipe(
         startWith(''),
         map(value => {

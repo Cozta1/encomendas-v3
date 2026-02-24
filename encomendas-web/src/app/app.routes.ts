@@ -3,37 +3,13 @@ import { Routes } from '@angular/router';
 // Guards
 import { authGuard } from './core/auth/auth.guard';
 
-// Layouts
+// Layouts (Eager — necessário imediatamente como shell)
 import { Main } from './layout/main/main';
 
-// Auth
+// Auth (Eager — necessário imediatamente)
 import { Login } from './login/login';
 import { Register } from './login/register/register';
 import { ForgotPassword } from './login/forgot-password/forgot-password';
-
-// Dashboard e Cadastros
-import { Dashboard } from './dashboard/dashboard';
-import { Clientes } from './pages/clientes/clientes';
-import { Fornecedores } from './pages/fornecedores/fornecedores';
-import { Produtos } from './pages/produtos/produtos';
-import { PerfilPage } from './pages/perfil/perfil';
-
-// Encomendas
-import { Encomendas } from './pages/encomendas/encomendas';
-import { EncomendaCreate } from './pages/encomenda-create/encomenda-create';
-import { EncomendaDetalhesComponent } from './pages/encomenda-detalhes/encomenda-detalhes';
-
-// Equipes
-import { EquipesPage } from './pages/equipes/equipes';
-import { GestaoEquipe } from './pages/gestao-equipe/gestao-equipe';
-
-// Operacional (Funcionário)
-import { ChecklistDiaComponent } from './pages/checklist-dia/checklist-dia';
-import { MeuCalendarioComponent } from './pages/meu-calendario/meu-calendario';
-
-// Administração (Gestor) - NOVAS IMPORTAÇÕES
-import { EscalaAdminComponent } from './pages/escala-admin/escala-admin';
-import { ChecklistCriadorComponent } from './pages/checklist-criador/checklist-criador';
 
 export const routes: Routes = [
   // Rotas Públicas
@@ -63,84 +39,84 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        component: Dashboard,
+        loadComponent: () => import('./dashboard/dashboard').then(m => m.Dashboard),
         title: 'Dashboard - Encomendas'
       },
 
       // --- CADASTROS ---
       {
         path: 'clientes',
-        component: Clientes,
+        loadComponent: () => import('./pages/clientes/clientes').then(m => m.Clientes),
         title: 'Gestão de Clientes'
       },
       {
         path: 'fornecedores',
-        component: Fornecedores,
+        loadComponent: () => import('./pages/fornecedores/fornecedores').then(m => m.Fornecedores),
         title: 'Gestão de Fornecedores'
       },
       {
         path: 'produtos',
-        component: Produtos,
+        loadComponent: () => import('./pages/produtos/produtos').then(m => m.Produtos),
         title: 'Catálogo de Produtos'
       },
 
       // --- ENCOMENDAS ---
       {
         path: 'encomendas',
-        component: Encomendas,
+        loadComponent: () => import('./pages/encomendas/encomendas').then(m => m.Encomendas),
         title: 'Minhas Encomendas'
       },
       {
         path: 'encomendas/nova',
-        component: EncomendaCreate,
+        loadComponent: () => import('./pages/encomenda-create/encomenda-create').then(m => m.EncomendaCreate),
         title: 'Nova Encomenda'
       },
       {
         path: 'encomendas/:id',
-        component: EncomendaDetalhesComponent,
+        loadComponent: () => import('./pages/encomenda-detalhes/encomenda-detalhes').then(m => m.EncomendaDetalhesComponent),
         title: 'Detalhes da Encomenda'
       },
 
       // --- EQUIPES ---
       {
         path: 'equipes',
-        component: EquipesPage,
+        loadComponent: () => import('./pages/equipes/equipes').then(m => m.EquipesPage),
         title: 'Minhas Equipes'
       },
       {
         path: 'gestao-equipes',
-        component: GestaoEquipe,
+        loadComponent: () => import('./pages/gestao-equipe/gestao-equipe').then(m => m.GestaoEquipe),
         title: 'Gerenciar Membros'
       },
 
       // --- OPERACIONAL (FUNCIONÁRIO) ---
       {
         path: 'checklists',
-        component: ChecklistDiaComponent,
+        loadComponent: () => import('./pages/checklist-dia/checklist-dia').then(m => m.ChecklistDiaComponent),
         title: 'Meu Checklist Diário'
       },
       {
         path: 'meu-calendario',
-        component: MeuCalendarioComponent,
+        loadComponent: () => import('./pages/meu-calendario/meu-calendario').then(m => m.MeuCalendarioComponent),
         title: 'Minha Escala'
       },
 
       // --- ADMINISTRAÇÃO (GESTOR) ---
       {
         path: 'admin/escalas',
-        component: EscalaAdminComponent,
+        loadComponent: () => import('./pages/escala-admin/escala-admin').then(m => m.EscalaAdminComponent),
         title: 'Gestão de Escalas'
       },
       {
         path: 'admin/checklists',
-        component: ChecklistCriadorComponent,
+        loadComponent: () => import('./pages/checklist-criador/checklist-criador').then(m => m.ChecklistCriadorComponent),
         title: 'Gestor de Checklists'
       },
 
       // --- CONTA ---
       {
         path: 'perfil',
-        component: PerfilPage,
+        loadComponent: () => import('./pages/perfil/perfil').then(m => m.PerfilPage),
         title: 'Meu Perfil'
       }
     ]

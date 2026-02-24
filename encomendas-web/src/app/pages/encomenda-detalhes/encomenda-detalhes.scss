@@ -104,3 +104,24 @@
 
 .mb-4 { margin-bottom: 24px; }
 .primary-text { color: var(--app-primary-color); }
+
+:host-context(.dark-theme) {
+  .log-line { background-color: #2a2a2a; }
+
+  .log-content {
+    background: #252525;
+    border-color: #2a2a2a;
+  }
+
+  .log-title { color: #e0e0e0; }
+
+  .log-meta {
+    color: #9a9a9a;
+    .inline-icon { color: #606060; }
+  }
+
+  .cancelled-banner {
+    background: #2a0a0a;
+    color: #ef9a9a;
+  }
+}

@@ -46,8 +46,8 @@ public class ClienteService {
         Equipe equipe = equipeRepository.findById(equipeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
-        if (clienteRepository.findByEquipeId(equipeId).stream()
-                .anyMatch(c -> c.getEmail().equalsIgnoreCase(dto.getEmail()))) {
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() &&
+                clienteRepository.findByEquipeIdAndEmailIgnoreCase(equipeId, dto.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe um cliente com este email.");
         }
 

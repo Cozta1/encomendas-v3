@@ -1,13 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { BehaviorSubject, Subscription } from 'rxjs'; // Removido 'skip'
+import { BehaviorSubject, Subscription } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { EncomendaResponse } from '../core/models/encomenda.interfaces';
 import { EncomendaService } from '../core/services/encomenda.service';
-import { TeamService, Equipe } from '../core/team/team.service'; // Importe 'Equipe'
+import { TeamService } from '../core/team/team.service';
+import { AuthService } from '../core/auth/auth.service';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { MatDialog } from '@angular/material/dialog';
+import { EnviarNotificacaoDialog } from '../components/dialogs/enviar-notificacao-dialog/enviar-notificacao-dialog';
 
-// Imports UI (Mantenha os imports existentes)
+// Imports UI
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -17,6 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,7 +29,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
   imports: [
     CommonModule, RouterModule, MatGridListModule, MatCardModule,
     MatTableModule, MatIconModule, MatChipsModule, MatButtonModule,
-    MatListModule, MatDividerModule, MatProgressBarModule
+    MatListModule, MatDividerModule, MatProgressBarModule, MatDialogModule
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -35,7 +40,8 @@ export class Dashboard implements OnInit, OnDestroy {
   private breakpointSub: Subscription | undefined;
 
   public isMobile = false;
-  // ... (mantenha suas variáveis de BehaviorSubject aqui)
+  public isAdmin = false;
+
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
   public totalBrutoMes$ = new BehaviorSubject<number>(0);
   public totalLiquidoMes$ = new BehaviorSubject<number>(0);
@@ -49,12 +55,15 @@ export class Dashboard implements OnInit, OnDestroy {
   constructor(
     private encomendaService: EncomendaService,
     private teamService: TeamService,
+    private authService: AuthService,
     private router: Router,
-    private breakpointObserver: BreakpointObserver
+    private breakpointObserver: BreakpointObserver,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    // 1. Monitora o tamanho da tela
+    this.isAdmin = this.authService.isAdmin();
+
     this.breakpointSub = this.breakpointObserver.observe([
       Breakpoints.Handset,
       Breakpoints.TabletPortrait
@@ -65,34 +74,28 @@ export class Dashboard implements OnInit, OnDestroy {
         : ['data', 'cliente', 'status', 'valorTotal', 'acoes'];
     });
 
-    // 2. Inscreve-se na equipe ativa. Isso roda no início E quando muda a equipe.
-    this.teamSubscription = this.teamService.equipeAtiva$.subscribe((equipe) => {
+    this.teamSubscription = this.teamService.equipeAtiva$.pipe(
+      distinctUntilChanged((a, b) => a?.id === b?.id)
+    ).subscribe((equipe) => {
       if (equipe) {
-        // Se tem equipe, carrega os dados
         this.carregarDadosDashboard();
       } else {
-        // Se NÃO tem equipe (login novo), tenta selecionar automaticamente
         this.autoSelecionarEquipe();
       }
     });
   }
 
-  // Nova função para evitar o loop de 401
   private autoSelecionarEquipe(): void {
     this.teamService.fetchEquipesDoUsuario().subscribe({
       next: (equipes) => {
         if (equipes && equipes.length > 0) {
-          // Seleciona a primeira equipe encontrada
           this.teamService.selecionarEquipe(equipes[0]);
-          // A seleção vai disparar o 'teamSubscription' acima, que chamará o 'carregarDadosDashboard'
         } else {
-          // Se o usuário não tem nenhuma equipe, redirecione para criar uma
           this.router.navigate(['/equipes']);
         }
       },
       error: (err) => {
         console.error('Erro ao buscar equipes', err);
-        // Se falhar ao buscar equipes, aí sim pode ser token inválido
       }
     });
   }
@@ -103,7 +106,6 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   carregarDadosDashboard(): void {
-    // Só chama o backend se tiver equipe selecionada (redundância de segurança)
     if (!this.teamService.getEquipeAtivaId()) return;
 
     this.encomendaService.getEncomendas().subscribe({
@@ -116,9 +118,7 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
-  // ... (Mantenha os métodos processarMetricas, processarEncomendasAbertas, getStatusColor, etc. iguais)
   private processarMetricas(encomendas: EncomendaResponse[]): void {
-     // ... seu código original ...
      const agora = new Date();
      const inicioMes = new Date(agora);
      inicioMes.setDate(agora.getDate() - 30);
@@ -194,6 +194,23 @@ export class Dashboard implements OnInit, OnDestroy {
       case 'Pendente': return 'warn';
       default: return 'primary';
     }
+  }
+
+  public abrirEnviarNotificacao(): void {
+    const equipeId = this.teamService.getEquipeAtivaId();
+    const user = this.authService.getUser();
+    if (!equipeId || !user) return;
+
+    this.teamService.getMembros(equipeId).subscribe({
+      next: (membros) => {
+        const outrosMembros = membros.filter(m => m.id !== user.id);
+        this.dialog.open(EnviarNotificacaoDialog, {
+          data: { equipeId, remetenteId: user.id, membros: outrosMembros },
+          width: '460px'
+        });
+      },
+      error: () => {}
+    });
   }
 
   public irParaEncomendas(): void {

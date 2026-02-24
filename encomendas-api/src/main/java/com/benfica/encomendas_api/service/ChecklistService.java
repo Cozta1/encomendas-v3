@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -161,6 +162,28 @@ public class ChecklistService {
         return "ABERTO";
     }
 
+    private String calcularStatusRelatorioCard(
+            List<ChecklistRelatorioDTO.RelatorioItemDTO> itens,
+            ChecklistCard card,
+            LocalDate data) {
+
+        if (itens == null || itens.isEmpty()) return "SEM_ITENS";
+
+        boolean todosCompletos = itens.stream().allMatch(ChecklistRelatorioDTO.RelatorioItemDTO::isMarcado);
+        if (todosCompletos) return "CONCLUIDA";
+
+        LocalDate hoje = LocalDate.now();
+        if (data.isBefore(hoje)) return "FECHADA_INCOMPLETA";
+        if (data.isAfter(hoje)) return "PENDENTE";
+
+        // Today: check current time vs card window
+        LocalTime agora = LocalTime.now();
+        if (agora.isAfter(card.getHorarioFechamento())) return "FECHADA_INCOMPLETA";
+        if (agora.isBefore(card.getHorarioAbertura())) return "PENDENTE";
+
+        return "ABERTA";
+    }
+
     // --- AÇÕES E CRUD (Sem Alterações na Lógica) ---
     @Transactional
     public void registrarAcao(ChecklistLogRequestDTO request, Long usuarioId) {
@@ -241,16 +264,68 @@ public class ChecklistService {
     }
 
     @Transactional
-    public void atualizarDescricaoCard(UUID cardId, String novaDescricao) {
+    public void atualizarBoard(UUID boardId, Map<String, Object> payload) {
+        ChecklistBoard board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new EntityNotFoundException("Board não encontrado"));
+        if (payload.containsKey("nome")) {
+            board.setNome((String) payload.get("nome"));
+        }
+        boardRepository.save(board);
+    }
+
+    @Transactional
+    public void excluirBoard(UUID boardId) {
+        ChecklistBoard board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new EntityNotFoundException("Board não encontrado"));
+        for (ChecklistCard card : board.getCards()) {
+            for (ChecklistItem item : card.getItens()) {
+                logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
+            }
+        }
+        boardRepository.delete(board);
+    }
+
+    @Transactional
+    public void atualizarCard(UUID cardId, Map<String, Object> payload) {
         ChecklistCard card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new EntityNotFoundException("Cartão não encontrado"));
-
-        card.setDescricao(novaDescricao);
+        if (payload.containsKey("titulo")) {
+            card.setTitulo((String) payload.get("titulo"));
+        }
+        if (payload.containsKey("descricao")) {
+            card.setDescricao((String) payload.get("descricao"));
+        }
+        if (payload.containsKey("horarioAbertura")) {
+            card.setHorarioAbertura(LocalTime.parse((String) payload.get("horarioAbertura")));
+        }
+        if (payload.containsKey("horarioFechamento")) {
+            card.setHorarioFechamento(LocalTime.parse((String) payload.get("horarioFechamento")));
+        }
         cardRepository.save(card);
     }
 
     @Transactional
-    public void adicionarItem(UUID cardId, String descricao, Integer ordem) {
+    public void excluirCard(UUID cardId) {
+        ChecklistCard card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new EntityNotFoundException("Card não encontrado"));
+        for (ChecklistItem item : card.getItens()) {
+            logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
+        }
+        cardRepository.delete(card);
+    }
+
+    @Transactional
+    public void moverCard(UUID cardId, UUID novoBoardId) {
+        ChecklistCard card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new EntityNotFoundException("Card não encontrado"));
+        ChecklistBoard board = boardRepository.findById(novoBoardId)
+                .orElseThrow(() -> new EntityNotFoundException("Board não encontrado"));
+        card.setBoard(board);
+        cardRepository.save(card);
+    }
+
+    @Transactional
+    public ChecklistItemDTO adicionarItem(UUID cardId, String descricao, Integer ordem) {
         ChecklistCard card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new EntityNotFoundException("Card não encontrado"));
 
@@ -260,44 +335,152 @@ public class ChecklistService {
                 .ordem(ordem)
                 .build();
 
-        itemRepository.save(item);
+        ChecklistItem salvo = itemRepository.save(item);
+        return ChecklistItemDTO.builder()
+                .id(salvo.getId())
+                .descricao(salvo.getDescricao())
+                .ordem(salvo.getOrdem())
+                .marcado(false)
+                .build();
+    }
+
+    @Transactional
+    public void excluirItem(UUID itemId) {
+        ChecklistItem item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new EntityNotFoundException("Item não encontrado"));
+        logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
+        itemRepository.delete(item);
     }
 
     // --- REORDENAÇÃO CORRIGIDA (PERSISTÊNCIA GARANTIDA) ---
 
     @Transactional
     public void atualizarOrdemBoards(List<ReorderRequestDTO> lista) {
-        List<ChecklistBoard> boardsParaSalvar = new ArrayList<>();
+        List<UUID> ids = lista.stream()
+                .filter(i -> i.getId() != null)
+                .map(ReorderRequestDTO::getId)
+                .collect(Collectors.toList());
 
-        for (ReorderRequestDTO item : lista) {
-            if (item.getId() == null) continue;
+        if (ids.isEmpty()) return;
 
-            boardRepository.findById(item.getId()).ifPresent(board -> {
-                board.setOrdem(item.getOrdem());
-                boardsParaSalvar.add(board);
-            });
-        }
-        // Salva todos de uma vez
-        if (!boardsParaSalvar.isEmpty()) {
-            boardRepository.saveAll(boardsParaSalvar);
-        }
+        Map<UUID, Integer> ordemPorId = lista.stream()
+                .filter(i -> i.getId() != null)
+                .collect(Collectors.toMap(ReorderRequestDTO::getId, ReorderRequestDTO::getOrdem));
+
+        List<ChecklistBoard> boards = boardRepository.findAllById(ids);
+        boards.forEach(b -> b.setOrdem(ordemPorId.get(b.getId())));
+        boardRepository.saveAll(boards);
     }
 
     @Transactional
     public void atualizarOrdemCards(List<ReorderRequestDTO> lista) {
-        List<ChecklistCard> cardsParaSalvar = new ArrayList<>();
+        List<UUID> ids = lista.stream()
+                .filter(i -> i.getId() != null)
+                .map(ReorderRequestDTO::getId)
+                .collect(Collectors.toList());
 
-        for (ReorderRequestDTO item : lista) {
-            if (item.getId() == null) continue;
+        if (ids.isEmpty()) return;
 
-            cardRepository.findById(item.getId()).ifPresent(card -> {
-                card.setOrdem(item.getOrdem());
-                cardsParaSalvar.add(card);
-            });
+        Map<UUID, Integer> ordemPorId = lista.stream()
+                .filter(i -> i.getId() != null)
+                .collect(Collectors.toMap(ReorderRequestDTO::getId, ReorderRequestDTO::getOrdem));
+
+        List<ChecklistCard> cards = cardRepository.findAllById(ids);
+        cards.forEach(c -> c.setOrdem(ordemPorId.get(c.getId())));
+        cardRepository.saveAll(cards);
+    }
+
+    // --- RELATÓRIO DE ATIVIDADES (Admin) ---
+
+    @Transactional(readOnly = true)
+    public ChecklistRelatorioDTO getRelatorio(UUID equipeId, LocalDate data) {
+        // 1. Carrega equipe + membros (lazy load dentro da transação)
+        Equipe equipe = equipeRepository.findById(equipeId)
+                .orElseThrow(() -> new EntityNotFoundException("Equipe não encontrada"));
+        List<Usuario> membros = equipe.getMembros();
+
+        // 2. Carrega todos os boards da equipe (JOIN FETCH cards + @BatchSize para itens)
+        List<ChecklistBoard> todosBoards = boardRepository.findByEquipeId(equipeId);
+
+        // 3. Carrega todos os logs do dia para esta equipe
+        List<ChecklistLog> logs = logRepository.findByEquipeIdAndDataReferencia(equipeId, data);
+
+        // 4. Agrupa logs por (usuarioId, itemId) → apenas o último registro de cada par
+        Map<String, ChecklistLog> ultimoLog = new HashMap<>();
+        for (ChecklistLog log : logs) {
+            String key = log.getUsuario().getId() + ":" + log.getItem().getId();
+            ChecklistLog atual = ultimoLog.get(key);
+            if (atual == null || log.getDataHoraAcao().isAfter(atual.getDataHoraAcao())) {
+                ultimoLog.put(key, log);
+            }
         }
 
-        if (!cardsParaSalvar.isEmpty()) {
-            cardRepository.saveAll(cardsParaSalvar);
-        }
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        // 5. Constrói o relatório por usuário
+        List<ChecklistRelatorioDTO.RelatorioUsuarioDTO> usuariosDTOs = membros.stream().map(membro -> {
+
+            // Boards visíveis para este membro (gerais + os específicos dele)
+            List<ChecklistBoard> boardsDoMembro = todosBoards.stream()
+                    .filter(b -> b.getUsuarioEspecifico() == null
+                              || b.getUsuarioEspecifico().getId().equals(membro.getId()))
+                    .collect(Collectors.toList());
+
+            List<ChecklistRelatorioDTO.RelatorioBoardDTO> boardDTOs = boardsDoMembro.stream().map(board -> {
+                List<ChecklistRelatorioDTO.RelatorioCardDTO> cardDTOs = board.getCards().stream().map(card -> {
+                    List<ChecklistRelatorioDTO.RelatorioItemDTO> itemDTOs = card.getItens().stream().map(item -> {
+                        String key = membro.getId() + ":" + item.getId();
+                        ChecklistLog lastLog = ultimoLog.get(key);
+                        boolean marcado = lastLog != null && lastLog.getValor();
+                        String hora = (marcado) ? lastLog.getDataHoraAcao().format(fmt) : null;
+
+                        return ChecklistRelatorioDTO.RelatorioItemDTO.builder()
+                                .descricao(item.getDescricao())
+                                .marcado(marcado)
+                                .horaPreenchimento(hora)
+                                .build();
+                    }).collect(Collectors.toList());
+
+                    String statusCard = calcularStatusRelatorioCard(itemDTOs, card, data);
+
+                    return ChecklistRelatorioDTO.RelatorioCardDTO.builder()
+                            .cardTitulo(card.getTitulo())
+                            .horarioAbertura(card.getHorarioAbertura().toString())
+                            .horarioFechamento(card.getHorarioFechamento().toString())
+                            .itens(itemDTOs)
+                            .statusCard(statusCard)
+                            .build();
+                }).collect(Collectors.toList());
+
+                return ChecklistRelatorioDTO.RelatorioBoardDTO.builder()
+                        .boardNome(board.getNome())
+                        .cards(cardDTOs)
+                        .build();
+            }).collect(Collectors.toList());
+
+            int totalItens = boardDTOs.stream()
+                    .mapToInt(b -> b.getCards().stream().mapToInt(c -> c.getItens().size()).sum())
+                    .sum();
+            int totalMarcados = boardDTOs.stream()
+                    .mapToInt(b -> b.getCards().stream()
+                            .mapToInt(c -> (int) c.getItens().stream()
+                                    .filter(ChecklistRelatorioDTO.RelatorioItemDTO::isMarcado)
+                                    .count())
+                            .sum())
+                    .sum();
+
+            return ChecklistRelatorioDTO.RelatorioUsuarioDTO.builder()
+                    .usuarioId(membro.getId())
+                    .nomeUsuario(membro.getNomeCompleto())
+                    .totalItens(totalItens)
+                    .totalMarcados(totalMarcados)
+                    .boards(boardDTOs)
+                    .build();
+        }).collect(Collectors.toList());
+
+        return ChecklistRelatorioDTO.builder()
+                .data(data)
+                .usuarios(usuariosDTOs)
+                .build();
     }
 }

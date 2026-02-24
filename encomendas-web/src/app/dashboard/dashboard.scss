@@ -153,3 +153,35 @@ mat-grid-tile { border-radius: 6px; overflow: hidden; }
 .small-icon-btn { width: 32px; height: 32px; line-height: 32px; mat-icon { font-size: 18px; } }
 .shortcuts-content { gap: 8px; justify-content: center; }
 .mobile-stack { height: auto; overflow-y: auto; padding-bottom: 80px; gap: 8px; }
+
+:host-context(.dark-theme) {
+  .stat-card, .table-card {
+    background: #1e1e1e;
+    mat-card-content {
+      h2 { color: #e8e8e8; }
+      p  { color: #9a9a9a; }
+    }
+  }
+
+  .funnel-step {
+    background: #1e1e1e;
+    .label { color: #9a9a9a; }
+  }
+
+  .funnel-arrow { color: #2a2a2a; }
+  .vertical-divider { background: #2a2a2a; }
+
+  .table-responsive-container {
+    &::-webkit-scrollbar-thumb { background: #333; }
+  }
+
+  .full-width-table {
+    td.mat-mdc-cell, th.mat-mdc-header-cell {
+      border-bottom-color: #2a2a2a;
+    }
+  }
+
+  .rank-badge { color: #9a9a9a; }
+
+  .status-grid .status-item .desc { color: #9a9a9a; }
+}

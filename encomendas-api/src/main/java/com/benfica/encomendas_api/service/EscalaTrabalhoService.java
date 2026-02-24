@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +27,7 @@ public class EscalaTrabalhoService {
     private UsuarioRepository usuarioRepository;
 
     // --- LEITURA ---
+    @Transactional(readOnly = true)
     public List<EscalaTrabalhoDTO> getEscalas(Long usuarioId, LocalDate inicio, LocalDate fim) {
         List<EscalaTrabalho> escalas = escalaRepository.findByUsuarioIdAndDataBetween(usuarioId, inicio, fim);
         return escalas.stream().map(this::toDTO).collect(Collectors.toList());
@@ -62,17 +65,19 @@ public class EscalaTrabalhoService {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
 
+        // Pré-carrega todas as escalas do período de uma só vez (evita N SELECT por dia)
+        Map<LocalDate, EscalaTrabalho> existentes = escalaRepository
+                .findByUsuarioIdAndDataBetween(usuario.getId(), dto.getDataInicio(), dto.getDataFim())
+                .stream()
+                .collect(Collectors.toMap(EscalaTrabalho::getData, e -> e));
+
+        List<EscalaTrabalho> paraSalvar = new ArrayList<>();
         LocalDate atual = dto.getDataInicio();
 
-        // Loop dia a dia
         while (!atual.isAfter(dto.getDataFim())) {
-            // Verifica se o dia da semana está na lista de dias selecionados
-            // getDayOfWeek().getValue(): 1=Segunda ... 7=Domingo
-            // O front envia: 1=Seg ... 7=Dom (compatível)
+            // getDayOfWeek().getValue(): 1=Segunda ... 7=Domingo (compatível com o front)
             if (dto.getDiasSemana().contains(atual.getDayOfWeek().getValue())) {
-
-                // Busca se já existe escala no dia
-                EscalaTrabalho escala = escalaRepository.findByUsuarioIdAndData(usuario.getId(), atual);
+                EscalaTrabalho escala = existentes.getOrDefault(atual, null);
 
                 if (escala == null) {
                     escala = new EscalaTrabalho();
@@ -80,15 +85,18 @@ public class EscalaTrabalhoService {
                     escala.setData(atual);
                 }
 
-                // Atualiza campos
                 escala.setTipo(dto.getTipo());
                 escala.setHorarioInicio(dto.getHorarioInicio());
                 escala.setHorarioFim(dto.getHorarioFim());
                 escala.setObservacao(dto.getObservacao());
 
-                escalaRepository.save(escala);
+                paraSalvar.add(escala);
             }
             atual = atual.plusDays(1);
+        }
+
+        if (!paraSalvar.isEmpty()) {
+            escalaRepository.saveAll(paraSalvar);
         }
     }
 

@@ -79,26 +79,66 @@ public class ChecklistController {
         return ResponseEntity.ok(card);
     }
 
+    @PatchMapping("/boards/{id}")
+    public ResponseEntity<Void> atualizarBoard(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> payload) {
+        checklistService.atualizarBoard(id, payload);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/boards/{id}")
+    public ResponseEntity<Void> excluirBoard(@PathVariable UUID id) {
+        checklistService.excluirBoard(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/cards/{id}")
     public ResponseEntity<Void> atualizarCard(
             @PathVariable UUID id,
             @RequestBody Map<String, Object> payload) {
+        checklistService.atualizarCard(id, payload);
+        return ResponseEntity.ok().build();
+    }
 
-        if (payload.containsKey("descricao")) {
-            String descricao = (String) payload.get("descricao");
-            checklistService.atualizarDescricaoCard(id, descricao);
-        }
+    @DeleteMapping("/cards/{id}")
+    public ResponseEntity<Void> excluirCard(@PathVariable UUID id) {
+        checklistService.excluirCard(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/cards/{id}/mover")
+    public ResponseEntity<Void> moverCard(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> payload) {
+        UUID boardId = UUID.fromString((String) payload.get("boardId"));
+        checklistService.moverCard(id, boardId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/itens")
-    public ResponseEntity<Void> adicionarItem(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<ChecklistItemDTO> adicionarItem(@RequestBody Map<String, Object> payload) {
         UUID cardId = UUID.fromString((String) payload.get("cardId"));
         String descricao = (String) payload.get("descricao");
         Integer ordem = (Integer) payload.get("ordem");
 
-        checklistService.adicionarItem(cardId, descricao, ordem);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(checklistService.adicionarItem(cardId, descricao, ordem));
+    }
+
+    @DeleteMapping("/itens/{id}")
+    public ResponseEntity<Void> excluirItem(@PathVariable UUID id) {
+        checklistService.excluirItem(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- RELATÓRIO DE ATIVIDADES (Admin) ---
+    @GetMapping("/relatorio")
+    public ResponseEntity<ChecklistRelatorioDTO> getRelatorio(
+            @RequestParam UUID equipeId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+
+        if (data == null) data = LocalDate.now();
+        return ResponseEntity.ok(checklistService.getRelatorio(equipeId, data));
     }
 
     // --- REORDENAÇÃO (Endpoints Otimizados com DTO) ---

@@ -14,6 +14,9 @@ public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
     List<Produto> findByEquipeId(UUID equipeId);
     List<Produto> findByEquipeIdAndNomeContainingIgnoreCase(UUID equipeId, String nome);
 
-    // --- NOVO MÉTODO ADICIONADO ---
     Optional<Produto> findByIdAndEquipeId(UUID id, UUID equipeId);
+
+    Optional<Produto> findByEquipeIdAndCodigo(UUID equipeId, String codigo);
+
+    Optional<Produto> findByEquipeIdAndNomeIgnoreCase(UUID equipeId, String nome);
 }

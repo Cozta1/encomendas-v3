@@ -29,6 +29,57 @@
     </button>
   </mat-menu>
 
+  <!-- Bell Icon with Badge -->
+  <button mat-icon-button
+          #notifTrigger="matMenuTrigger"
+          [matMenuTriggerFor]="menuNotificacoes"
+          (menuOpened)="carregarNotificacoes()"
+          matTooltip="Notificações"
+          class="bell-btn">
+    <mat-icon [matBadge]="naoLidas"
+              [matBadgeHidden]="naoLidas === 0"
+              matBadgeColor="warn"
+              matBadgeSize="small">notifications</mat-icon>
+  </button>
+
+  <mat-menu #menuNotificacoes="matMenu" panelClass="notif-menu-panel">
+    <div class="notif-header" (click)="$event.stopPropagation()">
+      <span>Notificações</span>
+      <button mat-button *ngIf="naoLidas > 0" (click)="marcarTodasLidas()" style="font-size: 12px;">
+        Marcar todas como lidas
+      </button>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <ng-container *ngIf="notificacoes.length > 0; else semNotif">
+      <button mat-menu-item *ngFor="let n of notificacoes"
+              (click)="abrirNotificacao(n)"
+              [class.notif-nao-lida]="!n.lida">
+        <div class="notif-item">
+          <mat-icon class="notif-icon" [class.notif-icon-sistema]="!n.remetenteId">
+            {{ n.remetenteId ? 'person' : 'smart_toy' }}
+          </mat-icon>
+          <div class="notif-body">
+            <div class="notif-titulo">{{ n.titulo }}</div>
+            <div class="notif-msg">{{ n.mensagem | slice:0:80 }}{{ n.mensagem.length > 80 ? '…' : '' }}</div>
+            <div class="notif-hora">
+              {{ n.remetenteNome || 'Sistema' }} · {{ n.dataEnvio | date:'dd/MM HH:mm' }}
+            </div>
+          </div>
+          <span *ngIf="!n.lida" class="notif-dot"></span>
+        </div>
+      </button>
+    </ng-container>
+
+    <ng-template #semNotif>
+      <div class="notif-vazio" (click)="$event.stopPropagation()">
+        <mat-icon>notifications_none</mat-icon>
+        <p>Sem notificações</p>
+      </div>
+    </ng-template>
+  </mat-menu>
+
   <button mat-icon-button (click)="toggleTheme()" matTooltip="Alternar Tema">
     <mat-icon>{{ (isDark$ | async) ? 'light_mode' : 'dark_mode' }}</mat-icon>
   </button>

@@ -5,7 +5,9 @@ import { environment } from '../../../environments/environment';
 import {
   ChecklistBoard,
   ChecklistCard,
-  ChecklistLogRequest
+  ChecklistItem,
+  ChecklistLogRequest,
+  ChecklistRelatorio
 } from '../models/checklist.interfaces';
 
 @Injectable({
@@ -64,16 +66,41 @@ export class ChecklistService {
     });
   }
 
-  atualizarDescricaoCard(cardId: string, descricao: string): Observable<void> {
-    return this.http.patch<void>(`${this.apiUrl}/cards/${cardId}`, { descricao });
+  atualizarBoard(boardId: string, changes: { nome?: string }): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/boards/${boardId}`, changes);
   }
 
-  adicionarItem(cardId: string, descricao: string, ordem: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/itens`, {
+  excluirBoard(boardId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/boards/${boardId}`);
+  }
+
+  atualizarCard(cardId: string, changes: { titulo?: string; descricao?: string; horarioAbertura?: string; horarioFechamento?: string }): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/cards/${cardId}`, changes);
+  }
+
+  // Keep the old method name as an alias for backward compatibility
+  atualizarDescricaoCard(cardId: string, descricao: string): Observable<void> {
+    return this.atualizarCard(cardId, { descricao });
+  }
+
+  excluirCard(cardId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/cards/${cardId}`);
+  }
+
+  moverCard(cardId: string, boardId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/cards/${cardId}/mover`, { boardId });
+  }
+
+  adicionarItem(cardId: string, descricao: string, ordem: number): Observable<ChecklistItem> {
+    return this.http.post<ChecklistItem>(`${this.apiUrl}/itens`, {
       cardId,
       descricao,
       ordem
     });
+  }
+
+  excluirItem(itemId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/itens/${itemId}`);
   }
 
   // --- PERSISTÊNCIA DE ORDEM (DRAG & DROP) ---
@@ -94,5 +121,11 @@ export class ChecklistService {
       ordem: index
     }));
     return this.http.put<void>(`${this.apiUrl}/cards/reordenar`, payload);
+  }
+
+  // --- RELATÓRIO DE ATIVIDADES (Admin) ---
+  getRelatorio(equipeId: string, data: string): Observable<ChecklistRelatorio> {
+    const params = new HttpParams().set('equipeId', equipeId).set('data', data);
+    return this.http.get<ChecklistRelatorio>(`${this.apiUrl}/relatorio`, { params });
   }
 }

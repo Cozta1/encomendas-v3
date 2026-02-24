@@ -20,3 +20,16 @@
 mat-nav-list {
   padding-top: 0;
 }
+
+:host-context(.dark-theme) {
+  .menu-header {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .active-link {
+    background-color: rgba(140, 158, 255, 0.12);
+    color: #8c9eff;
+
+    .mat-icon { color: #8c9eff; }
+  }
+}

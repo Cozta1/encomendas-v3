@@ -10,10 +10,16 @@ import java.util.UUID;
 
 public interface ChecklistBoardRepository extends JpaRepository<ChecklistBoard, UUID> {
 
-    // Método existente para o funcionário (filtrado)
-    @Query("SELECT b FROM ChecklistBoard b WHERE b.equipe.id = :equipeId AND (b.usuarioEspecifico IS NULL OR b.usuarioEspecifico.id = :usuarioId)")
+    // Método para o funcionário (filtrado) — JOIN FETCH evita N+1 boards->cards
+    // @BatchSize nos cards/itens/anexos das entidades complementa com batch IN-queries
+    @Query("SELECT DISTINCT b FROM ChecklistBoard b " +
+           "LEFT JOIN FETCH b.cards " +
+           "WHERE b.equipe.id = :equipeId AND (b.usuarioEspecifico IS NULL OR b.usuarioEspecifico.id = :usuarioId)")
     List<ChecklistBoard> findByEquipeAndUsuario(@Param("equipeId") UUID equipeId, @Param("usuarioId") Long usuarioId);
 
-    // --- NOVO: Método para o Admin (Traz tudo da equipe) ---
-    List<ChecklistBoard> findByEquipeId(UUID equipeId);
+    // Método para o Admin (Traz tudo da equipe) — JOIN FETCH evita N+1 boards->cards
+    @Query("SELECT DISTINCT b FROM ChecklistBoard b " +
+           "LEFT JOIN FETCH b.cards " +
+           "WHERE b.equipe.id = :equipeId")
+    List<ChecklistBoard> findByEquipeId(@Param("equipeId") UUID equipeId);
 }

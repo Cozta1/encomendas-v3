@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "checklist_boards")
+@Table(name = "checklist_boards", indexes = {
+    @Index(name = "idx_checklist_boards_equipe_id", columnList = "equipe_id"),
+    @Index(name = "idx_checklist_boards_usuario_id", columnList = "usuario_especifico_id"),
+    @Index(name = "idx_checklist_boards_ordem", columnList = "ordem")
+})
 public class ChecklistBoard {
 
     @Id
@@ -41,6 +46,7 @@ public class ChecklistBoard {
     // ---------------------------------------
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 30)
     private List<ChecklistCard> cards = new ArrayList<>();
 
     @CreationTimestamp

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,8 +8,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { finalize } from 'rxjs/operators';
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { catchError, finalize, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 import { ChecklistService } from '../../core/services/checklist.service';
 import { TeamService } from '../../core/team/team.service';
@@ -42,7 +43,6 @@ export class ChecklistDiaComponent implements OnInit {
   boards: ChecklistBoard[] = [];
   loading = false;
   dataAtual = new Date();
-  private dadosCarregados = false;
 
   escalaHoje: EscalaTrabalho | null = null;
   tipoEscalaEnum = TipoEscala;
@@ -53,74 +53,98 @@ export class ChecklistDiaComponent implements OnInit {
     private authService: AuthService,
     private escalaService: EscalaService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.carregarDadosIniciais();
+    this.carregarDados();
   }
 
-  // Carrega apenas na inicialização. Não deve ser chamado após fechar Modais.
-  carregarDadosIniciais() {
-    if (this.dadosCarregados) return;
+  get isHoje(): boolean {
+    const hoje = new Date();
+    return this.dataAtual.toDateString() === hoje.toDateString();
+  }
 
+  get somenteLeitura(): boolean {
+    return !this.isHoje;
+  }
+
+  // Returns list of all card-list IDs so each list can connect to the others
+  get cardListIds(): string[] {
+    return this.boards.map(b => 'cards-' + b.id);
+  }
+
+  diaAnterior(): void {
+    const d = new Date(this.dataAtual);
+    d.setDate(d.getDate() - 1);
+    this.dataAtual = d;
+    this.carregarDados();
+  }
+
+  proximoDia(): void {
+    const d = new Date(this.dataAtual);
+    d.setDate(d.getDate() + 1);
+    this.dataAtual = d;
+    this.carregarDados();
+  }
+
+  irParaHoje(): void {
+    this.dataAtual = new Date();
+    this.carregarDados();
+  }
+
+  carregarDados(): void {
     const equipeId = this.teamService.getEquipeAtivaId();
     const user = this.authService.getUser();
 
     if (!equipeId || !user) return;
 
     this.loading = true;
-    const hojeStr = this.formatDate(this.dataAtual);
+    const dataStr = this.formatDate(this.dataAtual);
 
-    this.escalaService.getEscalas(user.id, hojeStr, hojeStr).subscribe({
-      next: (escalas) => {
-        this.escalaHoje = escalas.length > 0 ? escalas[0] : null;
+    this.escalaService.getEscalas(user.id, dataStr, dataStr)
+      .pipe(
+        catchError(err => {
+          console.error('Erro ao verificar escala', err);
+          return of<EscalaTrabalho[]>([]);
+        }),
+        switchMap(escalas => {
+          this.escalaHoje = escalas.length > 0 ? escalas[0] : null;
 
-        if (this.escalaHoje && this.escalaHoje.tipo !== TipoEscala.TRABALHO) {
+          if (this.escalaHoje && this.escalaHoje.tipo !== TipoEscala.TRABALHO) {
+            this.boards = [];
+            return of<ChecklistBoard[]>([]);
+          }
+
+          return this.checklistService.getChecklistDoDia(equipeId, dataStr, user.id).pipe(
+            catchError(err => {
+              console.error('Erro ao carregar checklists', err);
+              return of<ChecklistBoard[]>([]);
+            })
+          );
+        }),
+        finalize(() => {
           this.loading = false;
-          this.boards = [];
-        } else {
-          this.buscarChecklists(equipeId, hojeStr, user.id);
-        }
-      },
-      error: (err) => {
-        console.error('Erro escala', err);
-        this.buscarChecklists(equipeId, hojeStr, user.id);
-      }
-    });
-  }
-
-  private buscarChecklists(equipeId: string, data: string, userId: number) {
-    this.checklistService.getChecklistDoDia(equipeId, data, userId)
-      .pipe(finalize(() => this.loading = false))
-      .subscribe({
-        next: (dados) => {
-          // Ordenação inicial vinda do backend
-          this.boards = dados.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-          this.boards.forEach(b => {
-            if(b.cards) b.cards.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-          });
-          this.dadosCarregados = true;
-        },
-        error: (err) => console.error(err)
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe(boards => {
+        this.boards = boards.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+        this.boards.forEach(b => {
+          if (b.cards) b.cards.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+        });
       });
   }
 
-  // --- DRAG & DROP OTIMIZADO ---
+  // --- DRAG & DROP ---
 
   dropBoard(event: CdkDragDrop<ChecklistBoard[]>) {
     if (event.previousIndex === event.currentIndex) return;
 
-    // 1. Atualiza o array visualmente
     moveItemInArray(this.boards, event.previousIndex, event.currentIndex);
+    this.boards.forEach((board, index) => { board.ordem = index; });
 
-    // 2. CRUCIAL: Atualiza a propriedade 'ordem' dos objetos locais para refletir a nova posição do array
-    // Isso garante que se o usuário mover outro item em seguida, o estado local esteja correto.
-    this.boards.forEach((board, index) => {
-      board.ordem = index;
-    });
-
-    // 3. Envia para o backend
     this.checklistService.reordenarBoards(this.boards).subscribe({
       error: () => this.snackBar.open('Erro ao salvar ordem. Recarregue a página.', 'Fechar', { duration: 4000 })
     });
@@ -128,23 +152,49 @@ export class ChecklistDiaComponent implements OnInit {
 
   dropCard(event: CdkDragDrop<ChecklistCard[]>) {
     if (event.previousContainer === event.container) {
+      // Reorder within same board
       if (event.previousIndex === event.currentIndex) return;
 
-      // 1. Atualiza visualmente
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      event.container.data.forEach((card, index) => { card.ordem = index; });
 
-      // 2. Atualiza modelo local
-      event.container.data.forEach((card, index) => {
-        card.ordem = index;
-      });
-
-      // 3. Persiste
       this.checklistService.reordenarCards(event.container.data).subscribe({
         error: () => this.snackBar.open('Erro ao salvar ordem. Recarregue a página.', 'Fechar', { duration: 4000 })
       });
     } else {
-      // Caso queira implementar mover entre colunas no futuro
-      // transferArrayItem(...)
+      // Move card between boards
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+
+      const card = event.container.data[event.currentIndex];
+
+      // Find the target board
+      const targetBoard = this.boards.find(b => b.cards === event.container.data);
+      if (targetBoard) {
+        // Update local ordem
+        event.container.data.forEach((c, i) => { c.ordem = i; });
+        event.previousContainer.data.forEach((c, i) => { c.ordem = i; });
+
+        // Persist move + reorder
+        this.checklistService.moverCard(card.id, targetBoard.id).subscribe({
+          error: () => this.snackBar.open('Erro ao mover cartão.', 'Fechar', { duration: 4000 })
+        });
+
+        if (event.container.data.length > 1) {
+          this.checklistService.reordenarCards(event.container.data).subscribe({
+            error: () => {}
+          });
+        }
+        if (event.previousContainer.data.length > 0) {
+          this.checklistService.reordenarCards(event.previousContainer.data).subscribe({
+            error: () => {}
+          });
+        }
+      }
     }
   }
 
@@ -152,22 +202,22 @@ export class ChecklistDiaComponent implements OnInit {
     const user = this.authService.getUser();
     if (!user) return;
 
-    // Abrimos o modal passando o objeto 'card' por referência.
-    // Qualquer alteração feita lá dentro (marcar checkbox) reflete aqui imediatamente.
-    const dialogRef = this.dialog.open(ChecklistCardDialog, {
+    // Find the board this card belongs to
+    const board = this.boards.find(b => b.cards.some(c => c.id === card.id));
+
+    this.dialog.open(ChecklistCardDialog, {
       width: '768px',
       maxWidth: '95vw',
       maxHeight: '90vh',
       panelClass: 'trello-dialog-container',
-      data: { card: card, usuarioId: user.id },
-      disableClose: false // Permite clicar fora pra fechar
-    });
-
-    // PERFORMANCE: NÃO recarregamos a página inteira ao fechar.
-    // O Angular detecta mudanças nos objetos e atualiza a view (barras de progresso, etc).
-    dialogRef.afterClosed().subscribe(() => {
-       // Apenas lógica local se necessário, mas NUNCA this.carregarDadosIniciais()
-       // a menos que seja uma mudança estrutural crítica (ex: deletar card)
+      data: {
+        card: card,
+        usuarioId: user.id,
+        dataReferencia: this.formatDate(this.dataAtual),
+        somenteLeitura: this.somenteLeitura || card.status === 'FECHADO',
+        boardNome: board?.nome
+      },
+      disableClose: false
     });
   }
 

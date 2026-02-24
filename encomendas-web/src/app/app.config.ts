@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
@@ -16,7 +16,7 @@ registerLocaleData(localePt);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withPreloading(PreloadAllModules)),
     provideAnimationsAsync(),
 
     // Interceptadores HTTP

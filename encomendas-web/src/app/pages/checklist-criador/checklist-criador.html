@@ -2,9 +2,14 @@
 
   <div class="header-action">
     <h1>Gestão de Checklists</h1>
-    <button mat-raised-button color="primary" (click)="showNovoBoardForm = !showNovoBoardForm">
-      <mat-icon>add</mat-icon> Novo Quadro
-    </button>
+    <div class="header-btns">
+      <button mat-stroked-button color="accent" (click)="abrirDialogNotificacao()">
+        <mat-icon>notifications</mat-icon> Enviar Notificação
+      </button>
+      <button mat-raised-button color="primary" (click)="showNovoBoardForm = !showNovoBoardForm">
+        <mat-icon>add</mat-icon> Novo Quadro
+      </button>
+    </div>
   </div>
 
   <div class="novo-board-container mat-elevation-z2" *ngIf="showNovoBoardForm">
@@ -12,7 +17,7 @@
     <div class="form-row">
       <mat-form-field appearance="outline">
         <mat-label>Nome do Quadro (Ex: Rotina Matinal)</mat-label>
-        <input matInput [(ngModel)]="novoBoard.nome">
+        <input matInput [(ngModel)]="novoBoard.nome" (keyup.enter)="criarBoard()">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -26,9 +31,12 @@
         <mat-hint>Deixe vazio para ser visível a todos</mat-hint>
       </mat-form-field>
 
-      <button mat-flat-button color="accent" (click)="criarBoard()" [disabled]="!novoBoard.nome">
-        Salvar
-      </button>
+      <div class="form-actions">
+        <button mat-flat-button color="accent" (click)="criarBoard()" [disabled]="!novoBoard.nome">
+          <mat-icon>save</mat-icon> Salvar
+        </button>
+        <button mat-button (click)="showNovoBoardForm = false">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -41,8 +49,20 @@
 
       <mat-expansion-panel-header>
         <mat-panel-title>
-          <mat-icon class="panel-icon">dashboard</mat-icon>
-          {{ board.nome }}
+          <!-- Inline rename -->
+          <ng-container *ngIf="editandoBoardId === board.id; else boardTitleDisplay">
+            <input class="inline-edit-input"
+                   [(ngModel)]="editandoBoardNome"
+                   (click)="$event.stopPropagation()"
+                   (keyup.enter)="salvarRenomearBoard(board)"
+                   (keyup.escape)="editandoBoardId = null"
+                   (blur)="salvarRenomearBoard(board)"
+                   autofocus>
+          </ng-container>
+          <ng-template #boardTitleDisplay>
+            <mat-icon class="panel-icon">dashboard</mat-icon>
+            {{ board.nome }}
+          </ng-template>
         </mat-panel-title>
         <mat-panel-description>
           <span class="tag-owner" *ngIf="board.usuarioEspecificoId">
@@ -51,58 +71,111 @@
           <span class="tag-general" *ngIf="!board.usuarioEspecificoId">
             <mat-icon>groups</mat-icon> Equipe Geral
           </span>
+          <div class="board-actions" (click)="$event.stopPropagation()">
+            <button mat-icon-button matTooltip="Renomear quadro"
+                    (click)="iniciarRenomearBoard(board, $event)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Excluir quadro" color="warn"
+                    (click)="excluirBoard(board, $event)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
         </mat-panel-description>
       </mat-expansion-panel-header>
 
       <div class="cards-grid">
 
         <mat-card *ngFor="let card of board.cards" class="checklist-card">
-          <mat-card-header>
-            <mat-card-title>{{ card.titulo }}</mat-card-title>
-            <mat-card-subtitle>
-              {{ card.horarioAbertura }} - {{ card.horarioFechamento }}
-            </mat-card-subtitle>
-          </mat-card-header>
 
-          <mat-divider></mat-divider>
-
-          <mat-card-content>
-            <div class="item-list">
-              <div class="item-row" *ngFor="let item of card.itens">
-                <mat-icon class="bullet">check_small</mat-icon>
-                <span>{{ item.descricao }}</span>
-              </div>
-              <div *ngIf="!card.itens?.length" class="empty-items">Sem itens ainda.</div>
+          <!-- Card Editing Mode -->
+          <div *ngIf="editandoCardId === card.id" class="card-edit-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Título do cartão</mat-label>
+              <input matInput [(ngModel)]="editandoCardNome" (keyup.enter)="salvarEditarCard(card)">
+            </mat-form-field>
+            <div class="time-inputs">
+              <mat-form-field appearance="outline">
+                <mat-label>Início</mat-label>
+                <input matInput type="time" [(ngModel)]="editandoCardHoraInicio">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Fim</mat-label>
+                <input matInput type="time" [(ngModel)]="editandoCardHoraFim">
+              </mat-form-field>
             </div>
-
-            <div class="add-item-box">
-              <input #newItemInput placeholder="Novo item..." (keyup.enter)="adicionarItem(card, newItemInput.value); newItemInput.value=''">
-              <button mat-icon-button color="primary" (click)="adicionarItem(card, newItemInput.value); newItemInput.value=''">
-                <mat-icon>add_circle</mat-icon>
+            <div class="card-edit-actions">
+              <button mat-flat-button color="primary" (click)="salvarEditarCard(card)">
+                <mat-icon>check</mat-icon> Salvar
               </button>
+              <button mat-button (click)="editandoCardId = null">Cancelar</button>
             </div>
-          </mat-card-content>
+          </div>
+
+          <!-- Normal Card View -->
+          <ng-container *ngIf="editandoCardId !== card.id">
+            <mat-card-header>
+              <mat-card-title>{{ card.titulo }}</mat-card-title>
+              <mat-card-subtitle>
+                {{ formatarHorario(card.horarioAbertura) }} – {{ formatarHorario(card.horarioFechamento) }}
+              </mat-card-subtitle>
+              <div class="card-header-actions">
+                <button mat-icon-button matTooltip="Editar cartão" (click)="iniciarEditarCard(card, $event)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Excluir cartão" color="warn"
+                        (click)="excluirCard(board, card, $event)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </mat-card-header>
+
+            <mat-divider></mat-divider>
+
+            <mat-card-content>
+              <div class="item-list">
+                <div class="item-row" *ngFor="let item of card.itens">
+                  <mat-icon class="bullet">check_small</mat-icon>
+                  <span class="item-desc">{{ item.descricao }}</span>
+                  <button mat-icon-button class="delete-item-btn" matTooltip="Remover item"
+                          (click)="excluirItem(card, item, $event)">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+                <div *ngIf="!card.itens?.length" class="empty-items">Sem itens ainda.</div>
+              </div>
+
+              <div class="add-item-box">
+                <input #newItemInput placeholder="Adicionar item..." (keyup.enter)="adicionarItem(card, newItemInput.value, newItemInput)">
+                <button mat-icon-button color="primary" (click)="adicionarItem(card, newItemInput.value, newItemInput)">
+                  <mat-icon>add_circle</mat-icon>
+                </button>
+              </div>
+            </mat-card-content>
+          </ng-container>
+
         </mat-card>
 
+        <!-- Add New Card Form -->
         <div class="new-card-placeholder">
-          <h4>Adicionar Tarefa/Cartão</h4>
-          <mat-form-field appearance="fill" class="full-width">
+          <h4><mat-icon>add_card</mat-icon> Adicionar Tarefa</h4>
+          <mat-form-field appearance="outline" class="full-width">
             <mat-label>Título</mat-label>
-            <input matInput #newCardTitle>
+            <input matInput #newCardTitle (keyup.enter)="adicionarCard(board, newCardTitle.value, newCardStart.value, newCardEnd.value); newCardTitle.value=''">
           </mat-form-field>
 
           <div class="time-inputs">
-            <mat-form-field appearance="fill">
+            <mat-form-field appearance="outline">
               <mat-label>Início</mat-label>
               <input matInput type="time" #newCardStart value="08:00">
             </mat-form-field>
-            <mat-form-field appearance="fill">
+            <mat-form-field appearance="outline">
               <mat-label>Fim</mat-label>
               <input matInput type="time" #newCardEnd value="18:00">
             </mat-form-field>
           </div>
 
-          <button mat-stroked-button color="primary"
+          <button mat-flat-button color="primary"
                   (click)="adicionarCard(board, newCardTitle.value, newCardStart.value, newCardEnd.value); newCardTitle.value=''">
             <mat-icon>save</mat-icon> Criar Tarefa
           </button>
@@ -118,4 +191,122 @@
     <h3>Nenhum quadro de checklist encontrado.</h3>
     <p>Crie o primeiro para organizar a rotina.</p>
   </div>
+
+  <!-- ===================== RELATÓRIO DE ATIVIDADES ===================== -->
+  <div class="relatorio-section">
+
+    <div class="relatorio-toggle-bar">
+      <button mat-stroked-button color="primary" (click)="toggleRelatorio()">
+        <mat-icon>{{ mostrarRelatorio ? 'expand_less' : 'assessment' }}</mat-icon>
+        {{ mostrarRelatorio ? 'Ocultar Relatório' : 'Relatório de Atividades' }}
+      </button>
+    </div>
+
+    <div *ngIf="mostrarRelatorio" class="relatorio-container mat-elevation-z2">
+
+      <div class="relatorio-date-nav">
+        <button mat-icon-button (click)="diaAnteriorRelatorio()" matTooltip="Dia anterior">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="relatorio-date-label">
+          {{ dataRelatorio | date:"EEEE, d 'de' MMMM 'de' y" : '' : 'pt-BR' | titlecase }}
+        </span>
+        <button mat-icon-button (click)="proximoDiaRelatorio()" matTooltip="Próximo dia">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-button *ngIf="!isHojeRelatorio" (click)="irParaHojeRelatorio()">
+          <mat-icon>today</mat-icon> Hoje
+        </button>
+      </div>
+
+      <mat-progress-bar *ngIf="carregandoRelatorio" mode="indeterminate"></mat-progress-bar>
+
+      <div *ngIf="!carregandoRelatorio && relatorio">
+
+        <!-- Filter Chips -->
+        <div class="filtro-chips">
+          <button class="chip" [class.chip-ativo]="filtroStatus === 'TODOS'" (click)="filtroStatus = 'TODOS'">
+            Todos
+          </button>
+          <button class="chip chip-verde" [class.chip-ativo]="filtroStatus === 'CONCLUIDA'" (click)="filtroStatus = 'CONCLUIDA'">
+            <span class="chip-dot verde"></span> Concluídas ({{ contarCardsPorStatus('CONCLUIDA') }})
+          </button>
+          <button class="chip chip-amarela" [class.chip-ativo]="filtroStatus === 'ABERTA'" (click)="filtroStatus = 'ABERTA'">
+            <span class="chip-dot amarela"></span> Abertas ({{ contarCardsPorStatus('ABERTA') }})
+          </button>
+          <button class="chip chip-vermelha" [class.chip-ativo]="filtroStatus === 'FECHADA_INCOMPLETA'" (click)="filtroStatus = 'FECHADA_INCOMPLETA'">
+            <span class="chip-dot vermelha"></span> Fechadas Incompletas ({{ contarCardsPorStatus('FECHADA_INCOMPLETA') }})
+          </button>
+          <button class="chip chip-cinza" [class.chip-ativo]="filtroStatus === 'PENDENTE'" (click)="filtroStatus = 'PENDENTE'">
+            <span class="chip-dot cinza"></span> Pendentes ({{ contarCardsPorStatus('PENDENTE') }})
+          </button>
+        </div>
+
+        <mat-accordion multi>
+          <mat-expansion-panel *ngFor="let usuario of relatorio.usuarios" class="usuario-panel">
+
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <mat-icon>person</mat-icon>
+                {{ usuario.nomeUsuario }}
+              </mat-panel-title>
+              <mat-panel-description>
+                <span class="progresso-label"
+                      [class.completo]="filtroStatus === 'TODOS' && usuario.totalMarcados === usuario.totalItens && usuario.totalItens > 0">
+                  {{ getLabelProgresso(usuario) }}
+                  <mat-icon *ngIf="filtroStatus === 'TODOS' && usuario.totalMarcados === usuario.totalItens && usuario.totalItens > 0">
+                    check_circle
+                  </mat-icon>
+                </span>
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div *ngFor="let board of usuario.boards" class="relatorio-board">
+              <h4 class="relatorio-board-titulo">
+                <mat-icon>dashboard</mat-icon> {{ board.boardNome }}
+              </h4>
+
+              <ng-container *ngFor="let card of filtrarCards(board.cards)">
+                <div class="relatorio-card" [class]="'status-card-' + card.statusCard">
+                  <h5 class="relatorio-card-titulo">
+                    <span class="status-dot" [class]="'dot-' + card.statusCard"></span>
+                    <mat-icon>task_alt</mat-icon>
+                    {{ card.cardTitulo }}
+                    <span class="relatorio-horario">{{ card.horarioAbertura }} – {{ card.horarioFechamento }}</span>
+                    <span class="status-label" [class]="'label-' + card.statusCard">{{ getLabelStatus(card.statusCard) }}</span>
+                  </h5>
+
+                  <div class="relatorio-itens">
+                    <div *ngFor="let item of card.itens"
+                         class="relatorio-item"
+                         [class.item-marcado]="item.marcado">
+                      <mat-icon class="item-icon">
+                        {{ item.marcado ? 'check_box' : 'check_box_outline_blank' }}
+                      </mat-icon>
+                      <span class="item-desc">{{ item.descricao }}</span>
+                      <span *ngIf="item.horaPreenchimento" class="item-hora">
+                        {{ item.horaPreenchimento }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <div *ngIf="filtrarCards(board.cards).length === 0" class="sem-cards-filtro">
+                Nenhum cartão com este filtro.
+              </div>
+            </div>
+
+          </mat-expansion-panel>
+        </mat-accordion>
+      </div>
+
+      <div *ngIf="!carregandoRelatorio && !relatorio" class="relatorio-vazio">
+        <mat-icon>info_outline</mat-icon>
+        <p>Nenhum dado disponível para esta data.</p>
+      </div>
+
+    </div>
+  </div>
+
 </div>

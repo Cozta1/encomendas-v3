@@ -38,3 +38,37 @@ export interface ChecklistLogRequest {
   dataReferencia: string; // "YYYY-MM-DD"
   valor: boolean;
 }
+
+// --- Relatório de Atividades ---
+
+export interface ChecklistRelatorio {
+  data: string;
+  usuarios: RelatorioUsuario[];
+}
+
+export interface RelatorioUsuario {
+  usuarioId: number;
+  nomeUsuario: string;
+  totalItens: number;
+  totalMarcados: number;
+  boards: RelatorioBoard[];
+}
+
+export interface RelatorioBoard {
+  boardNome: string;
+  cards: RelatorioCard[];
+}
+
+export interface RelatorioCard {
+  cardTitulo: string;
+  horarioAbertura: string;
+  horarioFechamento: string;
+  itens: RelatorioItem[];
+  statusCard?: 'CONCLUIDA' | 'ABERTA' | 'FECHADA_INCOMPLETA' | 'PENDENTE' | 'SEM_ITENS';
+}
+
+export interface RelatorioItem {
+  descricao: string;
+  marcado: boolean;
+  horaPreenchimento?: string;
+}

@@ -3,31 +3,66 @@
 // =========================================
 
 .board-wrapper {
-  // Ajuste o 64px conforme a altura do seu Navbar/Toolbar
-  height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   padding: 0;
-  background-color: #f4f5f7; // Cor de fundo estilo Jira/Trello
-  overflow: hidden; // O scroll é gerido internamente nos containers
+  background-color: #f4f5f7;
 }
 
 .page-header {
-  padding: 20px 24px;
+  padding: 16px 24px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0; // Garante que o cabeçalho não encolhe
+  flex-shrink: 0;
 
   h1 {
-    margin: 0;
+    margin: 0 0 8px;
     font-size: 22px;
     color: #172b4d;
     font-weight: 600;
   }
-  .data-hoje {
-    margin: 4px 0 0;
-    color: #5e6c84;
-    font-size: 14px;
+
+  .loading-bar {
+    margin-top: 8px;
+    border-radius: 2px;
+  }
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .date-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 220px;
+    justify-content: center;
+
+    .data-hoje {
+      margin: 0;
+      color: #172b4d;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .chip-hoje {
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 11px;
+      height: 22px;
+    }
+
+    .chip-leitura {
+      background: #fff3e0;
+      color: #e65100;
+      font-size: 11px;
+      height: 22px;
+
+      mat-icon { font-size: 12px; width: 12px; height: 12px; }
+    }
   }
 }
 
@@ -35,22 +70,6 @@
 // ESTADOS DE LOADING E MENSAGENS
 // =========================================
 
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%; // Ocupa toda a área disponível
-  color: #5e6c84;
-
-  .spin {
-    animation: rotate 1s linear infinite;
-    font-size: 32px;
-    height: 32px;
-    width: 32px;
-    margin-bottom: 8px;
-  }
-}
 
 .empty-state {
   display: flex;
@@ -135,27 +154,21 @@
 .kanban-container {
   flex: 1;
   display: flex;
-  overflow-x: auto; // Permite scroll horizontal
-  overflow-y: hidden;
+  flex-wrap: wrap;
   padding: 24px;
-  gap: 24px; // Espaço entre colunas
-  align-items: flex-start; // Alinha colunas ao topo
-
-  // Scrollbar personalizada mais bonita
-  &::-webkit-scrollbar { height: 12px; }
-  &::-webkit-scrollbar-thumb { background: #bfc4ce; border-radius: 6px; }
-  &::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+  gap: 24px;
+  align-items: flex-start;
+  align-content: flex-start;
 }
 
 .kanban-column {
-  min-width: 300px;
-  max-width: 320px;
-  background-color: #ebecf0; // Cinza claro clássico de colunas
+  flex: 1 1 300px;
+  max-width: 400px;
+  background-color: #ebecf0;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  max-height: 100%; // Respeita a altura do container pai
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); // Animação suave ao mover
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
 .column-header {
@@ -208,14 +221,10 @@
 
 .cards-list {
   padding: 0 8px 8px 8px;
-  overflow-y: auto; // Scroll vertical DENTRO da coluna
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 100px; // IMPORTANTE: Área mínima para conseguir soltar items em lista vazia
-
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-thumb { background: #dcdfe4; border-radius: 3px; }
+  min-height: 100px; // Área mínima para soltar items em lista vazia
 }
 
 // =========================================
@@ -248,16 +257,41 @@
     }
   }
 
+  // Estado Fechado Incompleto
+  &.card-fechado {
+    border: 1px solid #ffcdd2;
+    background-color: #fff8f8;
+
+    .card-title { color: #b71c1c; }
+  }
+
   .status-indicator {
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 4px;
     background: #ccc;
 
-    &.ABERTO { background: #0079bf; } // Azul
-    &.PENDENTE { background: #ff9800; } // Laranja
-    &.FECHADO { background: #4caf50; } // Verde
-    &.ATRASADO { background: #eb5a46; } // Vermelho
+    &.ABERTO { background: #0079bf; }
+    &.PENDENTE { background: #ff9800; }
+    &.FECHADO { background: #4caf50; }
+    &.ATRASADO { background: #eb5a46; }
+    &.fechado-incompleto { background: #d32f2f !important; }
+  }
+
+  .fechada-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #d32f2f;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+
+    mat-icon { font-size: 11px; width: 11px; height: 11px; }
   }
 
   .card-content {
@@ -375,9 +409,9 @@
   background: rgba(0, 0, 0, 0.05);
   border: 2px dashed rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  min-width: 300px;
-  height: 100%;
-  margin-right: 24px;
+  flex: 1 1 300px;
+  max-width: 400px;
+  min-height: 120px;
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
@@ -395,4 +429,86 @@
 // Animação do Loading
 @keyframes rotate {
   100% { transform: rotate(360deg); }
+}
+
+// ===================== DARK MODE =====================
+:host-context(.dark-theme) {
+
+  .board-wrapper { background-color: #141414; }
+
+  .page-header {
+    background: #1a1a1a;
+    border-bottom-color: #2a2a2a;
+    h1 { color: #e8e8e8; }
+  }
+
+  .date-nav .date-display {
+    .data-hoje { color: #c8c8c8; }
+    .chip-hoje  { background: #0d2035; color: #90caf9; }
+    .chip-leitura { background: #2a1a08; color: #ffb74d; }
+  }
+
+  // Estados de escala
+  .status-state {
+    background: #1e1e1e;
+    h2, p { color: inherit; }
+  }
+
+  .empty-state { color: #9a9a9a; }
+
+  // Colunas do Kanban
+  .kanban-column { background-color: #1e1e1e; }
+
+  .column-header {
+    .header-title {
+      .drag-handle { color: #555; }
+      h2 { color: #c8c8c8; }
+    }
+    .card-count { background: rgba(255,255,255,0.07); color: #9a9a9a; }
+  }
+
+  // Cards
+  .kanban-card {
+    background: #252525;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+
+    &:hover {
+      background-color: #2d2d2d;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    &.card-concluido {
+      background-color: #1e1e1e;
+      .card-title { color: #555; }
+    }
+
+    &.card-fechado {
+      border-color: #6b1a1a;
+      background-color: #1e1212;
+      .card-title { color: #ef9a9a; }
+    }
+
+    .fechada-tag { background: #b71c1c; }
+
+    .card-title  { color: #e0e0e0; }
+    .card-meta   { color: #9a9a9a; }
+    .card-badges .badge { color: #9a9a9a; }
+  }
+
+  // Placeholder de drag
+  .custom-card-placeholder {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.08);
+  }
+  .custom-column-placeholder {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  // Preview de drag
+  .cdk-drag-preview.kanban-card {
+    background: #2d2d2d;
+    .card-title { color: #e0e0e0; }
+  }
+  .cdk-drag-preview.kanban-column { background-color: #1e1e1e; }
 }

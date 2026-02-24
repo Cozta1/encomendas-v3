@@ -48,8 +48,8 @@ public class FornecedorService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Equipe não encontrada"));
 
         // Validação simples de unicidade de email (opcional, pode ser por CNPJ também)
-        if (fornecedorRepository.findByEquipeId(equipeId).stream()
-                .anyMatch(f -> f.getEmail().equalsIgnoreCase(dto.getEmail()))) {
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() &&
+                fornecedorRepository.findByEquipeIdAndEmailIgnoreCase(equipeId, dto.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Já existe um fornecedor com este email.");
         }
 

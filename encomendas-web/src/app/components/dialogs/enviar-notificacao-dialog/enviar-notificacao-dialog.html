@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Enviar Notificação</h2>
+
+<mat-dialog-content>
+
+  <div class="destinatarios-section">
+    <p class="destinatarios-label">Destinatários</p>
+    <div class="destinatarios-list">
+      <mat-checkbox
+        [checked]="todosSelected"
+        [indeterminate]="algunsSelected"
+        (change)="toggleTodos()"
+        class="membro-checkbox todos-checkbox">
+        Toda a Equipe
+      </mat-checkbox>
+
+      <mat-divider></mat-divider>
+
+      <mat-checkbox
+        *ngFor="let m of data.membros"
+        [checked]="destinatariosIds.has(m.id)"
+        (change)="toggleMembro(m.id)"
+        class="membro-checkbox">
+        {{ m.nomeCompleto }}
+      </mat-checkbox>
+
+      <p *ngIf="data.membros.length === 0" class="sem-membros">Sem outros membros na equipe.</p>
+    </div>
+  </div>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Título</mat-label>
+    <input matInput [(ngModel)]="titulo" maxlength="100" placeholder="Ex: Reunião amanhã às 9h">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Mensagem</mat-label>
+    <textarea matInput [(ngModel)]="mensagem" rows="4"
+              placeholder="Detalhes da notificação..."></textarea>
+  </mat-form-field>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-raised-button color="primary"
+          (click)="enviar()"
+          [disabled]="!titulo.trim() || !mensagem.trim() || destinatariosIds.size === 0 || enviando">
+    <span *ngIf="!enviando">Enviar</span>
+    <span *ngIf="enviando">A enviar...</span>
+  </button>
+</mat-dialog-actions>

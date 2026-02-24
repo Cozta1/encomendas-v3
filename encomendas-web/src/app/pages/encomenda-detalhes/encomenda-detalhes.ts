@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
 
@@ -14,10 +14,6 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatListModule } from '@angular/material/list';
-
-// PDF Imports
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-encomenda-detalhes',
@@ -101,7 +97,9 @@ export class EncomendaDetalhesComponent implements OnInit {
 
   // --- PDF ---
 
-  gerarPDF(encomenda: EncomendaResponse): void {
+  async gerarPDF(encomenda: EncomendaResponse): Promise<void> {
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
     const doc = new jsPDF();
     let cursorY = 20;
 
@@ -210,9 +208,9 @@ export class EncomendaDetalhesComponent implements OnInit {
 
   avancar(encomenda: EncomendaResponse) {
     this.encomendaService.avancarEtapa(encomenda.id).subscribe({
-      next: () => {
+      next: (updated) => {
+        this.encomenda$ = of(updated);
         this.snackBar.open('Status atualizado!', 'OK', { duration: 2000 });
-        this.ngOnInit();
       },
       error: () => this.snackBar.open('Erro ao atualizar.', 'Fechar')
     });
@@ -221,22 +219,22 @@ export class EncomendaDetalhesComponent implements OnInit {
   cancelar(encomenda: EncomendaResponse) {
     if(confirm('Deseja realmente cancelar?')) {
       this.encomendaService.cancelarEncomenda(encomenda.id).subscribe({
-        next: () => {
+        next: (updated) => {
+          this.encomenda$ = of(updated);
           this.snackBar.open('Encomenda cancelada.', 'OK', { duration: 2000 });
-          this.ngOnInit();
         },
         error: () => this.snackBar.open('Erro ao cancelar.', 'Fechar')
       });
     }
   }
 
-  // --- NOVO MÉTODO: REATIVAR ---
+  // --- REATIVAR ---
   reativar(encomenda: EncomendaResponse) {
     if(confirm('Deseja reativar esta encomenda? Ela voltará para o status "Criada".')) {
       this.encomendaService.descancelarEncomenda(encomenda.id).subscribe({
-        next: () => {
+        next: (updated) => {
+          this.encomenda$ = of(updated);
           this.snackBar.open('Encomenda reativada com sucesso!', 'OK', { duration: 2000 });
-          this.ngOnInit();
         },
         error: () => this.snackBar.open('Erro ao reativar encomenda.', 'Fechar')
       });

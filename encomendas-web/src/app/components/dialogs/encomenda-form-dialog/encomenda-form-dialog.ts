@@ -9,7 +9,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTable, MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Observable } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { startWith, map, filter, debounceTime, switchMap } from 'rxjs/operators';
 import { MatDividerModule } from '@angular/material/divider';
 
@@ -94,8 +94,12 @@ export class EncomendaFormDialog implements OnInit {
   }
 
   private carregarDadosIniciais(): void {
-    this.clienteService.getClientes().subscribe(data => {
-      this.allClientes = data;
+    forkJoin({
+      clientes: this.clienteService.getClientes(),
+      produtos: this.produtoService.getProdutos(),
+      fornecedores: this.fornecedorService.getFornecedores()
+    }).subscribe(({ clientes, produtos, fornecedores }) => {
+      this.allClientes = clientes;
       this.filteredClientes$ = this.encomendaForm.get('cliente')!.valueChanges.pipe(
         startWith(''),
         map(value => {
@@ -103,10 +107,8 @@ export class EncomendaFormDialog implements OnInit {
           return nome ? this._filterClientes(nome) : this.allClientes.slice();
         })
       );
-    });
 
-    this.produtoService.getProdutos().subscribe(data => {
-      this.allProdutos = data;
+      this.allProdutos = produtos;
       this.filteredProdutos$ = this.itemForm.get('produto')!.valueChanges.pipe(
         startWith(''),
         map(value => {
@@ -114,10 +116,8 @@ export class EncomendaFormDialog implements OnInit {
           return nome ? this._filterProdutos(nome) : this.allProdutos.slice();
         })
       );
-    });
 
-    this.fornecedorService.getFornecedores().subscribe(data => {
-      this.allFornecedores = data;
+      this.allFornecedores = fornecedores;
       this.filteredFornecedores$ = this.itemForm.get('fornecedor')!.valueChanges.pipe(
         startWith(''),
         map(value => {

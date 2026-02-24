@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { UsuarioResponse } from '../models/usuario.interfaces'; // Verifique se o import está correto
 
@@ -30,6 +30,8 @@ export class TeamService {
   private equipeAtivaSubject = new BehaviorSubject<Equipe | null>(null);
   public equipeAtiva$ = this.equipeAtivaSubject.asObservable();
 
+  private _equipesCached$ = new BehaviorSubject<Equipe[] | null>(null);
+
   constructor(private http: HttpClient) {
     this.carregarEquipeAtivaDoStorage();
   }
@@ -39,11 +41,23 @@ export class TeamService {
   }
 
   public fetchEquipesDoUsuario(): Observable<Equipe[]> {
-    return this.http.get<Equipe[]>(this.API_URL);
+    const cached = this._equipesCached$.getValue();
+    if (cached !== null) {
+      return of(cached);
+    }
+    return this.http.get<Equipe[]>(this.API_URL).pipe(
+      tap(equipes => this._equipesCached$.next(equipes))
+    );
+  }
+
+  public invalidarCacheEquipes(): void {
+    this._equipesCached$.next(null);
   }
 
   public criarEquipe(dados: { nome: string, descricao: string }): Observable<Equipe> {
-    return this.http.post<Equipe>(this.API_URL, dados);
+    return this.http.post<Equipe>(this.API_URL, dados).pipe(
+      tap(() => this.invalidarCacheEquipes())
+    );
   }
 
   // --- NOVO MÉTODO PARA ATUALIZAR ---
@@ -73,6 +87,8 @@ export class TeamService {
       `${this.API_URL}/convites/${conviteId}/aceitar`,
       {},
       { responseType: 'text' as 'json' }
+    ).pipe(
+      tap(() => this.invalidarCacheEquipes())
     );
   }
 

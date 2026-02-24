@@ -72,11 +72,8 @@ export class MeuCalendarioComponent implements OnInit {
     const inicioStr = this.formatDate(inicio);
     const fimStr = this.formatDate(fim);
 
-    console.log(`Buscando escalas para User ${user.id} de ${inicioStr} até ${fimStr}`);
-
     this.escalaService.getEscalas(user.id, inicioStr, fimStr).subscribe({
       next: (dados) => {
-        console.log('Escalas recebidas:', dados);
         this.escalas = dados;
         this.atualizarDiasComEscala();
         this.loading = false;
@@ -132,11 +129,6 @@ export class MeuCalendarioComponent implements OnInit {
     this.dias = this.dias.map(dia => {
 
       const escalaEncontrada = this.escalas.find(e => this.datasIguais(dia.data, e.data));
-
-      // Debug apenas no dia 1 para não poluir o console
-      if (dia.diaMes === 1 && !dia.isOutroMes) {
-         console.log('Comparando dia 1:', dia.data, 'Escala encontrada:', escalaEncontrada);
-      }
 
       return {
         ...dia,

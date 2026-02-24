@@ -37,6 +37,15 @@
   }
 }
 
+:host-context(.dark-theme) {
+  .item-box {
+    background-color: #252525;
+    border-color: #2a2a2a;
+  }
+
+  .total-display h3 { color: #e0e0e0; }
+}
+
 /* NOVO: Destaque para o botão de calendário */
 .calendar-toggle-highlight {
   transform: scale(1.3);

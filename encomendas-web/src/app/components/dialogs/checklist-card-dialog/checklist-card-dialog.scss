@@ -6,6 +6,30 @@
   overflow-y: auto;
   padding: 0;
 
+  .readonly-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff7e6;
+    border-left: 4px solid #f6a623;
+    color: #7a4f01;
+    padding: 10px 20px;
+    font-size: 13px;
+    mat-icon { font-size: 18px; height: 18px; width: 18px; }
+
+    &.user-banner {
+      background: #e8f4fd;
+      border-left-color: #1976d2;
+      color: #0d47a1;
+    }
+
+    &.fechado-banner {
+      background: #ffebee;
+      border-left-color: #d32f2f;
+      color: #b71c1c;
+    }
+  }
+
   // Header
   .card-header {
     display: flex;
@@ -109,6 +133,28 @@
     }
   }
 
+  // Title edit
+  .editable-title {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    &:hover { background: #f4f5f7; }
+  }
+
+  .title-input {
+    font-size: 20px;
+    font-weight: 600;
+    border: 2px solid #0079bf;
+    border-radius: 3px;
+    padding: 4px 8px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    color: #172b4d;
+    line-height: 24px;
+  }
+
   // Checklist
   .progress-area {
     margin-left: 40px;
@@ -124,11 +170,64 @@
   .checklist-items {
     margin-left: 40px;
     .item-row {
-      margin-bottom: 6px;
-      &:hover { background: #f4f5f7; border-radius: 3px; }
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+      border-radius: 3px;
 
+      &:hover {
+        background: #f4f5f7;
+        .delete-item-btn { opacity: 1; }
+      }
+
+      mat-checkbox { flex: 1; }
       .riscado { text-decoration: line-through; color: #5e6c84; }
+
+      .delete-item-btn {
+        opacity: 0;
+        transition: opacity 0.15s;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        flex-shrink: 0;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #c0c0c0; }
+        &:hover mat-icon { color: #eb5a46; }
+      }
     }
+
+    .empty-checklist {
+      margin-left: 0;
+      p { color: #5e6c84; font-size: 13px; margin: 8px 0; }
+    }
+  }
+
+  .add-item-form {
+    margin-left: 40px;
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+
+    .add-item-input {
+      flex: 1;
+      background: #f4f5f7;
+      border: 2px solid transparent;
+      border-radius: 3px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      color: #172b4d;
+
+      &:focus {
+        background: #fff;
+        border-color: #0079bf;
+      }
+
+      &::placeholder { color: #8993a4; }
+    }
+
+    button { flex-shrink: 0; }
   }
 
   // Sidebar (Direita)
@@ -154,6 +253,115 @@
 
       mat-icon { margin-right: 8px; font-size: 16px; height: 16px; width: 16px; }
       &:hover { background: #dfe1e6; }
+    }
+
+    .progress-summary {
+      margin-bottom: 8px;
+      .progress-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #5e6c84;
+        mat-icon { font-size: 16px; width: 16px; height: 16px; }
+        &.done { color: #61bd4f; mat-icon { color: #61bd4f; } }
+      }
+    }
+
+    .horario-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #5e6c84;
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    }
+  }
+}
+
+// ===================== DARK MODE =====================
+:host-context(.dark-theme) {
+  .trello-card-container {
+    color: #e0e0e0;
+    background: #1e1e1e;
+
+    .readonly-banner {
+      background: #2a1a06;
+      border-left-color: #f6a623;
+      color: #ffb74d;
+
+      &.fechado-banner {
+        background: #1a0808;
+        border-left-color: #d32f2f;
+        color: #ef9a9a;
+      }
+
+      &.user-banner {
+        background: #0a1929;
+        border-left-color: #42a5f5;
+        color: #90caf9;
+      }
+    }
+
+    .card-header {
+      .header-icon { color: #9a9a9a; }
+      .header-content {
+        h2 { color: #e0e0e0; }
+        .subtext { color: #9a9a9a; }
+      }
+    }
+
+    .section .section-header {
+      mat-icon { color: #9a9a9a; }
+      h3 { color: #e0e0e0; }
+    }
+
+    .desc-content {
+      p { color: #d0d0d0; }
+      .btn-fake-input {
+        background: #252525;
+        color: #a0a0a0;
+        &:hover { background: #2d2d2d; }
+      }
+    }
+
+    .title-input {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border-color: #8c9eff;
+    }
+
+    .editable-title:hover { background: rgba(255,255,255,0.06); }
+
+    .desc-editor textarea {
+      background: #252525;
+      color: #e0e0e0;
+      border-color: #8c9eff;
+    }
+
+    .progress-area .percent { color: #9a9a9a; }
+
+    .checklist-items .item-row {
+      &:hover { background: rgba(255,255,255,0.04); }
+      .riscado { color: #555; }
+    }
+
+    .add-item-form .add-item-input {
+      background: #252525;
+      color: #e0e0e0;
+      &:focus { background: #1a1a1a; border-color: #8c9eff; }
+      &::placeholder { color: #555; }
+    }
+
+    .sidebar-group {
+      h4 { color: #9a9a9a; }
+      .sidebar-btn {
+        background: #252525;
+        color: #c0c0c0;
+        &:hover { background: #2d2d2d; }
+      }
+      .progress-count { color: #9a9a9a; }
+      .horario-info { color: #9a9a9a; }
     }
   }
 }

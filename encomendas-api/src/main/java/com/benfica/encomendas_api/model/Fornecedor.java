@@ -18,7 +18,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "fornecedores")
+@Table(name = "fornecedores", indexes = {
+    @Index(name = "idx_fornecedores_equipe_id", columnList = "equipe_id"),
+    @Index(name = "idx_fornecedores_nome", columnList = "nome"),
+    @Index(name = "idx_fornecedores_email", columnList = "email")
+})
 public class Fornecedor {
 
     @Id

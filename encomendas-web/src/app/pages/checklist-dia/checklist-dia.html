@@ -2,18 +2,38 @@
 
   <div class="page-header">
     <h1>Meu Dia</h1>
-    <p class="data-hoje">{{ dataAtual | date:"EEEE, d 'de' MMMM" : '' : 'pt-BR' | titlecase }}</p>
-  </div>
 
-  <div *ngIf="loading" class="loading-state">
-    <mat-icon class="spin">sync</mat-icon>
-    <p>Verificando sua agenda...</p>
+    <div class="date-nav">
+      <button mat-icon-button (click)="diaAnterior()" matTooltip="Dia anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <div class="date-display">
+        <p class="data-hoje">{{ dataAtual | date:"EEEE, d 'de' MMMM" : '' : 'pt-BR' | titlecase }}</p>
+        <mat-chip-set>
+          <mat-chip *ngIf="isHoje" class="chip-hoje">Hoje</mat-chip>
+          <mat-chip *ngIf="somenteLeitura" class="chip-leitura">
+            <mat-icon>lock</mat-icon> Somente leitura
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <button mat-icon-button (click)="proximoDia()" matTooltip="Próximo dia">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <button mat-button *ngIf="!isHoje" (click)="irParaHoje()" matTooltip="Voltar para hoje">
+        <mat-icon>today</mat-icon> Hoje
+      </button>
+    </div>
+
+    <mat-progress-bar *ngIf="loading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
   </div>
 
   <div class="status-state folga" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FOLGA">
     <div class="icon-circle"><mat-icon>weekend</mat-icon></div>
     <h2>Bom descanso!</h2>
-    <p>Hoje é sua folga. Aproveite.</p>
+    <p>Folga neste dia.</p>
   </div>
 
   <div class="status-state ferias" *ngIf="!loading && escalaHoje?.tipo === tipoEscalaEnum.FERIAS">
@@ -31,7 +51,7 @@
   <div class="empty-state" *ngIf="!loading && boards.length === 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
     <img src="assets/images/relax.svg" alt="Sem Tarefas" style="width: 150px; opacity: 0.6; margin-bottom: 20px;">
     <h3>Tudo limpo por aqui!</h3>
-    <p>Nenhuma checklist hoje.</p>
+    <p>Nenhuma checklist para este dia.</p>
   </div>
 
   <div class="kanban-container"
@@ -54,20 +74,28 @@
 
       <div class="cards-list"
            cdkDropList
+           [id]="'cards-' + board.id"
            [cdkDropListData]="board.cards"
+           [cdkDropListConnectedTo]="cardListIds"
            (cdkDropListDropped)="dropCard($event)">
 
         <div class="kanban-card"
              *ngFor="let card of board.cards"
              cdkDrag
              (click)="abrirCardDetalhado(card)"
-             [class.card-concluido]="getProgresso(card) === 100">
+             [class.card-concluido]="getProgresso(card) === 100"
+             [class.card-fechado]="card.status === 'FECHADO' && getProgresso(card) < 100">
 
           <div class="custom-card-placeholder" *cdkDragPlaceholder></div>
 
-          <div class="status-indicator" [ngClass]="card.status"></div>
+          <div class="status-indicator"
+               [ngClass]="card.status"
+               [class.fechado-incompleto]="card.status === 'FECHADO' && getProgresso(card) < 100"></div>
 
           <div class="card-content">
+            <div class="fechada-tag" *ngIf="card.status === 'FECHADO' && getProgresso(card) < 100">
+              <mat-icon>lock</mat-icon> FECHADA
+            </div>
             <h3 class="card-title">{{ card.titulo }}</h3>
             <div class="card-meta">
               <mat-icon class="clock-icon">schedule</mat-icon>
@@ -75,6 +103,7 @@
             </div>
             <div class="card-badges">
               <div class="badge" *ngIf="card.descricao"><mat-icon>subject</mat-icon></div>
+              <div class="badge" *ngIf="somenteLeitura" matTooltip="Somente leitura"><mat-icon>lock</mat-icon></div>
               <div class="badge checkbox-badge" [class.done]="getProgresso(card) === 100">
                 <mat-icon>check_box</mat-icon>
                 <span class="badge-text">{{ countMarcados(card) }}/{{ card.itens.length }}</span>

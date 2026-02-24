@@ -1,10 +1,45 @@
 <div class="trello-card-container">
 
-  <div class="card-header">
-    <mat-icon class="header-icon">video_label</mat-icon> <div class="header-content">
-    <h2>{{ card.titulo }}</h2>
-    <p class="subtext">Na lista <strong>Checklist Diário</strong></p>
+  <!-- Card fechado incompleto -->
+  <div class="readonly-banner fechado-banner" *ngIf="isIncompleto">
+    <mat-icon>lock</mat-icon>
+    <span>Checklist fechada — o período de preenchimento encerrou.</span>
   </div>
+
+  <!-- Somente leitura por ser outro dia (e card não fechado incompleto) -->
+  <div class="readonly-banner" *ngIf="somenteLeitura && !isIncompleto">
+    <mat-icon>lock</mat-icon>
+    <span>Somente leitura — não é possível editar checklists de outros dias.</span>
+  </div>
+
+  <!-- Utilizador sem permissão de edição (hoje, card aberto) -->
+  <div class="readonly-banner user-banner" *ngIf="!somenteLeitura && !isAdmin">
+    <mat-icon>info_outline</mat-icon>
+    <span>Apenas preenchimento da checklist disponível.</span>
+  </div>
+
+  <div class="card-header">
+    <mat-icon class="header-icon">video_label</mat-icon>
+    <div class="header-content">
+      <!-- Título: modo edição (apenas admin + hoje) -->
+      <ng-container *ngIf="editandoTitulo && podeEditar; else titleDisplay">
+        <input class="title-input"
+               [(ngModel)]="novoTitulo"
+               (keyup.enter)="salvarTitulo()"
+               (keyup.escape)="editandoTitulo = false"
+               (blur)="salvarTitulo()"
+               autofocus>
+      </ng-container>
+      <ng-template #titleDisplay>
+        <h2 (click)="podeEditar && iniciarEditarTitulo()"
+            [class.editable-title]="podeEditar"
+            [matTooltip]="podeEditar ? 'Clique para editar' : ''"
+            matTooltipShowDelay="600">
+          {{ card.titulo }}
+        </h2>
+      </ng-template>
+      <p class="subtext">Na lista <strong>{{ boardNome }}</strong></p>
+    </div>
     <button mat-icon-button (click)="fechar()"><mat-icon>close</mat-icon></button>
   </div>
 
@@ -12,35 +47,42 @@
 
     <div class="main-col">
 
+      <!-- DESCRIÇÃO -->
       <div class="section description-section">
         <div class="section-header">
           <mat-icon>subject</mat-icon>
           <h3>Descrição</h3>
-          <button mat-button *ngIf="card.descricao && !editandoDescricao" (click)="editandoDescricao = true">Editar</button>
+          <button mat-button *ngIf="podeEditar && card.descricao && !editandoDescricao"
+                  (click)="editandoDescricao = true">Editar</button>
         </div>
 
         <div class="desc-content" *ngIf="!editandoDescricao">
-          <p *ngIf="card.descricao" [innerHTML]="card.descricao"></p> <button class="btn-fake-input" *ngIf="!card.descricao" (click)="editandoDescricao = true">
-          Adicionar uma descrição mais detalhada...
-        </button>
+          <p *ngIf="card.descricao" [innerHTML]="card.descricao"></p>
+          <button class="btn-fake-input" *ngIf="!card.descricao && podeEditar"
+                  (click)="editandoDescricao = true">
+            Adicionar uma descrição mais detalhada...
+          </button>
+          <p *ngIf="!card.descricao && !podeEditar" class="empty-msg">Sem descrição.</p>
         </div>
 
-        <div class="desc-editor" *ngIf="editandoDescricao">
-          <textarea [(ngModel)]="novaDescricao" placeholder="Adicionar uma descrição mais detalhada..." rows="4"></textarea>
+        <div class="desc-editor" *ngIf="editandoDescricao && podeEditar">
+          <textarea [(ngModel)]="novaDescricao"
+                    placeholder="Adicionar uma descrição mais detalhada..."
+                    rows="4"></textarea>
           <div class="editor-actions">
-            <button mat-raised-button color="primary" (click)="salvarDescricao()">Salvar</button>
-            <button mat-button (click)="editandoDescricao = false">Cancelar</button>
+            <button mat-raised-button color="primary" (click)="salvarDescricao()" [disabled]="saving">Salvar</button>
+            <button mat-button (click)="editandoDescricao = false; novaDescricao = card.descricao || ''">Cancelar</button>
           </div>
         </div>
       </div>
 
-      <div class="section attachments-section">
+      <!-- ANEXOS -->
+      <div class="section attachments-section" *ngIf="card.anexos && card.anexos.length > 0">
         <div class="section-header">
           <mat-icon>attach_file</mat-icon>
           <h3>Anexos</h3>
         </div>
-
-        <div class="anexos-list" *ngIf="card.anexos && card.anexos.length > 0">
+        <div class="anexos-list">
           <div class="anexo-item" *ngFor="let anexo of card.anexos">
             <div class="anexo-thumb">DOC</div>
             <div class="anexo-info">
@@ -49,59 +91,87 @@
             </div>
           </div>
         </div>
-        <p *ngIf="!card.anexos?.length" class="empty-msg">Nenhum anexo.</p>
       </div>
 
+      <!-- CHECKLIST -->
       <div class="section checklist-section">
         <div class="section-header">
           <mat-icon>check_box</mat-icon>
-          <div class="header-text">
-            <h3>Checklist</h3>
-          </div>
+          <h3>Checklist</h3>
         </div>
 
-        <div class="progress-area">
+        <div class="progress-area" *ngIf="card.itens && card.itens.length > 0">
           <span class="percent">{{ progresso | number:'1.0-0' }}%</span>
-          <mat-progress-bar mode="determinate" [value]="progresso"></mat-progress-bar>
+          <mat-progress-bar mode="determinate" [value]="progresso"
+                            [color]="progresso === 100 ? 'accent' : 'primary'"></mat-progress-bar>
         </div>
 
         <div class="checklist-items">
           <div class="item-row" *ngFor="let item of card.itens">
-            <mat-checkbox [checked]="item.marcado" (change)="toggleItem(item)" color="primary">
+            <mat-checkbox [checked]="item.marcado"
+                          (change)="toggleItem(item)"
+                          color="primary"
+                          [disabled]="somenteLeitura">
               <span [class.riscado]="item.marcado">{{ item.descricao }}</span>
             </mat-checkbox>
+            <!-- Botão de apagar: apenas admin + hoje -->
+            <button *ngIf="podeEditar"
+                    mat-icon-button class="delete-item-btn"
+                    matTooltip="Remover item"
+                    (click)="excluirItem(item)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
           </div>
+
+          <div class="empty-checklist" *ngIf="!card.itens.length">
+            <p>Sem itens no checklist.</p>
+          </div>
+        </div>
+
+        <!-- Adicionar item: apenas admin + hoje -->
+        <div class="add-item-form" *ngIf="podeEditar">
+          <input class="add-item-input"
+                 [(ngModel)]="novoItemDescricao"
+                 placeholder="Adicionar item ao checklist..."
+                 (keyup.enter)="adicionarItem()">
+          <button mat-flat-button color="primary"
+                  (click)="adicionarItem()"
+                  [disabled]="!novoItemDescricao.trim()">
+            <mat-icon>add</mat-icon>
+          </button>
         </div>
       </div>
 
     </div>
 
+    <!-- SIDEBAR -->
     <div class="sidebar-col">
-      <div class="sidebar-group">
-        <h4>Adicionar ao cartão</h4>
+
+      <!-- Ações rápidas: apenas admin + hoje -->
+      <div class="sidebar-group" *ngIf="podeEditar">
+        <h4>Ações rápidas</h4>
+        <button mat-button class="sidebar-btn" (click)="iniciarEditarTitulo()">
+          <mat-icon>edit</mat-icon> Editar título
+        </button>
         <button mat-button class="sidebar-btn" (click)="editandoDescricao = true">
-          <mat-icon>person</mat-icon> Membros
-        </button>
-        <button mat-button class="sidebar-btn">
-          <mat-icon>label</mat-icon> Etiquetas
-        </button>
-        <button mat-button class="sidebar-btn">
-          <mat-icon>schedule</mat-icon> Datas
-        </button>
-        <button mat-button class="sidebar-btn" (click)="adicionarAnexo()">
-          <mat-icon>attach_file</mat-icon> Anexo
+          <mat-icon>subject</mat-icon> Editar descrição
         </button>
       </div>
 
       <div class="sidebar-group">
-        <h4>Ações</h4>
-        <button mat-button class="sidebar-btn">
-          <mat-icon>arrow_forward</mat-icon> Mover
-        </button>
-        <button mat-button class="sidebar-btn">
-          <mat-icon>content_copy</mat-icon> Copiar
-        </button>
+        <h4>Progresso</h4>
+        <div class="progress-summary">
+          <span class="progress-count" [class.done]="progresso === 100">
+            <mat-icon>{{ progresso === 100 ? 'check_circle' : 'check_box' }}</mat-icon>
+            {{ countMarcados() }}/{{ card.itens.length }} itens
+          </span>
+        </div>
+        <div class="horario-info">
+          <mat-icon>schedule</mat-icon>
+          <span>{{ card.horarioAbertura }} – {{ card.horarioFechamento }}</span>
+        </div>
       </div>
+
     </div>
 
   </div>

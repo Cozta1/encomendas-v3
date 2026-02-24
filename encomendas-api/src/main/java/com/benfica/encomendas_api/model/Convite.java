@@ -15,7 +15,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "convites")
+@Table(name = "convites", indexes = {
+    @Index(name = "idx_convites_equipe_id", columnList = "equipe_id"),
+    @Index(name = "idx_convites_email_destino", columnList = "emailDestino"),
+    @Index(name = "idx_convites_status", columnList = "status")
+})
 public class Convite {
 
     @Id

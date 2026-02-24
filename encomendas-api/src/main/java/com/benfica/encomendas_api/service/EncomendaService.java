@@ -227,15 +227,11 @@ public class EncomendaService {
 
     private Cliente resolverCliente(EncomendaRequestDTO.ClienteDataDTO dto, Equipe equipe) {
         if (dto.getCodigoInterno() != null && !dto.getCodigoInterno().trim().isEmpty()) {
-            Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
-                    .filter(c -> dto.getCodigoInterno().equalsIgnoreCase(c.getCodigoInterno()))
-                    .findFirst();
+            Optional<Cliente> existente = clienteRepository.findByEquipeIdAndCodigoInterno(equipe.getId(), dto.getCodigoInterno());
             if (existente.isPresent()) return existente.get();
         }
         if (dto.getCpf() != null && !dto.getCpf().trim().isEmpty()) {
-            Optional<Cliente> existente = clienteRepository.findByEquipeId(equipe.getId()).stream()
-                    .filter(c -> dto.getCpf().equals(c.getCpf()))
-                    .findFirst();
+            Optional<Cliente> existente = clienteRepository.findByEquipeIdAndCpf(equipe.getId(), dto.getCpf());
             if (existente.isPresent()) return existente.get();
         }
         Cliente novo = Cliente.builder()
@@ -251,14 +247,10 @@ public class EncomendaService {
 
     private Produto resolverProduto(EncomendaRequestDTO.ProdutoDataDTO dto, Equipe equipe) {
         if (dto.getCodigo() != null && !dto.getCodigo().trim().isEmpty()) {
-            Optional<Produto> existente = produtoRepository.findByEquipeId(equipe.getId()).stream()
-                    .filter(p -> dto.getCodigo().equals(p.getCodigo()))
-                    .findFirst();
+            Optional<Produto> existente = produtoRepository.findByEquipeIdAndCodigo(equipe.getId(), dto.getCodigo());
             if (existente.isPresent()) return existente.get();
         } else {
-            Optional<Produto> existentePorNome = produtoRepository.findByEquipeId(equipe.getId()).stream()
-                    .filter(p -> p.getNome().equalsIgnoreCase(dto.getNome()))
-                    .findFirst();
+            Optional<Produto> existentePorNome = produtoRepository.findByEquipeIdAndNomeIgnoreCase(equipe.getId(), dto.getNome());
             if (existentePorNome.isPresent()) return existentePorNome.get();
         }
         Produto novo = Produto.builder()
@@ -271,9 +263,7 @@ public class EncomendaService {
     }
 
     private Fornecedor resolverFornecedor(EncomendaRequestDTO.FornecedorDataDTO dto, Equipe equipe) {
-        Optional<Fornecedor> existente = fornecedorRepository.findByEquipeId(equipe.getId()).stream()
-                .filter(f -> f.getNome().equalsIgnoreCase(dto.getNome()))
-                .findFirst();
+        Optional<Fornecedor> existente = fornecedorRepository.findByEquipeIdAndNomeIgnoreCase(equipe.getId(), dto.getNome());
         if (existente.isPresent()) return existente.get();
 
         Fornecedor novo = Fornecedor.builder()
