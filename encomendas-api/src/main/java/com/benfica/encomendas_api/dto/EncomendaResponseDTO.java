@@ -28,6 +28,10 @@ public class EncomendaResponseDTO {
     private String enderecoComplemento;
     // ----------------
 
+    private Boolean notaFutura;
+    private Boolean vendaEstoqueNegativo;
+    private Boolean apenasEncomenda;
+
     private BigDecimal valorAdiantamento;
     private BigDecimal valorTotal;
     private LocalDateTime dataCriacao;
@@ -55,6 +59,10 @@ public class EncomendaResponseDTO {
                 .enderecoRua(encomenda.getEnderecoRua())
                 .enderecoNumero(encomenda.getEnderecoNumero())
                 .enderecoComplemento(encomenda.getEnderecoComplemento())
+                // Flags
+                .notaFutura(encomenda.getNotaFutura())
+                .vendaEstoqueNegativo(encomenda.getVendaEstoqueNegativo())
+                .apenasEncomenda(encomenda.getApenasEncomenda())
                 // Valores
                 .valorAdiantamento(encomenda.getValorAdiantamento())
                 .valorTotal(encomenda.getValorTotal())

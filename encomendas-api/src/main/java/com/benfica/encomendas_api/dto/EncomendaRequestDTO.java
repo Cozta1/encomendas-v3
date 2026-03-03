@@ -34,6 +34,7 @@ public class EncomendaRequestDTO {
     // --- CORREÇÃO AQUI: Mudado de boolean para Boolean ---
     private Boolean notaFutura;
     private Boolean vendaEstoqueNegativo;
+    private Boolean apenasEncomenda;
     // -----------------------------------------------------
 
     private BigDecimal valorAdiantamento;

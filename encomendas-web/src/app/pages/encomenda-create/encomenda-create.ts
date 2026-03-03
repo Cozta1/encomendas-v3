@@ -17,6 +17,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Services e Models
 import { EncomendaService } from '../../core/services/encomenda.service';
@@ -38,7 +39,7 @@ import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
     CommonModule, ReactiveFormsModule, FormsModule, RouterModule,
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatDatepickerModule, MatNativeDateModule,
-    MatCheckboxModule, MatDividerModule, MatAutocompleteModule,
+    MatCheckboxModule, MatDividerModule, MatAutocompleteModule, MatTooltipModule,
     CepMaskDirective, CpfMaskDirective, PhoneMaskDirective
   ],
   templateUrl: './encomenda-create.html',
@@ -82,6 +83,7 @@ export class EncomendaCreate implements OnInit {
       observacoes: [''],
       notaFutura: [false],
       vendaEstoqueNegativo: [false],
+      apenasEncomenda: [false],
       itens: this.fb.array([], Validators.required),
       valorTotal: [{ value: 0, disabled: true }],
       quitado: [false],

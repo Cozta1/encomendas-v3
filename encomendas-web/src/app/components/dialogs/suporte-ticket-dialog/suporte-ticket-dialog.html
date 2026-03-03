@@ -1,0 +1,65 @@
+<div class="dialog-header">
+  <div class="header-icon-wrap">
+    <mat-icon>bug_report</mat-icon>
+  </div>
+  <div class="header-text">
+    <h2 mat-dialog-title>Reportar Problema / FAQ</h2>
+    <p class="header-sub">Seu ticket será enviado diretamente ao desenvolvedor</p>
+  </div>
+  <button mat-icon-button mat-dialog-close class="close-btn" matTooltip="Fechar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-content>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Categoria</mat-label>
+    <mat-select [(ngModel)]="categoria" required>
+      <mat-option *ngFor="let c of categorias" [value]="c.valor">
+        <div class="option-row">
+          <mat-icon>{{ c.icone }}</mat-icon>
+          <span>{{ c.valor }}</span>
+        </div>
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Título do problema</mat-label>
+    <input matInput [(ngModel)]="titulo"
+           placeholder="Ex: Botão de salvar não funciona na tela de encomendas"
+           maxlength="120">
+    <mat-hint align="end">{{ titulo.length }}/120</mat-hint>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Descrição detalhada</mat-label>
+    <textarea matInput [(ngModel)]="descricao"
+              rows="6"
+              placeholder="Descreva o problema com o máximo de detalhes. O que aconteceu? Quando ocorre? Quais passos para reproduzir?"
+              maxlength="2000"></textarea>
+    <mat-hint align="end">{{ descricao.length }}/2000</mat-hint>
+  </mat-form-field>
+
+  <div class="info-box">
+    <mat-icon>info_outline</mat-icon>
+    <span>O ticket incluirá automaticamente seu nome de usuário e equipe ativa para facilitar o diagnóstico.</span>
+  </div>
+
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-raised-button color="warn"
+          [disabled]="!formValido || enviando"
+          (click)="enviar()">
+    <mat-spinner *ngIf="enviando" diameter="18"></mat-spinner>
+    <mat-icon *ngIf="!enviando">send</mat-icon>
+    {{ enviando ? 'Enviando...' : 'Enviar Ticket' }}
+  </button>
+</mat-dialog-actions>

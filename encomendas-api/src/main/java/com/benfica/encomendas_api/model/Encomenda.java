@@ -73,6 +73,9 @@ public class Encomenda {
 
     @Column(name = "venda_estoque_negativo")
     private Boolean vendaEstoqueNegativo; // Aceita null agora
+
+    @Column(name = "apenas_encomenda")
+    private Boolean apenasEncomenda;
     // -----------------------------------------------------
 
     @Column(name = "valor_adiantamento", precision = 10, scale = 2)

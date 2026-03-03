@@ -1,0 +1,204 @@
+<div class="chat-container">
+
+  <!-- Painel esquerdo: lista de conversas -->
+  <div class="conversations-panel">
+    <div class="panel-header">
+      <mat-icon>chat</mat-icon>
+      <span>Conversas</span>
+      <button mat-icon-button
+              class="new-conv-btn"
+              [class.active]="showMemberSelect"
+              (click)="toggleMemberSelect()"
+              matTooltip="{{ showMemberSelect ? 'Fechar' : 'Nova conversa privada' }}">
+        <mat-icon>{{ showMemberSelect ? 'close' : 'add' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Painel de seleção de membro -->
+    <div class="member-selector" *ngIf="showMemberSelect">
+      <div class="member-search">
+        <mat-icon>search</mat-icon>
+        <input type="text"
+               [(ngModel)]="filtroBusca"
+               placeholder="Buscar funcionário…"
+               autocomplete="off" />
+      </div>
+      <div class="member-list">
+        <div class="member-item"
+             *ngFor="let m of membrosFiltrados"
+             (click)="iniciarPrivado(m.id)">
+          <div class="member-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="member-info">
+            <div class="member-nome">{{ m.nomeCompleto }}</div>
+            <div class="member-cargo" *ngIf="m.cargo">{{ m.cargo }}</div>
+          </div>
+          <mat-icon class="member-arrow">chevron_right</mat-icon>
+        </div>
+        <div class="member-empty" *ngIf="membrosFiltrados.length === 0">
+          <mat-icon>person_search</mat-icon>
+          <p>Nenhum funcionário encontrado</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="conversations-loading" *ngIf="loadingConversas">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+
+    <div class="conversations-list" *ngIf="!loadingConversas">
+      <div
+        class="conversation-item"
+        *ngFor="let c of conversas"
+        [class.active]="conversaAtiva?.id === c.id"
+        (click)="abrirConversa(c)">
+        <div class="conv-avatar">
+          <mat-icon>{{ c.tipo === 'GRUPO' ? 'groups' : 'person' }}</mat-icon>
+        </div>
+        <div class="conv-info">
+          <div class="conv-nome">{{ c.nomeExibicao }}</div>
+          <div class="conv-ultima" *ngIf="c.ultimaMensagem">
+            {{ c.ultimaMensagem | slice:0:40 }}{{ c.ultimaMensagem.length > 40 ? '…' : '' }}
+          </div>
+          <div class="conv-ultima sem-mensagem" *ngIf="!c.ultimaMensagem">
+            Sem mensagens
+          </div>
+        </div>
+        <div class="conv-badge" *ngIf="c.naoLidas > 0">
+          {{ c.naoLidas > 99 ? '99+' : c.naoLidas }}
+        </div>
+      </div>
+
+      <div class="sem-conversas" *ngIf="conversas.length === 0">
+        <mat-icon>forum</mat-icon>
+        <p>Nenhuma conversa</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel direito: área de mensagens -->
+  <div class="messages-panel">
+    <ng-container *ngIf="conversaAtiva; else semConversa">
+
+      <!-- Header -->
+      <div class="messages-header">
+        <div class="header-avatar">
+          <mat-icon>{{ conversaAtiva.tipo === 'GRUPO' ? 'groups' : 'person' }}</mat-icon>
+        </div>
+        <div class="header-info">
+          <span class="header-nome">{{ conversaAtiva.nomeExibicao }}</span>
+          <span class="header-tipo">{{ conversaAtiva.tipo === 'GRUPO' ? 'Grupo da equipe' : 'Conversa privada' }}</span>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Carregar anteriores -->
+      <div class="load-more" *ngIf="temMaisAnteriores && mensagens.length >= 30">
+        <button mat-button (click)="carregarAnteriores()" [disabled]="carregandoPagina">
+          <mat-spinner *ngIf="carregandoPagina" diameter="16" style="margin-right: 6px;"></mat-spinner>
+          Carregar mensagens anteriores
+        </button>
+      </div>
+
+      <!-- Mensagens -->
+      <div class="messages-area">
+        <div class="messages-loading" *ngIf="loadingMensagens">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+
+        <div class="messages-list" *ngIf="!loadingMensagens">
+          <div class="sem-mensagens" *ngIf="mensagens.length === 0">
+            <mat-icon>chat_bubble_outline</mat-icon>
+            <p>Seja o primeiro a enviar uma mensagem!</p>
+          </div>
+
+          <div
+            class="message-bubble"
+            *ngFor="let msg of mensagens"
+            [class.mine]="isMine(msg)"
+            [class.theirs]="!isMine(msg)">
+
+            <div class="bubble-remetente" *ngIf="!isMine(msg) && conversaAtiva.tipo === 'GRUPO'">
+              {{ msg.remetenteNome }}
+            </div>
+
+            <div class="bubble-conteudo" *ngIf="msg.conteudo">{{ msg.conteudo }}</div>
+
+            <!-- Anexos -->
+            <div class="bubble-anexos" *ngIf="msg.anexos && msg.anexos.length > 0">
+              <div class="anexo-item" *ngFor="let a of msg.anexos">
+                <a [href]="baseUrl + a.url" target="_blank" class="anexo-link">
+                  <ng-container [ngSwitch]="a.tipoArquivo">
+                    <mat-icon *ngSwitchCase="'IMG'">image</mat-icon>
+                    <mat-icon *ngSwitchCase="'PDF'">picture_as_pdf</mat-icon>
+                    <mat-icon *ngSwitchCase="'LINK'">link</mat-icon>
+                    <mat-icon *ngSwitchDefault>attach_file</mat-icon>
+                  </ng-container>
+                  <span>{{ a.nomeArquivo }}</span>
+                </a>
+              </div>
+            </div>
+
+            <div class="bubble-hora">
+              {{ msg.enviadoEm | date:'HH:mm' }}
+            </div>
+          </div>
+
+          <div #messagesEnd></div>
+        </div>
+      </div>
+
+      <!-- Pré-visualização de anexos pendentes -->
+      <div class="pending-anexos" *ngIf="pendingAnexos.length > 0">
+        <mat-chip-set>
+          <mat-chip *ngFor="let a of pendingAnexos; let i = index" (removed)="removerAnexo(i)">
+            <mat-icon matChipAvatar>attach_file</mat-icon>
+            {{ a.nomeArquivo | slice:0:20 }}{{ a.nomeArquivo.length > 20 ? '…' : '' }}
+            <button matChipRemove>
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <!-- Input area -->
+      <div class="input-area">
+        <button mat-icon-button
+                matTooltip="Anexar ficheiro"
+                (click)="fileInput.click()"
+                class="attach-btn">
+          <mat-icon>attach_file</mat-icon>
+        </button>
+        <input #fileInput type="file" hidden multiple (change)="onFileSelected($event)" />
+
+        <mat-form-field appearance="outline" class="message-input-field">
+          <input
+            matInput
+            [(ngModel)]="textoMensagem"
+            placeholder="Escreva uma mensagem…"
+            (keydown)="onEnterKey($event)"
+            autocomplete="off" />
+        </mat-form-field>
+
+        <button mat-fab
+                color="primary"
+                [disabled]="enviando || (!textoMensagem.trim() && pendingAnexos.length === 0)"
+                (click)="enviarMensagem()"
+                class="send-btn">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+
+    </ng-container>
+
+    <ng-template #semConversa>
+      <div class="sem-conversa-placeholder">
+        <mat-icon>forum</mat-icon>
+        <p>Selecione uma conversa para começar</p>
+      </div>
+    </ng-template>
+  </div>
+
+</div>

@@ -22,6 +22,7 @@ import { TeamService, Equipe } from '../../core/team/team.service';
 import { NotificacaoService } from '../../core/services/notificacao.service';
 import { Notificacao } from '../../core/models/notificacao.interfaces';
 import { NotificacaoDetalheDialog } from '../../components/dialogs/notificacao-detalhe-dialog/notificacao-detalhe-dialog';
+import { SuporteTicketDialog } from '../../components/dialogs/suporte-ticket-dialog/suporte-ticket-dialog';
 
 @Component({
   selector: 'app-navbar',
@@ -58,6 +59,10 @@ export class Navbar implements OnInit, OnDestroy {
   naoLidas = 0;
   private usuarioId: number | null = null;
   private pollingInterval: Subscription | undefined;
+
+  // Chat badge (REST-only polling, no WebSocket in navbar)
+  chatNaoLidas = 0;
+  private chatPollingInterval: Subscription | undefined;
 
   constructor(
     private authService: AuthService,
@@ -102,6 +107,7 @@ export class Navbar implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.breakpointSub?.unsubscribe();
     this.pollingInterval?.unsubscribe();
+    this.chatPollingInterval?.unsubscribe();
   }
 
   carregarNotificacoes() {
@@ -129,10 +135,26 @@ export class Navbar implements OnInit, OnDestroy {
     });
   }
 
+  get notificacoesSistema(): Notificacao[] {
+    return this.notificacoes.filter(n => !n.remetenteId);
+  }
+
+  get notificacoesPessoais(): Notificacao[] {
+    return this.notificacoes.filter(n => !!n.remetenteId);
+  }
+
   marcarTodasLidas() {
     if (!this.usuarioId) return;
     this.notificacaoService.marcarTodasLidas(this.usuarioId).subscribe(() => {
       this.notificacoes.forEach(n => n.lida = true);
+      this.naoLidas = 0;
+    });
+  }
+
+  limparNotificacoes() {
+    if (!this.usuarioId) return;
+    this.notificacaoService.limparNotificacoes(this.usuarioId).subscribe(() => {
+      this.notificacoes = [];
       this.naoLidas = 0;
     });
   }
@@ -143,6 +165,7 @@ export class Navbar implements OnInit, OnDestroy {
 
   selecionarEquipe(equipe: Equipe): void {
     this.teamService.selecionarEquipe(equipe);
+    window.location.reload();
   }
 
   toggleTheme(): void {
@@ -152,5 +175,12 @@ export class Navbar implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  abrirSuporteDialog(): void {
+    this.dialog.open(SuporteTicketDialog, {
+      width: '560px',
+      maxWidth: '96vw'
+    });
   }
 }

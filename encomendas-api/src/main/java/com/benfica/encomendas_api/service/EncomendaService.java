@@ -73,6 +73,7 @@ public class EncomendaService {
                 .dataEstimadaEntrega(dto.getDataEstimadaEntrega())
                 .notaFutura(dto.getNotaFutura())
                 .vendaEstoqueNegativo(dto.getVendaEstoqueNegativo())
+                .apenasEncomenda(dto.getApenasEncomenda())
                 .valorAdiantamento(dto.getValorAdiantamento() != null ? dto.getValorAdiantamento() : BigDecimal.ZERO)
                 .status(STATUS_CRIADA)
                 .valorTotal(BigDecimal.ZERO)

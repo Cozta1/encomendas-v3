@@ -29,6 +29,17 @@
     </button>
   </mat-menu>
 
+  <!-- Chat Icon with Badge -->
+  <button mat-icon-button
+          routerLink="/chat"
+          matTooltip="Chat da Equipe"
+          class="chat-btn">
+    <mat-icon [matBadge]="chatNaoLidas"
+              [matBadgeHidden]="chatNaoLidas === 0"
+              matBadgeColor="accent"
+              matBadgeSize="small">chat</mat-icon>
+  </button>
+
   <!-- Bell Icon with Badge -->
   <button mat-icon-button
           #notifTrigger="matMenuTrigger"
@@ -45,31 +56,74 @@
   <mat-menu #menuNotificacoes="matMenu" panelClass="notif-menu-panel">
     <div class="notif-header" (click)="$event.stopPropagation()">
       <span>Notificações</span>
-      <button mat-button *ngIf="naoLidas > 0" (click)="marcarTodasLidas()" style="font-size: 12px;">
-        Marcar todas como lidas
-      </button>
+      <div class="notif-header-actions">
+        <button mat-icon-button
+                *ngIf="naoLidas > 0"
+                (click)="marcarTodasLidas()"
+                matTooltip="Marcar todas como lidas"
+                class="notif-action-btn">
+          <mat-icon>done_all</mat-icon>
+        </button>
+        <button mat-icon-button
+                *ngIf="notificacoes.length > 0"
+                (click)="limparNotificacoes()"
+                matTooltip="Limpar todas"
+                class="notif-action-btn notif-action-btn--clear">
+          <mat-icon>delete_sweep</mat-icon>
+        </button>
+      </div>
     </div>
 
     <mat-divider></mat-divider>
 
     <ng-container *ngIf="notificacoes.length > 0; else semNotif">
-      <button mat-menu-item *ngFor="let n of notificacoes"
-              (click)="abrirNotificacao(n)"
-              [class.notif-nao-lida]="!n.lida">
-        <div class="notif-item">
-          <mat-icon class="notif-icon" [class.notif-icon-sistema]="!n.remetenteId">
-            {{ n.remetenteId ? 'person' : 'smart_toy' }}
-          </mat-icon>
-          <div class="notif-body">
-            <div class="notif-titulo">{{ n.titulo }}</div>
-            <div class="notif-msg">{{ n.mensagem | slice:0:80 }}{{ n.mensagem.length > 80 ? '…' : '' }}</div>
-            <div class="notif-hora">
-              {{ n.remetenteNome || 'Sistema' }} · {{ n.dataEnvio | date:'dd/MM HH:mm' }}
-            </div>
-          </div>
-          <span *ngIf="!n.lida" class="notif-dot"></span>
+
+      <!-- Secção: Sistema -->
+      <ng-container *ngIf="notificacoesSistema.length > 0">
+        <div class="notif-section-header" (click)="$event.stopPropagation()">
+          <mat-icon>smart_toy</mat-icon>
+          <span>Sistema</span>
+          <span class="notif-section-count">{{ notificacoesSistema.length }}</span>
         </div>
-      </button>
+        <button mat-menu-item
+                *ngFor="let n of notificacoesSistema"
+                (click)="abrirNotificacao(n)"
+                [class.notif-nao-lida]="!n.lida">
+          <div class="notif-item">
+            <mat-icon class="notif-icon notif-icon-sistema">smart_toy</mat-icon>
+            <div class="notif-body">
+              <div class="notif-titulo">{{ n.titulo }}</div>
+              <div class="notif-msg">{{ n.mensagem | slice:0:80 }}{{ n.mensagem.length > 80 ? '…' : '' }}</div>
+              <div class="notif-hora">{{ n.dataEnvio | date:'dd/MM HH:mm' }}</div>
+            </div>
+            <span *ngIf="!n.lida" class="notif-dot"></span>
+          </div>
+        </button>
+      </ng-container>
+
+      <!-- Secção: Pessoal -->
+      <ng-container *ngIf="notificacoesPessoais.length > 0">
+        <div class="notif-section-header" (click)="$event.stopPropagation()">
+          <mat-icon>person</mat-icon>
+          <span>Pessoal</span>
+          <span class="notif-section-count">{{ notificacoesPessoais.length }}</span>
+        </div>
+        <button mat-menu-item
+                *ngFor="let n of notificacoesPessoais"
+                (click)="abrirNotificacao(n)"
+                [class.notif-nao-lida]="!n.lida">
+          <div class="notif-item">
+            <mat-icon class="notif-icon">person</mat-icon>
+            <div class="notif-body">
+              <div class="notif-titulo">{{ n.titulo }}</div>
+              <div class="notif-msg">{{ n.mensagem | slice:0:80 }}{{ n.mensagem.length > 80 ? '…' : '' }}</div>
+              <div class="notif-hora">{{ n.remetenteNome }} · {{ n.dataEnvio | date:'dd/MM HH:mm' }}</div>
+            </div>
+            <span *ngIf="!n.lida" class="notif-dot"></span>
+          </div>
+        </button>
+      </ng-container>
+
     </ng-container>
 
     <ng-template #semNotif>
@@ -79,6 +133,11 @@
       </div>
     </ng-template>
   </mat-menu>
+
+  <!-- Support / Ticket Button -->
+  <button mat-icon-button (click)="abrirSuporteDialog()" matTooltip="Reportar Problema / FAQ">
+    <mat-icon>help_outline</mat-icon>
+  </button>
 
   <button mat-icon-button (click)="toggleTheme()" matTooltip="Alternar Tema">
     <mat-icon>{{ (isDark$ | async) ? 'light_mode' : 'dark_mode' }}</mat-icon>

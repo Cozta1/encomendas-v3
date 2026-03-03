@@ -203,9 +203,29 @@
       </mat-card-header>
       <mat-card-content class="pt-3">
 
-        <div style="display: flex; gap: 24px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
-          <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>
-          <mat-checkbox formControlName="vendaEstoqueNegativo" color="warn">Venda c/ Estoque Negativo</mat-checkbox>
+        <div style="display: flex; gap: 24px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee; flex-wrap: wrap; align-items: center;">
+
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #9e9e9e; cursor: help; vertical-align: middle;"
+                      matTooltip="Indica que a nota fiscal desta venda será emitida em uma data futura. Use para vendas com entrega programada ou faturamento postergado."
+                      matTooltipPosition="above">info_outline</mat-icon>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <mat-checkbox formControlName="vendaEstoqueNegativo" color="warn">Venda c/ Estoque Negativo</mat-checkbox>
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #9e9e9e; cursor: help; vertical-align: middle;"
+                      matTooltip="Permite registrar a venda mesmo que o produto não possua estoque disponível no momento. Use com cautela — pode gerar divergências no inventário."
+                      matTooltipPosition="above">info_outline</mat-icon>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <mat-checkbox formControlName="apenasEncomenda">Apenas Encomenda</mat-checkbox>
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px; color: #9e9e9e; cursor: help; vertical-align: middle;"
+                      matTooltip="Marca este pedido como uma encomenda pura, sem nenhuma movimentação de estoque. Ideal para produtos que serão adquiridos especificamente para este cliente."
+                      matTooltipPosition="above">info_outline</mat-icon>
+          </div>
+
         </div>
 
         <div class="row payment-row">
