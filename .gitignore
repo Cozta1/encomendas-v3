@@ -1,0 +1,9 @@
+# Claude Code
+.claude/
+
+# Uploads (user-generated files)
+uploads/
+
+# Frontend build artifacts
+encomendas-web/dist-debug/
+encomendas-web/dist/

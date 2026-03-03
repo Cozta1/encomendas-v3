@@ -20,4 +20,8 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
     @Modifying
     @Query("UPDATE Notificacao n SET n.lida = true WHERE n.destinatario.id = :destinatarioId AND n.lida = false")
     void marcarTodasLidas(@Param("destinatarioId") Long destinatarioId);
+
+    @Modifying
+    @Query("DELETE FROM Notificacao n WHERE n.destinatario.id = :destinatarioId")
+    void deleteAllByDestinatarioId(@Param("destinatarioId") Long destinatarioId);
 }

@@ -113,6 +113,13 @@ export const routes: Routes = [
         title: 'Gestor de Checklists'
       },
 
+      // --- CHAT ---
+      {
+        path: 'chat',
+        loadComponent: () => import('./pages/chat/chat').then(m => m.ChatPage),
+        title: 'Chat da Equipe'
+      },
+
       // --- CONTA ---
       {
         path: 'perfil',

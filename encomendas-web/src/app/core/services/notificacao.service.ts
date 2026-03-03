@@ -38,4 +38,9 @@ export class NotificacaoService {
     const params = new HttpParams().set('usuarioId', usuarioId.toString());
     return this.http.post<void>(`${this.apiUrl}/ler-todas`, {}, { params });
   }
+
+  limparNotificacoes(usuarioId: number): Observable<void> {
+    const params = new HttpParams().set('usuarioId', usuarioId.toString());
+    return this.http.delete<void>(`${this.apiUrl}/limpar`, { params });
+  }
 }

@@ -47,6 +47,11 @@ public class NotificacaoService {
     }
 
     @Transactional
+    public void limparNotificacoes(Long usuarioId) {
+        notificacaoRepository.deleteAllByDestinatarioId(usuarioId);
+    }
+
+    @Transactional
     public void marcarLida(UUID notificacaoId) {
         Notificacao n = notificacaoRepository.findById(notificacaoId)
                 .orElseThrow(() -> new EntityNotFoundException("Notificação não encontrada"));

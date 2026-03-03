@@ -191,4 +191,14 @@ body {
   }
   .notif-nao-lida { background: rgba(144, 202, 249, 0.06) !important; }
   .notif-vazio { color: #555; }
+
+  .notif-action-btn mat-icon { color: #aaa !important; }
+  .notif-action-btn--clear mat-icon { color: #ef9a9a !important; }
+
+  .notif-section-header {
+    color: #555;
+    background: rgba(255, 255, 255, 0.03);
+
+    .notif-section-count { background: rgba(255, 255, 255, 0.1); }
+  }
 }

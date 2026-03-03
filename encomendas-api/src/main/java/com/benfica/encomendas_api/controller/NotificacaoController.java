@@ -50,4 +50,10 @@ public class NotificacaoController {
         notificacaoService.marcarTodasLidas(usuarioId);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/limpar")
+    public ResponseEntity<Void> limparNotificacoes(@RequestParam Long usuarioId) {
+        notificacaoService.limparNotificacoes(usuarioId);
+        return ResponseEntity.noContent().build();
+    }
 }
