@@ -266,7 +266,23 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
 
+    const MAX_SIZE = 10 * 1024 * 1024;
+    const ALLOWED_TYPES = [
+      'image/',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument'
+    ];
+
     Array.from(input.files).forEach(file => {
+      if (file.size > MAX_SIZE) {
+        this.snackBar.open('Arquivo muito grande (máx. 10MB)', 'OK', { duration: 4000 });
+        return;
+      }
+      if (!ALLOWED_TYPES.some(t => file.type.startsWith(t))) {
+        this.snackBar.open('Tipo de arquivo não suportado', 'OK', { duration: 4000 });
+        return;
+      }
       this.chatService.uploadAnexo(file).subscribe({
         next: uploaded => {
           this.pendingAnexos.push(uploaded);

@@ -4,6 +4,7 @@ import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 
 // --- IMPORTS DE LOCALE (IDIOMA) ---
 import { registerLocaleData } from '@angular/common';
@@ -20,7 +21,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
 
     // Interceptadores HTTP
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
 
     // --- CONFIGURAÇÃO DE DATAS E IDIOMA ---
     { provide: LOCALE_ID, useValue: 'pt-BR' },      // Para Pipes do Angular (currency, date)

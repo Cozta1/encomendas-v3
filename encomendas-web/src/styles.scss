@@ -33,6 +33,28 @@ $dark-theme: mat.m2-define-dark-theme((
 // 4. APLICA O TEMA ESCURO (componentes Material)
 .dark-theme {
   @include mat.all-component-colors($dark-theme);
+
+  // Alinha backgrounds do Material com a paleta escura
+  .mat-mdc-card {
+    --mdc-elevated-card-container-color: #1e1e1e;
+    --mdc-outlined-card-container-color: #1e1e1e;
+  }
+
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #1e1e1e;
+  }
+
+  .mat-mdc-menu-panel {
+    --mat-menu-container-color: #1e1e1e;
+  }
+
+  // Corrige tabelas dentro de dialogs e cards (mat-elevation-z* usa branco por padrão)
+  .mat-mdc-table {
+    --mat-table-background-color: #252525;
+    --mat-table-header-headline-color: #9a9a9a;
+    --mat-table-row-item-label-text-color: #e8e8e8;
+    --mat-table-row-item-outline-color: #2a2a2a;
+  }
 }
 
 // 5. DEFINIÇÃO DAS VARIÁVEIS DE CSS GLOBAIS
@@ -65,25 +87,25 @@ $dark-theme: mat.m2-define-dark-theme((
   --app-chip-cancelado-text: #616161;
 }
 
-// Variáveis para o TEMA ESCURO — estilo Opera GX Force Dark
+// Variáveis para o TEMA ESCURO
 .dark-theme {
   // Cores da Paleta
   --app-primary-color: #{mat.m2-get-color-from-palette($dark-primary, 'A200')};
   --app-accent-color: #{mat.m2-get-color-from-palette($dark-accent, 'A200')};
   --app-warn-color: #{mat.m2-get-color-from-palette($dark-warn, 'default')};
 
-  // Cores de Fundo (Opera GX force-dark)
-  --app-background-color: #141414;      // Quase preto — fundo da página
-  --app-card-background-color: #1e1e1e; // Superfície dos cards/dialogs
-  --app-sidebar-background-color: #111111; // Sidebar ainda mais escura
-  --app-surface-color: #252525;         // Superfície elevada (dentro de cards)
-  --app-border-color: rgba(255, 255, 255, 0.07);
+  // Cores de Fundo
+  --app-background-color: #141414;
+  --app-card-background-color: #1e1e1e;
+  --app-sidebar-background-color: #111111;
+  --app-surface-color: #252525;
+  --app-border-color: rgba(255, 255, 255, 0.10);
   --app-divider-color: #2a2a2a;
 
   // Cores de Texto
-  --app-text-color: #e8e8e8;            // Branco suave
-  --app-text-color-secondary: #9a9a9a; // Cinza médio
-  --app-text-muted: #555555;           // Cinza escuro
+  --app-text-color: #e8e8e8;
+  --app-text-color-secondary: #9a9a9a;
+  --app-text-muted: #555555;
 
   // Interação
   --app-hover-bg: rgba(255, 255, 255, 0.05);
@@ -101,9 +123,9 @@ html, body {
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  // Aplica as variáveis de fundo e texto ao body
   background-color: var(--app-background-color);
   color: var(--app-text-color);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 // Estilo global do chip cancelado

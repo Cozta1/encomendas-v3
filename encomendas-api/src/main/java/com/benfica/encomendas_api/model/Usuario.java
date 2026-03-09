@@ -18,7 +18,9 @@ import java.util.Collections;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", indexes = {
+    @Index(name = "idx_usuarios_equipe_id", columnList = "equipe_id")
+})
 public class Usuario implements UserDetails {
 
     @Id

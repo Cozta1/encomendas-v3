@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -87,7 +87,7 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email não encontrado."));
 
-        String codigo = String.format("%06d", new Random().nextInt(999999));
+        String codigo = UUID.randomUUID().toString();
         usuario.setTokenResetSenha(codigo);
         usuario.setDataExpiracaoToken(LocalDateTime.now().plusMinutes(15));
         usuarioRepository.save(usuario);

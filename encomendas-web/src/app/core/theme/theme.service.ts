@@ -18,7 +18,7 @@ export class ThemeService {
   constructor() {
     // 3. Verifica o localStorage no construtor
     const savedState = localStorage.getItem(this.THEME_KEY);
-    const initialState = savedState === 'true'; // Converte string 'true' para boolean true
+    const initialState = savedState === 'true';
 
     this.isDarkSubject.next(initialState);
     this.applyTheme(initialState);

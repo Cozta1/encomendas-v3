@@ -277,11 +277,6 @@ public class ChecklistService {
     public void excluirBoard(UUID boardId) {
         ChecklistBoard board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new EntityNotFoundException("Board não encontrado"));
-        for (ChecklistCard card : board.getCards()) {
-            for (ChecklistItem item : card.getItens()) {
-                logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
-            }
-        }
         boardRepository.delete(board);
     }
 
@@ -308,9 +303,6 @@ public class ChecklistService {
     public void excluirCard(UUID cardId) {
         ChecklistCard card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new EntityNotFoundException("Card não encontrado"));
-        for (ChecklistItem item : card.getItens()) {
-            logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
-        }
         cardRepository.delete(card);
     }
 
@@ -348,7 +340,6 @@ public class ChecklistService {
     public void excluirItem(UUID itemId) {
         ChecklistItem item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new EntityNotFoundException("Item não encontrado"));
-        logRepository.deleteAll(logRepository.findByItemIdOrderByDataHoraAcaoDesc(item.getId()));
         itemRepository.delete(item);
     }
 

@@ -15,7 +15,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "mensagens_chat", indexes = {
     @Index(name = "idx_mensagens_conversa", columnList = "conversa_id"),
-    @Index(name = "idx_mensagens_enviado_em", columnList = "enviado_em")
+    @Index(name = "idx_mensagens_enviado_em", columnList = "enviado_em"),
+    @Index(name = "idx_mensagens_remetente_id", columnList = "remetente_id")
 })
 public class MensagemChat {
 

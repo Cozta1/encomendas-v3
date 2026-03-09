@@ -5,6 +5,8 @@ import com.benfica.encomendas_api.dto.EncomendaResponseDTO;
 import com.benfica.encomendas_api.model.*;
 import com.benfica.encomendas_api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -42,10 +44,9 @@ public class EncomendaService {
     private FornecedorRepository fornecedorRepository;
 
     @Transactional(readOnly = true)
-    public List<EncomendaResponseDTO> listarEncomendasPorEquipe(UUID equipeId) {
-        return encomendaRepository.findByEquipeId(equipeId).stream()
-                .map(EncomendaResponseDTO::fromEntity)
-                .collect(Collectors.toList());
+    public Page<EncomendaResponseDTO> listarEncomendasPorEquipe(UUID equipeId, Pageable pageable) {
+        return encomendaRepository.findByEquipeIdOrderByDataCriacaoDesc(equipeId, pageable)
+                .map(EncomendaResponseDTO::fromEntity);
     }
 
     @Transactional(readOnly = true)
@@ -109,10 +110,10 @@ public class EncomendaService {
                     .subtotal(subtotal)
                     .build();
 
-            encomendaItemRepository.save(item);
             itens.add(item);
         }
 
+        encomendaItemRepository.saveAll(itens);
         encomenda.setValorTotal(valorTotal);
         encomenda.setItens(itens);
 

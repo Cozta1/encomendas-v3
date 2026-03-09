@@ -1,4 +1,12 @@
 import { ClienteResponse } from './cliente.interfaces';
+
+export interface PagedResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
 import { FornecedorResponse } from './fornecedor.interfaces';
 import { ProdutoResponse } from './produto.interfaces';
 

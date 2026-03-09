@@ -5,7 +5,7 @@
       <button mat-icon-button routerLink="/encomendas"><mat-icon>arrow_back</mat-icon></button>
       <div>
         <h1 style="margin: 0; font-size: 1.5rem;">Encomenda #{{ e.id.split('-')[0] | uppercase }}</h1>
-        <span style="color: #666;">Cliente: <strong>{{ e.cliente.nome }}</strong></span>
+        <span style="color: var(--app-text-color-secondary);">Cliente: <strong>{{ e.cliente.nome }}</strong></span>
       </div>
     </div>
 
@@ -47,7 +47,7 @@
 
       <mat-divider style="margin: 24px 0;"></mat-divider>
 
-      <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: #444;">
+      <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; color: var(--app-text-color-secondary);">
         <mat-icon>history</mat-icon> Histórico de Alterações
       </h3>
 
@@ -69,7 +69,7 @@
 
         </div>
 
-        <div *ngIf="getLogHistorico(e).length === 0" style="color: #999; font-style: italic; padding-left: 20px;">
+        <div *ngIf="getLogHistorico(e).length === 0" style="color: var(--app-text-muted); font-style: italic; padding-left: 20px;">
           Nenhum histórico registrado.
         </div>
       </div>
@@ -89,7 +89,7 @@
               <th mat-header-cell *matHeaderCellDef> Produto </th>
               <td mat-cell *matCellDef="let item">
                 <strong>{{item.produto.nome}}</strong>
-                <div style="font-size: 0.85em; color: #666;">{{item.fornecedor.nome}}</div>
+                <div style="font-size: 0.85em; color: var(--app-text-color-secondary);">{{item.fornecedor.nome}}</div>
               </td>
             </ng-container>
             <ng-container matColumnDef="qtd">
@@ -111,7 +111,7 @@
         <mat-card-content style="padding-top: 16px;">
           <p style="font-size: 1.1rem; margin-bottom: 4px;">{{ e.enderecoRua }}, {{ e.enderecoNumero }}</p>
           <p>{{ e.enderecoBairro }} - {{ e.enderecoCep }}</p>
-          <p *ngIf="e.enderecoComplemento" style="color: #666;">Compl: {{ e.enderecoComplemento }}</p>
+          <p *ngIf="e.enderecoComplemento" style="color: var(--app-text-color-secondary);">Compl: {{ e.enderecoComplemento }}</p>
         </mat-card-content>
       </mat-card>
 
@@ -149,7 +149,7 @@
         <mat-card-header><mat-card-title>Previsão</mat-card-title></mat-card-header>
         <mat-card-content style="padding-top: 16px;">
           <div style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px;"
-               [style.color]="verificarAtraso(e) ? '#f44336' : '#333'">
+               [style.color]="verificarAtraso(e) ? '#f44336' : 'inherit'">
             <mat-icon>event</mat-icon>
             {{ e.dataEstimadaEntrega | date:'dd/MM/yyyy HH:mm' }}
             <span *ngIf="verificarAtraso(e)" style="font-weight: bold; font-size: 0.8em;">(ATRASADA)</span>

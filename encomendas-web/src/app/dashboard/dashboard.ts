@@ -108,11 +108,11 @@ export class Dashboard implements OnInit, OnDestroy {
   carregarDadosDashboard(): void {
     if (!this.teamService.getEquipeAtivaId()) return;
 
-    this.encomendaService.getEncomendas().subscribe({
+    this.encomendaService.getEncomendas(0, 1000).subscribe({
       next: (data) => {
-        this.encomendasSubject.next(data);
-        this.processarMetricas(data);
-        this.processarEncomendasAbertas(data);
+        this.encomendasSubject.next(data.content);
+        this.processarMetricas(data.content);
+        this.processarEncomendasAbertas(data.content);
       },
       error: (err) => console.error('Erro ao carregar dashboard:', err)
     });

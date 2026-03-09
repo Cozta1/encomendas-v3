@@ -1,9 +1,11 @@
 package com.benfica.encomendas_api.repository;
 
 import com.benfica.encomendas_api.model.Encomenda;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query; // <-- IMPORTAR
-import org.springframework.data.repository.query.Param; // <-- IMPORTAR
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,13 +19,14 @@ public interface EncomendaRepository extends JpaRepository<Encomenda, UUID> {
      * Busca encomendas da equipe, já carregando (JOIN FETCH) as relações
      * para evitar N+1 queries e erros de LazyInitialization ou NullPointer.
      */
-    @Query("SELECT DISTINCT e FROM Encomenda e " + // <-- MODIFIED
+    @Query("SELECT DISTINCT e FROM Encomenda e " +
             "LEFT JOIN FETCH e.cliente c " +
             "LEFT JOIN FETCH e.itens i " +
             "LEFT JOIN FETCH i.produto p " +
             "LEFT JOIN FETCH i.fornecedor f " +
             "WHERE e.equipe.id = :equipeId " +
-            // "GROUP BY e.id, c.id " + // <-- REMOVED
             "ORDER BY e.dataCriacao DESC")
     List<Encomenda> findByEquipeId(@Param("equipeId") UUID equipeId);
+
+    Page<Encomenda> findByEquipeIdOrderByDataCriacaoDesc(UUID equipeId, Pageable pageable);
 }

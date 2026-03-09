@@ -20,6 +20,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "encomendas", indexes = {
     @Index(name = "idx_encomendas_equipe_id", columnList = "equipe_id"),
+    @Index(name = "idx_encomendas_cliente_id", columnList = "cliente_id"),
     @Index(name = "idx_encomendas_status", columnList = "status"),
     @Index(name = "idx_encomendas_data_criacao", columnList = "data_criacao")
 })
@@ -29,6 +30,7 @@ public class Encomenda {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Builder.Default
     @OneToMany(mappedBy = "encomenda", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dataAlteracao ASC")
     private List<EncomendaHistorico> historico = new ArrayList<>();

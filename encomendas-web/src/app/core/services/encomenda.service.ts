@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EncomendaRequest, EncomendaResponse } from '../models/encomenda.interfaces';
+import { EncomendaRequest, EncomendaResponse, PagedResult } from '../models/encomenda.interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -13,8 +13,11 @@ export class EncomendaService {
 
   constructor(private http: HttpClient) { }
 
-  getEncomendas(): Observable<EncomendaResponse[]> {
-    return this.http.get<EncomendaResponse[]>(this.apiUrl);
+  getEncomendas(page: number = 0, size: number = 20): Observable<PagedResult<EncomendaResponse>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<PagedResult<EncomendaResponse>>(this.apiUrl, { params });
   }
 
   // --- MÉTODO ADICIONADO ---

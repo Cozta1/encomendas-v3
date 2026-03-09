@@ -126,7 +126,7 @@
 
       <mat-card-content class="pt-3">
 
-        <form [formGroup]="itemForm" style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 24px; padding: 16px; background-color: #f9f9f9; border-radius: 8px;">
+        <form [formGroup]="itemForm" class="item-form-area">
 
           <mat-form-field appearance="outline" style="flex: 2; min-width: 250px;">
             <mat-label>Buscar Produto</mat-label>
@@ -172,7 +172,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <strong>{{ i + 1 }}. {{ item.get('produto')?.value?.nome || item.get('produto.nome')?.value }}</strong>
-                <div style="font-size: 0.9em; color: #666;">
+                <div class="item-secondary-text">
                   Fornecedor: {{ item.get('fornecedor')?.value?.nome || item.get('fornecedor.nome')?.value }}
                 </div>
               </div>
@@ -189,7 +189,7 @@
 
           </div>
 
-          <div *ngIf="itensFormArray.length === 0" style="text-align: center; color: #999; padding: 20px;">
+          <div *ngIf="itensFormArray.length === 0" class="item-empty-state">
             Nenhum item adicionado.
           </div>
         </div>
@@ -203,7 +203,7 @@
       </mat-card-header>
       <mat-card-content class="pt-3">
 
-        <div style="display: flex; gap: 24px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #eee; flex-wrap: wrap; align-items: center;">
+        <div class="options-row">
 
           <div style="display: flex; align-items: center; gap: 4px;">
             <mat-checkbox formControlName="notaFutura">Nota Futura</mat-checkbox>

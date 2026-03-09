@@ -6,12 +6,14 @@ import com.benfica.encomendas_api.security.TeamContextHolder;
 import com.benfica.encomendas_api.service.EncomendaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,12 +24,15 @@ public class EncomendaController {
     private EncomendaService encomendaService;
 
     @GetMapping
-    public ResponseEntity<List<EncomendaResponseDTO>> listarEncomendasPorEquipe() {
+    public ResponseEntity<Page<EncomendaResponseDTO>> listarEncomendasPorEquipe(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         UUID equipeId = TeamContextHolder.getTeamId();
         if (equipeId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessão inválida. Faça login novamente.");
         }
-        List<EncomendaResponseDTO> dtos = encomendaService.listarEncomendasPorEquipe(equipeId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<EncomendaResponseDTO> dtos = encomendaService.listarEncomendasPorEquipe(equipeId, pageable);
         return ResponseEntity.ok(dtos);
     }
 

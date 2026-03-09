@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router'; // Importar Router
+import { Router } from '@angular/router';
 import { BehaviorSubject, Subscription, skip } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
@@ -14,6 +14,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { EncomendaFormDialog } from '../../components/dialogs/encomenda-form-dialog/encomenda-form-dialog';
 
@@ -29,7 +30,8 @@ import { EncomendaFormDialog } from '../../components/dialogs/encomenda-form-dia
     MatDialogModule,
     MatSnackBarModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatPaginatorModule
   ],
   templateUrl: './encomendas.html',
   styleUrl: './encomendas.scss'
@@ -38,6 +40,10 @@ export class Encomendas implements OnInit, OnDestroy {
 
   private encomendasSubject = new BehaviorSubject<EncomendaResponse[]>([]);
   public encomendas$ = this.encomendasSubject.asObservable();
+
+  public totalElements = 0;
+  public pageSize = 20;
+  public pageIndex = 0;
 
   public displayedColumns: string[] = ['data', 'cliente', 'endereco', 'status', 'itens', 'total', 'acoes'];
 
@@ -55,6 +61,7 @@ export class Encomendas implements OnInit, OnDestroy {
     this.carregarEncomendas();
 
     this.teamSubscription = this.teamService.equipeAtiva$.pipe(skip(1)).subscribe(() => {
+      this.pageIndex = 0;
       this.carregarEncomendas();
     });
   }
@@ -64,9 +71,16 @@ export class Encomendas implements OnInit, OnDestroy {
   }
 
   carregarEncomendas(): void {
-    this.encomendaService.getEncomendas().subscribe(data => {
-      this.encomendasSubject.next(data);
+    this.encomendaService.getEncomendas(this.pageIndex, this.pageSize).subscribe(data => {
+      this.encomendasSubject.next(data.content);
+      this.totalElements = data.totalElements;
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.carregarEncomendas();
   }
 
   novaEncomenda(): void {
@@ -81,6 +95,7 @@ export class Encomendas implements OnInit, OnDestroy {
         this.encomendaService.criarEncomenda(resultado).subscribe({
           next: (novaEncomenda) => {
             this.snackBar.open('Encomenda criada com sucesso!', 'OK', { duration: 3000 });
+            this.pageIndex = 0;
             this.carregarEncomendas();
             // Opcional: Redirecionar para detalhes da nova encomenda
             this.verDetalhes(novaEncomenda);
