@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EscalaTrabalho, EscalaReplicacao } from '../models/escala.interfaces';
+import { EscalaTrabalho, EscalaReplicacao, EscalaReplicacaoMassa } from '../models/escala.interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -31,5 +31,10 @@ export class EscalaService {
   replicarEscala(replicacao: EscalaReplicacao): Observable<void> {
     // POST /api/escalas/replicar
     return this.http.post<void>(`${this.apiUrl}/replicar`, replicacao);
+  }
+
+  replicarEscalaMassa(replicacao: EscalaReplicacaoMassa): Observable<void> {
+    // POST /api/escalas/replicar-massa
+    return this.http.post<void>(`${this.apiUrl}/replicar-massa`, replicacao);
   }
 }

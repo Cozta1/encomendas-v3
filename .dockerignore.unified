@@ -1,0 +1,44 @@
+# .dockerignore para Dockerfile.unified
+# Build context: raiz do projeto
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Node modules (rebuild no container)
+encomendas-web/node_modules/
+encomendas-web/dist/
+encomendas-web/.angular/
+
+# Maven build (rebuild no container)
+encomendas-api/target/
+encomendas-api/.mvn/wrapper/maven-wrapper.jar
+
+# Docker
+.env
+.env.*
+Dockerfile*
+docker-compose*
+!Dockerfile.unified
+
+# Docs e scripts
+*.md
+*.docx
+*.py
+implementation_plan.md
+RELATORIO_DOCKER.md
+
+# Uploads
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

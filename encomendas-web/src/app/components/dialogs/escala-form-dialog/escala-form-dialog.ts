@@ -12,7 +12,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 
 // Imports de Data
 import { MatNativeDateModule, MAT_DATE_LOCALE, DateAdapter } from '@angular/material/core';
-import { CustomDateAdapter } from '../../../core/adapters/custom-date-adapter'; //
+import { CustomDateAdapter } from '../../../core/adapters/custom-date-adapter';
 
 // Diretiva de Máscara
 import { DateMaskDirective } from '../../../core/directives/date-mask.directive';
@@ -29,7 +29,6 @@ import { DateMaskDirective } from '../../../core/directives/date-mask.directive'
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
-    // Esta linha conecta seu CustomDateAdapter ao calendário deste componente
     { provide: DateAdapter, useClass: CustomDateAdapter }
   ],
   templateUrl: './escala-form-dialog.html',
@@ -62,7 +61,6 @@ export class EscalaFormDialog {
       observacao: [data.escala?.observacao || ''],
 
       replicar: [false],
-      // O valor inicial deve ser um Date válido para o Adapter funcionar bem
       dataFimReplicacao: [this.getDataFimMes(data.data)],
       diasSelecionados: this.fb.array([])
     });
@@ -108,9 +106,6 @@ export class EscalaFormDialog {
       };
 
       if (formValue.replicar) {
-        // Com o CustomDateAdapter, o formControl 'dataFimReplicacao'
-        // já deve ter um objeto Date válido se o usuário digitou corretamente.
-        // Se ainda for string, o parseData garante.
         const dataFim = this.parseData(formValue.dataFimReplicacao);
 
         result.replicacao = {
@@ -132,7 +127,6 @@ export class EscalaFormDialog {
     if (!valor) return new Date();
     if (valor instanceof Date) return valor;
 
-    // Tratamento extra caso o Adapter falhe em algum edge case
     if (typeof valor === 'string' && valor.includes('/')) {
       const partes = valor.split('/');
       if (partes.length === 3) {

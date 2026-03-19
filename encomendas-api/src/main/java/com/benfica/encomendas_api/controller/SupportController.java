@@ -2,6 +2,7 @@ package com.benfica.encomendas_api.controller;
 
 import com.benfica.encomendas_api.dto.SupportTicketRequest;
 import com.benfica.encomendas_api.service.EmailService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +18,11 @@ public class SupportController {
     @Autowired
     private EmailService emailService;
 
-    @Value("${app.support.dev-email:sistemafarmbenfica@gmail.com}")
+    @Value("${app.support.dev-email:}")
     private String devEmail;
 
     @PostMapping("/ticket")
-    public ResponseEntity<Void> enviarTicket(@RequestBody SupportTicketRequest req) {
+    public ResponseEntity<Void> enviarTicket(@Valid @RequestBody SupportTicketRequest req) {
         String timestamp = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
 

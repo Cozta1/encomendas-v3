@@ -4,12 +4,55 @@
     <p>Defina os horários de trabalho, folgas e férias da sua equipe.</p>
   </div>
 
+  <!-- Painel de seleção de funcionários -->
+  <mat-card class="selecao-card">
+    <mat-card-content>
+      <div class="selecao-header">
+        <mat-icon class="filtro-icon">groups</mat-icon>
+        <span class="selecao-titulo">Funcionários</span>
+        <span class="selecao-count" *ngIf="membrosSelecionadosIds.size > 0">
+          {{ membrosSelecionadosIds.size }} de {{ membros.length }} selecionados
+        </span>
+        <div class="selecao-acoes">
+          <button mat-stroked-button (click)="selecionarTodos()" *ngIf="membrosSelecionadosIds.size < membros.length">
+            <mat-icon>select_all</mat-icon> Todos
+          </button>
+          <button mat-stroked-button (click)="limparSelecao()" *ngIf="membrosSelecionadosIds.size > 0">
+            <mat-icon>deselect</mat-icon> Limpar
+          </button>
+        </div>
+      </div>
+
+      <div class="membros-grid">
+        <div *ngFor="let membro of membros"
+             class="membro-chip"
+             [class.selecionado]="membrosSelecionadosIds.has(membro.id)"
+             (click)="toggleMembro(membro.id)">
+          <mat-icon class="chip-check">
+            {{ membrosSelecionadosIds.has(membro.id) ? 'check_box' : 'check_box_outline_blank' }}
+          </mat-icon>
+          <span class="chip-nome">{{ membro.nomeCompleto.split(' ')[0] }} {{ membro.nomeCompleto.split(' ').length > 1 ? membro.nomeCompleto.split(' ')[membro.nomeCompleto.split(' ').length - 1] : '' }}</span>
+          <span *ngIf="membro.role === 'ROLE_ADMIN'" class="tag-admin">Admin</span>
+        </div>
+      </div>
+
+      <!-- Nomes completos dos selecionados -->
+      <div class="selecionados-resumo" *ngIf="membrosSelecionadosIds.size > 0">
+        <mat-icon>info_outline</mat-icon>
+        <span>Edições no calendário serão aplicadas a:
+          <strong>{{ getNomesSelecionados() }}</strong>
+        </span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Visualização individual -->
   <mat-card class="filtro-card">
     <mat-card-content>
       <div class="filtro-row">
         <mat-icon class="filtro-icon">person_search</mat-icon>
         <mat-form-field appearance="outline" class="select-func">
-          <mat-label>Selecione o Colaborador</mat-label>
+          <mat-label>Visualizar calendário de</mat-label>
           <mat-select [(ngModel)]="usuarioSelecionadoId" (selectionChange)="onUsuarioChange()">
             <mat-option *ngFor="let membro of membros" [value]="membro.id">
               {{ membro.nomeCompleto }}

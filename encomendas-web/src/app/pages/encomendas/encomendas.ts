@@ -101,7 +101,7 @@ export class Encomendas implements OnInit, OnDestroy {
             this.verDetalhes(novaEncomenda);
           },
           error: (err) => {
-            console.error('Erro ao criar encomenda', err);
+    
             this.snackBar.open('Erro ao criar encomenda.', 'Fechar', { duration: 5000 });
           }
         });
@@ -116,7 +116,7 @@ export class Encomendas implements OnInit, OnDestroy {
         this.atualizarEncomendaNaLista(encomendaAtualizada);
       },
       error: (err) => {
-        console.error('Erro ao avançar etapa', err);
+
         this.snackBar.open(err.error?.message || 'Erro ao avançar etapa.', 'Fechar', { duration: 5000 });
       }
     });
@@ -129,7 +129,7 @@ export class Encomendas implements OnInit, OnDestroy {
         this.atualizarEncomendaNaLista(encomendaAtualizada);
       },
       error: (err) => {
-        console.error('Erro ao retornar etapa', err);
+
         this.snackBar.open(err.error?.message || 'Erro ao retornar etapa.', 'Fechar', { duration: 5000 });
       }
     });
@@ -180,7 +180,7 @@ export class Encomendas implements OnInit, OnDestroy {
           this.carregarEncomendas();
         },
         error: (err) => {
-          console.error('Erro ao remover encomenda', err);
+
           this.snackBar.open('Erro ao remover encomenda.', 'Fechar', { duration: 5000 });
         }
       });

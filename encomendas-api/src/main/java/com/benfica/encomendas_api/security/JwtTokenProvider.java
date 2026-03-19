@@ -20,9 +20,7 @@ public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    // Valor padrão super seguro e longo apenas para evitar erros de inicialização se a property faltar.
-    // EM PRODUÇÃO, DEFINA ISSO NO application.properties OU VARIÁVEIS DE AMBIENTE!
-    @Value("${app.jwtSecret:9a4f2c8d3b7a1e6f4c5d8e9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c}")
+    @Value("${app.jwtSecret}")
     private String jwtSecret;
 
     @Value("${app.jwtExpirationInMs:86400000}") // Padrão de 1 dia (24 * 60 * 60 * 1000)

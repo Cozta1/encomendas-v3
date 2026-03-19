@@ -2,6 +2,9 @@ package com.benfica.encomendas_api.config;
 
 import com.benfica.encomendas_api.model.*;
 import com.benfica.encomendas_api.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,99 +12,202 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class DataSeeder {
 
+    private static final Logger logger = LoggerFactory.getLogger(DataSeeder.class);
+
+    @Value("${app.seeder.admin-password:Admin@Temp123}")
+    private String adminPassword;
+
+    @Value("${app.seeder.user-password:User@Temp123}")
+    private String userPassword;
+
     @Bean
     CommandLineRunner initDatabase(
             UsuarioRepository usuarioRepository,
             EquipeRepository equipeRepository,
-            EscalaTrabalhoRepository escalaRepository,
-            ChecklistBoardRepository boardRepository,
-            ChecklistCardRepository cardRepository,
-            ChecklistItemRepository itemRepository,
             PasswordEncoder passwordEncoder,
-            PlatformTransactionManager transactionManager) { // <--- 1. Injeção do Gerenciador de Transações
+            PlatformTransactionManager transactionManager) {
 
         return args -> {
-            System.out.println(">>> INICIANDO DATA SEEDER (CORRIGIDO) <<<");
+            logger.info("INICIANDO DATA SEEDER");
 
-            // 1. GARANTIR USUÁRIOS
-            Usuario admin = garantirUsuario(usuarioRepository, passwordEncoder, "Carlos Admin", "admin@benfica.com", "123456", "ROLE_ADMIN", "Gerente Geral");
-            Usuario joao = garantirUsuario(usuarioRepository, passwordEncoder, "João Manhã", "joao@benfica.com", "123456", "ROLE_USER", "Farmacêutico");
-            Usuario maria = garantirUsuario(usuarioRepository, passwordEncoder, "Maria Tarde", "maria@benfica.com", "123456", "ROLE_USER", "Atendente");
-            Usuario pedro = garantirUsuario(usuarioRepository, passwordEncoder, "Pedro Noite", "pedro@benfica.com", "123456", "ROLE_USER", "Caixa");
+            // =============================================
+            // 1. CRIAR TODOS OS FUNCIONÁRIOS
+            // =============================================
 
-            // 2. GARANTIR EQUIPE
+            // Gleison - Gerente (ADMIN)
+            Usuario gleison = garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Gleison de Jesus Afonso de Oliveira", "gleisonafonso@gmail.com",
+                    adminPassword, "ROLE_ADMIN", null, "000.000.000-01", "00 00000-0001");
+
+            // Funcionários (ROLE_USER)
+            List<Usuario> funcionarios = new ArrayList<>();
+            funcionarios.add(gleison);
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Andresa Catriene Rodrigues Fernandes", "andresaneves90@gmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-02", "00 00000-0002"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Antonia de Souza Leite", "claidiziasousa9@gmail.com",
+                    userPassword, "ROLE_USER", "Serviços Gerais", "000.000.000-03", "00 00000-0003"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Brenda Caroline Lima Ferreira", "brecaroline78@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-04", "00 00000-0004"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Carine Fernanda de Oliveira", "carinefernanda199@gmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-05", "00 00000-0005"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Cidclei Marques de Andrade", "cidcleicidclei@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedor", "000.000.000-06", "00 00000-0006"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Daniel Cesar Gama Martins", "dgama1001avontsplay@gmail.com",
+                    userPassword, "ROLE_USER", "Motoboy", "000.000.000-07", "00 00000-0007"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Davi Rochet", "davi4rochet6@gmail.com",
+                    userPassword, "ROLE_USER", "Farmacêutico", "000.000.000-08", "00 00000-0008"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Flaviana Mercedes da Silva", "silvaflaviana27543@gmail.com",
+                    userPassword, "ROLE_USER", "Serviços Gerais", "000.000.000-09", "00 00000-0009"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Francisco Marques Neto", "franciscomarques581@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedor", "000.000.000-10", "00 00000-0010"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Gabriela Ribeiro de Paula", "gabrielaribeiro2323@gmail.com",
+                    userPassword, "ROLE_USER", "Farmacêutica", "000.000.000-11", "00 00000-0011"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Guilherme Ricardo Mendes Santana", "guimendes9177@gmail.com",
+                    userPassword, "ROLE_USER", "Motoboy", "000.000.000-12", "00 00000-0012"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "João Pedro de Freitas Bedim", "jpfbedim@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedor", "000.000.000-13", "00 00000-0013"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Joao Victor de Souza", "joao.vitorace4@gmail.com",
+                    userPassword, "ROLE_USER", "Motoboy", "000.000.000-14", "00 00000-0014"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Luciene Clara de Lima da Cunha", "luiene.lima@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-15", "00 00000-0015"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Michele Mara Campos Miranda", "michelemara030@gmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-16", "00 00000-0016"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Milena Fernandes", "milenafernandeshosken@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-17", "00 00000-0017"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Natanaely Casimiro Mattos", "natanaelymattos@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-18", "00 00000-0018"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Patricia Alessandra Leonido Peres", "patyperes98@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-19", "00 00000-0019"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Paula Silva de Almeida", "paulaalmeidaadm@gmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-20", "00 00000-0020"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Paulo Pires Silva", "paulopires2008.2@hotmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-21", "00 00000-0021"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Paulo Rogerio da Silva", "paulosilvabenfica76@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedor", "000.000.000-22", "00 00000-0022"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Pureza Raquel da Costa S. Ferreira", "raquelcostta2692@gmail.com",
+                    userPassword, "ROLE_USER", "Caixa", "000.000.000-23", "00 00000-0023"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Raul dos Santos Camboim Junior", "raulzito244@gmail.com",
+                    userPassword, "ROLE_USER", "Motoboy", "000.000.000-24", "00 00000-0024"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Robson Eduardo da Silva", "robsone289@gmail.com",
+                    userPassword, "ROLE_USER", "Motoboy", "000.000.000-25", "00 00000-0025"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Sheyla Francoise Muniz", "sheyla.muniz39@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedora", "000.000.000-26", "00 00000-0026"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "Wallace Venancio dos Anjos", "venqnciowallace470@gmail.com",
+                    userPassword, "ROLE_USER", "Vendedor", "000.000.000-27", "00 00000-0027"));
+
+            funcionarios.add(garantirUsuario(usuarioRepository, passwordEncoder,
+                    "William da Silva Araujo", "wsaraujo2013@gmail.com",
+                    userPassword, "ROLE_USER", "Farmacêutico", "000.000.000-28", "00 00000-0028"));
+
+            logger.info("{} funcionários garantidos.", funcionarios.size());
+
+            // =============================================
+            // 2. CRIAR EQUIPE COM GLEISON COMO GERENTE
+            // =============================================
             Equipe equipe = equipeRepository.findByNome("Drogaria Benfica - Matriz")
                     .orElseGet(() -> {
                         Equipe nova = new Equipe();
                         nova.setNome("Drogaria Benfica - Matriz");
                         nova.setDescricao("Loja Principal - Centro");
-                        nova.setAdministrador(admin);
+                        nova.setAdministrador(gleison);
                         return equipeRepository.save(nova);
                     });
 
-            // 3. ATUALIZAR MEMBROS (COM TRANSAÇÃO EXPLÍCITA)
-            // Usamos TransactionTemplate para garantir que a sessão esteja aberta ao acessar 'getMembros'
+            // =============================================
+            // 3. ADICIONAR TODOS COMO MEMBROS DA EQUIPE
+            // =============================================
             TransactionTemplate tm = new TransactionTemplate(transactionManager);
             tm.execute(status -> {
-                atualizarMembrosEquipe(equipeRepository, usuarioRepository, equipe, List.of(admin, joao, maria, pedro));
+                Equipe eq = equipeRepository.findById(equipe.getId()).orElse(equipe);
+                boolean alterou = false;
+
+                for (Usuario u : funcionarios) {
+                    // Atualiza o lado do Usuario (ManyToOne)
+                    if (u.getEquipe() == null || !u.getEquipe().getId().equals(eq.getId())) {
+                        u.setEquipe(eq);
+                        usuarioRepository.save(u);
+                    }
+                    // Atualiza o lado da Equipe (ManyToMany)
+                    boolean jaMembro = eq.getMembros().stream().anyMatch(m -> m.getId().equals(u.getId()));
+                    if (!jaMembro) {
+                        eq.getMembros().add(u);
+                        alterou = true;
+                    }
+                }
+
+                if (alterou) {
+                    equipeRepository.save(eq);
+                }
                 return null;
             });
 
-            System.out.println(">>> Equipe e Membros sincronizados.");
-
-            // 4. CRIAR ESCALAS
-            if (escalaRepository.count() == 0) {
-                LocalDate hoje = LocalDate.now();
-                LocalDate inicioMes = hoje.withDayOfMonth(1);
-                LocalDate fimMes = hoje.plusMonths(1).withDayOfMonth(1).minusDays(1);
-
-                criarEscalaMensal(escalaRepository, joao, inicioMes, fimMes,
-                        List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY),
-                        LocalTime.of(7, 0), LocalTime.of(16, 0));
-
-                criarEscalaMensal(escalaRepository, maria, inicioMes, fimMes,
-                        List.of(DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY),
-                        LocalTime.of(13, 0), LocalTime.of(22, 0));
-
-                criarEscalaMensal(escalaRepository, pedro, inicioMes, fimMes,
-                        List.of(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
-                        LocalTime.of(16, 0), LocalTime.of(0, 0));
-
-                System.out.println(">>> Escalas criadas.");
-            }
-
-            // 5. CRIAR CHECKLISTS
-            if (boardRepository.count() == 0) {
-                ChecklistBoard boardGeral = criarBoard(boardRepository, equipe, "Rotinas da Loja", null);
-                ChecklistCard cardLimpeza = criarCard(cardRepository, boardGeral, "Limpeza e Organização", "Tarefas de manutenção diária.", LocalTime.of(8, 0), LocalTime.of(22, 0));
-                criarItem(itemRepository, cardLimpeza, "Verificar lixeiras", 1);
-                criarItem(itemRepository, cardLimpeza, "Repor papel toalha", 2);
-
-                ChecklistBoard boardJoao = criarBoard(boardRepository, equipe, "Tarefas do João", joao);
-                criarCard(cardRepository, boardJoao, "Abertura", "Rotina matinal", LocalTime.of(7, 0), LocalTime.of(8, 0));
-
-                ChecklistBoard boardAdmin = criarBoard(boardRepository, equipe, "Gerência (Carlos)", admin);
-                criarCard(cardRepository, boardAdmin, "Relatórios", "Análise diária", LocalTime.of(9, 0), LocalTime.of(18, 0));
-
-                System.out.println(">>> Checklists criados.");
-            }
-
-            System.out.println(">>> SEEDER CONCLUÍDO COM SUCESSO! <<<");
+            logger.info("Equipe 'Drogaria Benfica - Matriz' com {} membros.", funcionarios.size());
+            logger.info("SEEDER CONCLUÍDO COM SUCESSO!");
         };
     }
 
-    // --- MÉTODOS AUXILIARES ---
-
-    private Usuario garantirUsuario(UsuarioRepository repo, PasswordEncoder encoder, String nome, String email, String senha, String role, String cargo) {
+    private Usuario garantirUsuario(UsuarioRepository repo, PasswordEncoder encoder,
+                                     String nome, String email, String senha,
+                                     String role, String cargo,
+                                     String cpf, String telefone) {
         return repo.findByEmail(email).orElseGet(() -> {
             Usuario u = new Usuario();
             u.setNomeCompleto(nome);
@@ -109,83 +215,10 @@ public class DataSeeder {
             u.setPassword(encoder.encode(senha));
             u.setRole(role);
             u.setCargo(cargo);
-            u.setIdentificacao(email.split("@")[0].toUpperCase());
+            u.setIdentificacao(cpf);
+            u.setTelefone(telefone);
+            u.setAtivo(true);
             return repo.save(u);
         });
-    }
-
-    // Removemos @Transactional daqui pois não surte efeito em método privado
-    private void atualizarMembrosEquipe(EquipeRepository equipeRepo, UsuarioRepository userRepo, Equipe equipe, List<Usuario> membros) {
-        // 1. Atualiza o lado do Usuario (ManyToOne)
-        for (Usuario u : membros) {
-            if (u.getEquipe() == null || !u.getEquipe().getId().equals(equipe.getId())) {
-                u.setEquipe(equipe);
-                userRepo.save(u);
-            }
-        }
-
-        // 2. Atualiza o lado da Equipe (Lazy collection)
-        // Como estamos dentro do tm.execute(), a sessão está aberta
-        Equipe equipeAtualizada = equipeRepo.findById(equipe.getId()).orElse(equipe);
-
-        boolean alterou = false;
-        for (Usuario u : membros) {
-            // Aqui ocorria o erro: acesso à lista Lazy sem transação
-            boolean jaEstaNaLista = equipeAtualizada.getMembros().stream().anyMatch(m -> m.getId().equals(u.getId()));
-            if (!jaEstaNaLista) {
-                equipeAtualizada.getMembros().add(u);
-                alterou = true;
-            }
-        }
-
-        if (alterou) {
-            equipeRepo.save(equipeAtualizada);
-        }
-    }
-
-    private void criarEscalaMensal(EscalaTrabalhoRepository repo, Usuario usuario, LocalDate inicio, LocalDate fim, List<DayOfWeek> diasSemana, LocalTime entrada, LocalTime saida) {
-        // Lógica de escala mantida
-        LocalDate data = inicio;
-        List<EscalaTrabalho> escalas = new ArrayList<>();
-        while (!data.isAfter(fim)) {
-            if (diasSemana.contains(data.getDayOfWeek())) {
-                EscalaTrabalho e = new EscalaTrabalho();
-                e.setUsuario(usuario);
-                e.setData(data);
-                e.setTipo(TipoEscala.TRABALHO);
-                e.setHorarioInicio(entrada);
-                e.setHorarioFim(saida);
-                e.setObservacao("Turno Regular");
-                escalas.add(e);
-            }
-            data = data.plusDays(1);
-        }
-        repo.saveAll(escalas);
-    }
-
-    private ChecklistBoard criarBoard(ChecklistBoardRepository repo, Equipe equipe, String nome, Usuario usuarioEspecifico) {
-        ChecklistBoard board = new ChecklistBoard();
-        board.setNome(nome);
-        board.setEquipe(equipe);
-        board.setUsuarioEspecifico(usuarioEspecifico);
-        return repo.save(board);
-    }
-
-    private ChecklistCard criarCard(ChecklistCardRepository repo, ChecklistBoard board, String titulo, String descricao, LocalTime inicio, LocalTime fim) {
-        ChecklistCard card = new ChecklistCard();
-        card.setBoard(board);
-        card.setTitulo(titulo);
-        card.setDescricao(descricao);
-        card.setHorarioAbertura(inicio);
-        card.setHorarioFechamento(fim);
-        return repo.save(card);
-    }
-
-    private void criarItem(ChecklistItemRepository repo, ChecklistCard card, String descricao, int ordem) {
-        ChecklistItem item = new ChecklistItem();
-        item.setCard(card);
-        item.setDescricao(descricao);
-        item.setOrdem(ordem);
-        repo.save(item);
     }
 }

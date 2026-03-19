@@ -1,6 +1,7 @@
 package com.benfica.encomendas_api.controller;
 
 import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO;
+import com.benfica.encomendas_api.dto.EscalaReplicacaoMassaDTO;
 import com.benfica.encomendas_api.dto.EscalaTrabalhoDTO;
 import com.benfica.encomendas_api.service.EscalaTrabalhoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,12 @@ public class EscalaTrabalhoController {
     @PostMapping("/replicar")
     public ResponseEntity<Void> replicarEscala(@RequestBody EscalaReplicacaoDTO dto) {
         escalaService.replicarEscala(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/replicar-massa")
+    public ResponseEntity<Void> replicarEscalaMassa(@RequestBody EscalaReplicacaoMassaDTO dto) {
+        escalaService.replicarEscalaMassa(dto);
         return ResponseEntity.ok().build();
     }
 }

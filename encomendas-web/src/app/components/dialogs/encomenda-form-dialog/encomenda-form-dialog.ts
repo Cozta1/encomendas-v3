@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -9,8 +9,8 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTable, MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { forkJoin, Observable } from 'rxjs';
-import { startWith, map, filter, debounceTime, switchMap } from 'rxjs/operators';
+import { forkJoin, Observable, Subject } from 'rxjs';
+import { startWith, map, filter, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { MatDividerModule } from '@angular/material/divider';
 
 import { ClienteService } from '../../../core/services/cliente.service';
@@ -37,8 +37,9 @@ import { CepMaskDirective } from '../../../core/directives/cep-mask.directive'; 
   templateUrl: './encomenda-form-dialog.html',
   styleUrl: './encomenda-form-dialog.scss'
 })
-export class EncomendaFormDialog implements OnInit {
+export class EncomendaFormDialog implements OnInit, OnDestroy {
 
+  private destroy$ = new Subject<void>();
   @ViewChild('itensTable') itensTable!: MatTable<FormGroup>;
 
   encomendaForm: FormGroup;
@@ -130,6 +131,7 @@ export class EncomendaFormDialog implements OnInit {
 
   private setupCepListener(): void {
     this.encomendaForm.get('enderecoCep')?.valueChanges.pipe(
+      takeUntil(this.destroy$),
       debounceTime(300),
       filter(value => value && value.replace(/\D/g, '').length === 8),
       switchMap(cep => this.cepService.buscarCep(cep))
@@ -172,6 +174,7 @@ export class EncomendaFormDialog implements OnInit {
 
   private observeProdutoChanges(): void {
     this.itemForm.get('produto')?.valueChanges.pipe(
+      takeUntil(this.destroy$),
       filter(value => typeof value === 'object' && value !== null)
     ).subscribe((produto: ProdutoResponse) => {
       this.itemForm.get('precoCotado')?.setValue(produto.precoBase);
@@ -290,5 +293,10 @@ export class EncomendaFormDialog implements OnInit {
 
   onCancel(): void {
     this.dialogRef.close();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

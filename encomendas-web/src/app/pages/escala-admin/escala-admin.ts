@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,7 +13,9 @@ import { TeamService } from '../../core/team/team.service';
 import { EscalaService } from '../../core/services/escala.service';
 import { EscalaFormDialog } from '../../components/dialogs/escala-form-dialog/escala-form-dialog';
 import { UsuarioResponse } from '../../core/models/usuario.interfaces';
-import { EscalaReplicacao, EscalaTrabalho } from '../../core/models/escala.interfaces';
+import { EscalaReplicacao, EscalaReplicacaoMassa, EscalaTrabalho } from '../../core/models/escala.interfaces';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 interface DiaAdmin {
   data: Date;
@@ -34,10 +36,14 @@ interface DiaAdmin {
   templateUrl: './escala-admin.html',
   styleUrls: ['./escala-admin.scss']
 })
-export class EscalaAdminComponent implements OnInit {
+export class EscalaAdminComponent implements OnInit, OnDestroy {
 
+  private destroy$ = new Subject<void>();
   membros: UsuarioResponse[] = [];
   usuarioSelecionadoId: number | null = null;
+
+  // Seleção múltipla para operações em massa
+  membrosSelecionadosIds = new Set<number>();
 
   dataAtual: Date = new Date();
   dias: DiaAdmin[] = [];
@@ -60,20 +66,49 @@ export class EscalaAdminComponent implements OnInit {
   carregarMembros() {
     const equipeId = this.teamService.getEquipeAtivaId();
     if (equipeId) {
-      // Busca todos os membros (incluindo o admin) para popular o select
-      this.teamService.getMembros(equipeId).subscribe({
+      this.teamService.getMembros(equipeId).pipe(takeUntil(this.destroy$)).subscribe({
         next: (data) => this.membros = data,
-        error: (err) => console.error('Erro ao carregar membros', err)
+        error: () => this.snackBar.open('Erro ao carregar membros.', 'Fechar', { duration: 3000 })
       });
     }
   }
+
+  // --- Seleção de funcionários ---
+
+  toggleMembro(id: number) {
+    if (this.membrosSelecionadosIds.has(id)) {
+      this.membrosSelecionadosIds.delete(id);
+    } else {
+      this.membrosSelecionadosIds.add(id);
+    }
+  }
+
+  selecionarTodos() {
+    this.membros.forEach(m => this.membrosSelecionadosIds.add(m.id));
+  }
+
+  limparSelecao() {
+    this.membrosSelecionadosIds.clear();
+  }
+
+  getNomesSelecionados(): string {
+    const nomes = this.membros
+      .filter(m => this.membrosSelecionadosIds.has(m.id))
+      .map(m => m.nomeCompleto.split(' ')[0]);
+
+    if (nomes.length <= 5) {
+      return nomes.join(', ');
+    }
+    return nomes.slice(0, 5).join(', ') + ` e mais ${nomes.length - 5}`;
+  }
+
+  // --- Navegação ---
 
   onUsuarioChange() {
     this.carregarEscalas();
   }
 
   mesAnterior() {
-    // Subtrai mês mantendo dia 1 para evitar problemas de virada de mês (ex: 31 Jan -> Fev)
     this.dataAtual = new Date(this.dataAtual.getFullYear(), this.dataAtual.getMonth() - 1, 1);
     this.gerarCalendario();
     this.carregarEscalas();
@@ -99,7 +134,7 @@ export class EscalaAdminComponent implements OnInit {
     const inicioStr = this.formatDate(inicio);
     const fimStr = this.formatDate(fim);
 
-    this.escalaService.getEscalas(this.usuarioSelecionadoId, inicioStr, fimStr).subscribe({
+    this.escalaService.getEscalas(this.usuarioSelecionadoId, inicioStr, fimStr).pipe(takeUntil(this.destroy$)).subscribe({
       next: (dados) => {
         this.escalas = dados;
         this.atualizarDiasComEscala();
@@ -115,21 +150,17 @@ export class EscalaAdminComponent implements OnInit {
     const mes = this.dataAtual.getMonth();
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
-    const diaSemanaInicio = primeiroDia.getDay(); // 0=Dom ... 6=Sab
+    const diaSemanaInicio = primeiroDia.getDay();
 
-    // Dias do mês anterior (para preencher o calendário visualmente)
     for (let i = diaSemanaInicio; i > 0; i--) {
       const d = new Date(ano, mes, 1 - i);
       this.dias.push(this.criarDia(d, true));
     }
 
-    // Dias do mês atual
     for (let i = 1; i <= ultimoDia.getDate(); i++) {
       const d = new Date(ano, mes, i);
       this.dias.push(this.criarDia(d, false));
     }
-
-    // Opcional: Dias do próximo mês para completar a grade de 35 ou 42 dias
   }
 
   criarDia(data: Date, isOutroMes: boolean): DiaAdmin {
@@ -152,11 +183,13 @@ export class EscalaAdminComponent implements OnInit {
     });
   }
 
-  // --- AÇÕES DO DIALOG (Edição/Criação) ---
+  // --- AÇÕES DO DIALOG ---
 
   editarDia(dia: DiaAdmin) {
-    if (!this.usuarioSelecionadoId) {
-      this.snackBar.open('Selecione um funcionário primeiro.', 'Fechar', { duration: 3000 });
+    const temSelecao = this.membrosSelecionadosIds.size > 0;
+
+    if (!temSelecao && !this.usuarioSelecionadoId) {
+      this.snackBar.open('Selecione funcionários ou escolha um para visualizar.', 'Fechar', { duration: 3000 });
       return;
     }
 
@@ -167,11 +200,13 @@ export class EscalaAdminComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        if (result.replicacao) {
-          // Se o usuário marcou "Replicar"
+        if (temSelecao && result.replicacao) {
+          this.salvarReplicacaoMassa(result.replicacao);
+        } else if (temSelecao) {
+          this.salvarEscalaMassaSimples(result.single);
+        } else if (result.replicacao) {
           this.salvarReplicacao(result.replicacao);
         } else {
-          // Edição simples de um dia
           this.salvarEscalaSimples(result.single);
         }
       }
@@ -181,10 +216,8 @@ export class EscalaAdminComponent implements OnInit {
   salvarEscalaSimples(dados: any) {
     const payload: EscalaTrabalho = {
       usuarioId: this.usuarioSelecionadoId!,
-      // Garante formatação correta YYYY-MM-DD
       data: this.formatDate(new Date(dados.data)),
       tipo: dados.tipo,
-      // Formata hora HH:mm:ss ou undefined
       horarioInicio: dados.horarioInicio ? this.formatTime(dados.horarioInicio) : undefined,
       horarioFim: dados.horarioFim ? this.formatTime(dados.horarioFim) : undefined,
       observacao: dados.observacao
@@ -207,7 +240,6 @@ export class EscalaAdminComponent implements OnInit {
 
     const payload: EscalaReplicacao = {
       usuarioId: this.usuarioSelecionadoId!,
-      // Converte Date objects do Datepicker para string YYYY-MM-DD
       dataInicio: this.formatDate(new Date(dadosRep.dataInicio)),
       dataFim: this.formatDate(new Date(dadosRep.dataFim)),
       diasSemana: dadosRep.diasSemana,
@@ -226,13 +258,76 @@ export class EscalaAdminComponent implements OnInit {
       },
       error: (err) => {
         console.error('Erro ao replicar:', err);
-        this.snackBar.open('Erro ao replicar escala. Verifique os dados.', 'Fechar');
+        this.snackBar.open('Erro ao replicar escala.', 'Fechar');
         this.loading = false;
       }
     });
   }
 
-  // --- HELPERS DE FORMATAÇÃO ---
+  salvarEscalaMassaSimples(dados: any) {
+    const ids = Array.from(this.membrosSelecionadosIds);
+    const dataStr = this.formatDate(new Date(dados.data));
+
+    const payload: EscalaReplicacaoMassa = {
+      usuarioIds: ids,
+      dataInicio: dataStr,
+      dataFim: dataStr,
+      diasSemana: [1, 2, 3, 4, 5, 6, 7],
+      tipo: dados.tipo,
+      horarioInicio: dados.horarioInicio ? this.formatTime(dados.horarioInicio) : undefined,
+      horarioFim: dados.horarioFim ? this.formatTime(dados.horarioFim) : undefined,
+      observacao: dados.observacao
+    };
+
+    this.loading = true;
+    this.escalaService.replicarEscalaMassa(payload).subscribe({
+      next: () => {
+        this.snackBar.open(`Escala aplicada a ${ids.length} funcionários!`, 'OK', { duration: 3000 });
+        this.carregarEscalas();
+        this.loading = false;
+      },
+      error: () => {
+        this.snackBar.open('Erro ao aplicar escala em massa.', 'Fechar');
+        this.loading = false;
+      }
+    });
+  }
+
+  salvarReplicacaoMassa(dadosRep: any) {
+    if (!dadosRep.dataInicio || !dadosRep.dataFim) {
+      this.snackBar.open('Datas inválidas para replicação.', 'Fechar');
+      return;
+    }
+
+    const ids = Array.from(this.membrosSelecionadosIds);
+
+    const payload: EscalaReplicacaoMassa = {
+      usuarioIds: ids,
+      dataInicio: this.formatDate(new Date(dadosRep.dataInicio)),
+      dataFim: this.formatDate(new Date(dadosRep.dataFim)),
+      diasSemana: dadosRep.diasSemana,
+      tipo: dadosRep.tipo,
+      horarioInicio: dadosRep.horarioInicio ? this.formatTime(dadosRep.horarioInicio) : undefined,
+      horarioFim: dadosRep.horarioFim ? this.formatTime(dadosRep.horarioFim) : undefined,
+      observacao: dadosRep.observacao
+    };
+
+    this.loading = true;
+    this.escalaService.replicarEscalaMassa(payload).subscribe({
+      next: () => {
+        this.snackBar.open(`Escala replicada para ${ids.length} funcionários!`, 'OK', { duration: 3000 });
+        this.carregarEscalas();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Erro ao replicar em massa:', err);
+        this.snackBar.open('Erro ao replicar escala em massa.', 'Fechar');
+        this.loading = false;
+      }
+    });
+  }
+
+  // --- HELPERS ---
 
   private formatDate(date: Date): string {
     const y = date.getFullYear();
@@ -242,7 +337,6 @@ export class EscalaAdminComponent implements OnInit {
   }
 
   private formatTime(time: string): string {
-    // O Backend espera HH:mm:ss. Se o input time vier como HH:mm, adiciona :00
     if (time && time.length === 5) {
       return time + ':00';
     }
@@ -257,5 +351,10 @@ export class EscalaAdminComponent implements OnInit {
       case 'ATESTADO': return 'dia-atestado';
       default: return '';
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

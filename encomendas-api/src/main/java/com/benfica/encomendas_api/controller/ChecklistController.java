@@ -52,9 +52,24 @@ public class ChecklistController {
     // --- ESTRUTURA (Admin) ---
 
     @PostMapping("/boards")
-    public ResponseEntity<ChecklistBoardDTO> criarBoard(@RequestBody Map<String, Object> payload) {
-        String nome = (String) payload.get("nome");
-        UUID equipeId = UUID.fromString((String) payload.get("equipeId"));
+    public ResponseEntity<?> criarBoard(@RequestBody Map<String, Object> payload) {
+        Object nomeObj = payload.get("nome");
+        Object equipeIdObj = payload.get("equipeId");
+        if (nomeObj == null || equipeIdObj == null) {
+            return ResponseEntity.badRequest().body("Campos 'nome' e 'equipeId' são obrigatórios.");
+        }
+
+        String nome = nomeObj.toString().trim();
+        if (nome.isEmpty()) {
+            return ResponseEntity.badRequest().body("Nome do board não pode ser vazio.");
+        }
+
+        UUID equipeId;
+        try {
+            equipeId = UUID.fromString(equipeIdObj.toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("equipeId inválido.");
+        }
 
         Long usuarioId = null;
         if (payload.containsKey("usuarioId") && payload.get("usuarioId") != null) {
@@ -66,17 +81,31 @@ public class ChecklistController {
     }
 
     @PostMapping("/cards")
-    public ResponseEntity<ChecklistCardDTO> adicionarCard(@RequestBody Map<String, Object> payload) {
-        UUID boardId = UUID.fromString((String) payload.get("boardId"));
-        String titulo = (String) payload.get("titulo");
-        String abre = (String) payload.get("horarioAbertura");
-        String fecha = (String) payload.get("horarioFechamento");
+    public ResponseEntity<?> adicionarCard(@RequestBody Map<String, Object> payload) {
+        Object boardIdObj = payload.get("boardId");
+        Object tituloObj = payload.get("titulo");
+        Object abreObj = payload.get("horarioAbertura");
+        Object fechaObj = payload.get("horarioFechamento");
 
-        ChecklistCardDTO card = checklistService.adicionarCard(boardId, titulo,
-                java.time.LocalTime.parse(abre),
-                java.time.LocalTime.parse(fecha));
+        if (boardIdObj == null || tituloObj == null || abreObj == null || fechaObj == null) {
+            return ResponseEntity.badRequest().body("Campos 'boardId', 'titulo', 'horarioAbertura' e 'horarioFechamento' são obrigatórios.");
+        }
 
-        return ResponseEntity.ok(card);
+        UUID boardId;
+        try {
+            boardId = UUID.fromString(boardIdObj.toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("boardId inválido.");
+        }
+
+        try {
+            ChecklistCardDTO card = checklistService.adicionarCard(boardId, tituloObj.toString(),
+                    java.time.LocalTime.parse(abreObj.toString()),
+                    java.time.LocalTime.parse(fechaObj.toString()));
+            return ResponseEntity.ok(card);
+        } catch (java.time.format.DateTimeParseException e) {
+            return ResponseEntity.badRequest().body("Formato de horário inválido. Use HH:mm.");
+        }
     }
 
     @PatchMapping("/boards/{id}")
@@ -108,21 +137,41 @@ public class ChecklistController {
     }
 
     @PostMapping("/cards/{id}/mover")
-    public ResponseEntity<Void> moverCard(
+    public ResponseEntity<?> moverCard(
             @PathVariable UUID id,
             @RequestBody Map<String, Object> payload) {
-        UUID boardId = UUID.fromString((String) payload.get("boardId"));
-        checklistService.moverCard(id, boardId);
-        return ResponseEntity.ok().build();
+        Object boardIdObj = payload.get("boardId");
+        if (boardIdObj == null) {
+            return ResponseEntity.badRequest().body("Campo 'boardId' é obrigatório.");
+        }
+        try {
+            UUID boardId = UUID.fromString(boardIdObj.toString());
+            checklistService.moverCard(id, boardId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("boardId inválido.");
+        }
     }
 
     @PostMapping("/itens")
-    public ResponseEntity<ChecklistItemDTO> adicionarItem(@RequestBody Map<String, Object> payload) {
-        UUID cardId = UUID.fromString((String) payload.get("cardId"));
-        String descricao = (String) payload.get("descricao");
-        Integer ordem = (Integer) payload.get("ordem");
+    public ResponseEntity<?> adicionarItem(@RequestBody Map<String, Object> payload) {
+        Object cardIdObj = payload.get("cardId");
+        Object descricaoObj = payload.get("descricao");
+        Object ordemObj = payload.get("ordem");
 
-        return ResponseEntity.ok(checklistService.adicionarItem(cardId, descricao, ordem));
+        if (cardIdObj == null || descricaoObj == null) {
+            return ResponseEntity.badRequest().body("Campos 'cardId' e 'descricao' são obrigatórios.");
+        }
+
+        UUID cardId;
+        try {
+            cardId = UUID.fromString(cardIdObj.toString());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("cardId inválido.");
+        }
+
+        Integer ordem = ordemObj instanceof Number ? ((Number) ordemObj).intValue() : null;
+        return ResponseEntity.ok(checklistService.adicionarItem(cardId, descricaoObj.toString(), ordem));
     }
 
     @DeleteMapping("/itens/{id}")

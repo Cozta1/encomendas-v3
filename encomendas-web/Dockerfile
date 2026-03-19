@@ -8,7 +8,7 @@ RUN npm ci
 
 # Copia código e faz o build de produção
 COPY . .
-RUN npm run build -- --configuration production
+RUN npm run build -- --configuration docker
 
 # --- ESTÁGIO 2: SERVIDOR NGINX ---
 FROM nginx:alpine

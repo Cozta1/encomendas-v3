@@ -1,9 +1,24 @@
 # Claude Code
 .claude/
 
+# Docker environment (contém senhas)
+.env
+
+# Secrets de desenvolvimento local (contém passwords de dev)
+encomendas-api/src/main/resources/application-dev.properties
+
 # Uploads (user-generated files)
 uploads/
 
 # Frontend build artifacts
 encomendas-web/dist-debug/
 encomendas-web/dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

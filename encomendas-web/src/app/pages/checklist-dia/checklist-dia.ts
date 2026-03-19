@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,8 +9,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
-import { catchError, finalize, switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { catchError, finalize, switchMap, takeUntil } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
 
 import { ChecklistService } from '../../core/services/checklist.service';
 import { TeamService } from '../../core/team/team.service';
@@ -38,7 +38,7 @@ import { EscalaTrabalho, TipoEscala } from '../../core/models/escala.interfaces'
   templateUrl: './checklist-dia.html',
   styleUrls: ['./checklist-dia.scss']
 })
-export class ChecklistDiaComponent implements OnInit {
+export class ChecklistDiaComponent implements OnInit, OnDestroy {
 
   boards: ChecklistBoard[] = [];
   loading = false;
@@ -46,6 +46,7 @@ export class ChecklistDiaComponent implements OnInit {
 
   escalaHoje: EscalaTrabalho | null = null;
   tipoEscalaEnum = TipoEscala;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private checklistService: ChecklistService,
@@ -105,8 +106,9 @@ export class ChecklistDiaComponent implements OnInit {
 
     this.escalaService.getEscalas(user.id, dataStr, dataStr)
       .pipe(
-        catchError(err => {
-          console.error('Erro ao verificar escala', err);
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackBar.open('Erro ao verificar escala', 'Fechar', { duration: 4000 });
           return of<EscalaTrabalho[]>([]);
         }),
         switchMap(escalas => {
@@ -118,8 +120,8 @@ export class ChecklistDiaComponent implements OnInit {
           }
 
           return this.checklistService.getChecklistDoDia(equipeId, dataStr, user.id).pipe(
-            catchError(err => {
-              console.error('Erro ao carregar checklists', err);
+            catchError(() => {
+              this.snackBar.open('Erro ao carregar checklists', 'Fechar', { duration: 4000 });
               return of<ChecklistBoard[]>([]);
             })
           );
@@ -229,6 +231,11 @@ export class ChecklistDiaComponent implements OnInit {
   getProgresso(card: ChecklistCard): number {
     if (!card.itens || card.itens.length === 0) return 0;
     return (this.countMarcados(card) / card.itens.length) * 100;
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private formatDate(date: Date): string {

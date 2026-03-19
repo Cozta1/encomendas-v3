@@ -1,0 +1,90 @@
+# =============================================
+# Docker Compose - Sistema de Encomendas
+# =============================================
+# Como usar:
+#   1. Instale Docker Desktop (https://www.docker.com/products/docker-desktop/)
+#   2. Copie a pasta do projeto para o servidor
+#   3. Copie .env.example para .env e preencha com suas credenciais:
+#        cp .env.example .env
+#   4. Edite o arquivo .env com suas credenciais reais
+#   5. Abra um terminal na raiz do projeto e rode:
+#        docker compose up -d --build
+#   6. Acesse http://<IP-do-servidor>:8090
+#
+# Primeiro deploy (popular banco com dados iniciais):
+#   Altere SPRING_PROFILES_ACTIVE para 'dev' no .env, suba os containers,
+#   depois volte para 'prod' e reinicie: docker compose restart backend
+# =============================================
+
+services:
+  # --- Banco de Dados PostgreSQL ---
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sistema_encomendas}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sistema_encomendas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- Backend (Spring Boot API) ---
+  backend:
+    build: ./encomendas-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-sistema_encomendas}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_REGISTRATION_KEY: ${APP_REGISTRATION_KEY}
+      APP_ADMIN_REGISTRATION_KEY: ${APP_ADMIN_REGISTRATION_KEY}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      APP_SUPPORT_DEV_EMAIL: ${APP_SUPPORT_DEV_EMAIL:-}
+      CORS_ALLOWED_ORIGIN: "*"
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # --- Frontend (Angular + Nginx reverse proxy) ---
+  frontend:
+    build: ./encomendas-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8090}:80"
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+
+volumes:
+  pgdata:
+  uploads:

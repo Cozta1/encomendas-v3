@@ -49,7 +49,7 @@
   </div>
 
   <div class="empty-state" *ngIf="!loading && boards.length === 0 && (!escalaHoje || escalaHoje.tipo === tipoEscalaEnum.TRABALHO)">
-    <img src="assets/images/relax.svg" alt="Sem Tarefas" style="width: 150px; opacity: 0.6; margin-bottom: 20px;">
+    <mat-icon style="font-size: 80px; width: 80px; height: 80px; opacity: 0.3; margin-bottom: 20px;">task_alt</mat-icon>
     <h3>Tudo limpo por aqui!</h3>
     <p>Nenhuma checklist para este dia.</p>
   </div>

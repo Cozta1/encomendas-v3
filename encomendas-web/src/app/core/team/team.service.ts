@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, take, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { UsuarioResponse } from '../models/usuario.interfaces'; // Verifique se o import está correto
 
@@ -107,6 +107,7 @@ export class TeamService {
     const equipeId = this.getEquipeAtivaId();
     if (equipeId) {
       this.fetchEquipesDoUsuario().pipe(
+        take(1),
         switchMap(equipes => of(equipes.find(e => e.id === equipeId)))
       ).subscribe(equipeEncontrada => {
         if (equipeEncontrada) {

@@ -2,33 +2,31 @@ package com.benfica.encomendas_api.controller;
 
 import com.benfica.encomendas_api.dto.*;
 import com.benfica.encomendas_api.model.Conversa;
-import com.benfica.encomendas_api.model.TipoAnexo;
 import com.benfica.encomendas_api.service.ChatService;
+import com.benfica.encomendas_api.service.FileUploadService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+
     @Autowired
     private ChatService chatService;
 
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDir;
+    @Autowired
+    private FileUploadService fileUploadService;
 
     @GetMapping("/conversas")
     public ResponseEntity<List<ConversaDTO>> getConversas(
@@ -62,33 +60,16 @@ public class ChatController {
     }
 
     @PostMapping("/mensagens/upload")
-    public ResponseEntity<MensagemAnexoDTO> uploadAnexo(@RequestParam("file") MultipartFile file) throws IOException {
-        String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        String nomeArquivo = UUID.randomUUID() + "_" + originalFilename;
-
-        Path uploadPath = Paths.get(uploadDir, "chat");
-        Files.createDirectories(uploadPath);
-
-        Path filePath = uploadPath.resolve(nomeArquivo);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        String contentType = file.getContentType() != null ? file.getContentType() : "";
-        TipoAnexo tipoAnexo;
-        if (contentType.startsWith("image/")) {
-            tipoAnexo = TipoAnexo.IMG;
-        } else if (contentType.equals("application/pdf")) {
-            tipoAnexo = TipoAnexo.PDF;
-        } else {
-            tipoAnexo = TipoAnexo.DOC;
+    public ResponseEntity<?> uploadAnexo(@RequestParam("file") MultipartFile file) {
+        try {
+            MensagemAnexoDTO resultado = fileUploadService.uploadChatFile(file);
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IOException e) {
+            logger.error("Erro ao guardar ficheiro", e);
+            return ResponseEntity.internalServerError().body("Erro ao guardar ficheiro.");
         }
-
-        String url = "/uploads/chat/" + nomeArquivo;
-
-        return ResponseEntity.ok(MensagemAnexoDTO.builder()
-                .nomeArquivo(originalFilename)
-                .tipoArquivo(tipoAnexo.name())
-                .url(url)
-                .build());
     }
 
     @PostMapping("/mensagens/{conversaId}/lida")

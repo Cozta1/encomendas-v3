@@ -99,11 +99,11 @@ public class Usuario implements UserDetails {
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return this.ativo; }
+    public boolean isAccountNonLocked() { return Boolean.TRUE.equals(this.ativo); }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return this.ativo; }
+    public boolean isEnabled() { return Boolean.TRUE.equals(this.ativo); }
 }

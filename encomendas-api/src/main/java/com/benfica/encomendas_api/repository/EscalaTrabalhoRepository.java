@@ -20,4 +20,11 @@ public interface EscalaTrabalhoRepository extends JpaRepository<EscalaTrabalho, 
     // Mas podemos buscar todos por período para otimizar
     @Query("SELECT e FROM EscalaTrabalho e WHERE e.data BETWEEN :inicio AND :fim")
     List<EscalaTrabalho> findAllByDataBetween(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    // Busca escalas de múltiplos usuários num período (para replicação em massa)
+    @Query("SELECT e FROM EscalaTrabalho e WHERE e.usuario.id IN :usuarioIds AND e.data BETWEEN :inicio AND :fim")
+    List<EscalaTrabalho> findByUsuarioIdInAndDataBetween(
+            @Param("usuarioIds") List<Long> usuarioIds,
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim);
 }

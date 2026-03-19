@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { Observable, of, switchMap } from 'rxjs';
+import { Observable, of, switchMap, catchError, EMPTY } from 'rxjs';
 import { EncomendaService } from '../../core/services/encomenda.service';
 import { EncomendaResponse } from '../../core/models/encomenda.interfaces';
 
@@ -46,7 +46,12 @@ export class EncomendaDetalhesComponent implements OnInit {
         if (id) {
           return this.encomendaService.getEncomendaById(id);
         }
-        throw new Error('ID não fornecido');
+        this.snackBar.open('ID da encomenda não fornecido.', 'Fechar', { duration: 3000 });
+        return EMPTY;
+      }),
+      catchError(() => {
+        this.snackBar.open('Erro ao carregar encomenda.', 'Fechar', { duration: 3000 });
+        return EMPTY;
       })
     );
   }

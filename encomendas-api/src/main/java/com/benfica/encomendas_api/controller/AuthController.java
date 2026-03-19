@@ -16,6 +16,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,25 +36,29 @@ public class AuthController {
     @Value("${app.registrationKey}")
     private String userRegistrationKey;
 
-    @Value("${app.adminRegistrationKey:FARMACIA_ADMIN_MASTER}")
+    @Value("${app.adminRegistrationKey}")
     private String adminRegistrationKey;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
 
-        // Recupera o usuário autenticado para devolver role e nome no login
-        Usuario user = (Usuario) authentication.getPrincipal();
+            // Recupera o usuário autenticado para devolver role e nome no login
+            Usuario user = (Usuario) authentication.getPrincipal();
 
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, user.getRole(), user.getNomeCompleto(), user.getId()));
+            return ResponseEntity.ok(new JwtAuthenticationResponse(jwt, user.getRole(), user.getNomeCompleto(), user.getId()));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha incorretos.");
+        }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDTO dto) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequestDTO dto) {
         String roleDefinida;
 
         // Lógica de definição de Role baseada na chave de registro
@@ -84,28 +92,36 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDTO dto) {
-        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email não encontrado."));
+        // Retorna sempre a mesma mensagem para não revelar se o email existe
+        usuarioRepository.findByEmail(dto.getEmail()).ifPresent(usuario -> {
+            String codigo = UUID.randomUUID().toString();
+            usuario.setTokenResetSenha(codigo);
+            usuario.setDataExpiracaoToken(LocalDateTime.now().plusMinutes(15));
+            usuarioRepository.save(usuario);
+            emailService.enviarEmail(usuario.getEmail(), "Recuperação de Senha", "Código: " + codigo);
+        });
 
-        String codigo = UUID.randomUUID().toString();
-        usuario.setTokenResetSenha(codigo);
-        usuario.setDataExpiracaoToken(LocalDateTime.now().plusMinutes(15));
-        usuarioRepository.save(usuario);
-
-        emailService.enviarEmail(usuario.getEmail(), "Recuperação de Senha", "Código: " + codigo);
-
-        return ResponseEntity.ok("Código enviado.");
+        return ResponseEntity.ok("Se o email existir, um código será enviado.");
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
-        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email não encontrado."));
+        Usuario usuario = usuarioRepository.findByEmail(dto.getEmail()).orElse(null);
 
-        if (usuario.getTokenResetSenha() == null || !usuario.getTokenResetSenha().equals(dto.getToken())) {
+        if (usuario == null || usuario.getTokenResetSenha() == null || dto.getToken() == null) {
             return ResponseEntity.badRequest().body("Código inválido.");
         }
-        if (usuario.getDataExpiracaoToken().isBefore(LocalDateTime.now())) {
+
+        // Comparação constant-time para prevenir timing attacks
+        boolean tokenValido = MessageDigest.isEqual(
+                usuario.getTokenResetSenha().getBytes(StandardCharsets.UTF_8),
+                dto.getToken().getBytes(StandardCharsets.UTF_8)
+        );
+
+        if (!tokenValido) {
+            return ResponseEntity.badRequest().body("Código inválido.");
+        }
+        if (usuario.getDataExpiracaoToken() == null || usuario.getDataExpiracaoToken().isBefore(LocalDateTime.now())) {
             return ResponseEntity.badRequest().body("Código expirado.");
         }
 

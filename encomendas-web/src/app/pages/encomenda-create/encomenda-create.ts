@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { forkJoin, Observable } from 'rxjs';
-import { startWith, map, filter } from 'rxjs/operators';
+import { forkJoin, Observable, Subject } from 'rxjs';
+import { startWith, map, filter, takeUntil } from 'rxjs/operators';
 
 // Material
 import { MatCardModule } from '@angular/material/card';
@@ -45,9 +45,10 @@ import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
   templateUrl: './encomenda-create.html',
   styleUrls: ['./encomenda-create.scss']
 })
-export class EncomendaCreate implements OnInit {
+export class EncomendaCreate implements OnInit, OnDestroy {
   form: FormGroup;
   itemForm: FormGroup;
+  private destroy$ = new Subject<void>();
 
   filteredProdutos$!: Observable<ProdutoResponse[]>;
   filteredFornecedores$!: Observable<FornecedorResponse[]>;
@@ -104,6 +105,11 @@ export class EncomendaCreate implements OnInit {
     this.setupListeners();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   carregarDadosAuxiliares() {
     forkJoin({
       produtos: this.produtoService.getProdutos(),
@@ -132,13 +138,16 @@ export class EncomendaCreate implements OnInit {
   setupListeners() {
     // Preencher preço ao selecionar produto
     this.itemForm.get('produto')?.valueChanges.pipe(
+      takeUntil(this.destroy$),
       filter(value => typeof value === 'object' && value !== null)
     ).subscribe((produto: ProdutoResponse) => {
       this.itemForm.get('precoCotado')?.setValue(produto.precoBase);
     });
 
     // Lógica do Quitado
-    this.form.get('quitado')?.valueChanges.subscribe(isQuitado => {
+    this.form.get('quitado')?.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(isQuitado => {
       const adiantamentoControl = this.form.get('valorAdiantamento');
       if (isQuitado) {
         adiantamentoControl?.setValue(this.calcularTotalItens());
@@ -292,7 +301,6 @@ export class EncomendaCreate implements OnInit {
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        console.error(err);
         this.snackBar.open('Erro ao criar encomenda.', 'Fechar', { duration: 5000 });
       }
     });

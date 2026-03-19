@@ -16,6 +16,10 @@ WORKDIR /app
 
 # Cria usuário não-root para segurança
 RUN addgroup -S spring && adduser -S spring -G spring
+
+# Cria diretório de uploads com permissão
+RUN mkdir -p /app/uploads && chown -R spring:spring /app
+
 USER spring:spring
 
 # Copia apenas o .jar gerado

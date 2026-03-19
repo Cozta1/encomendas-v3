@@ -1,6 +1,7 @@
 package com.benfica.encomendas_api.service;
 
 import com.benfica.encomendas_api.dto.EscalaReplicacaoDTO;
+import com.benfica.encomendas_api.dto.EscalaReplicacaoMassaDTO;
 import com.benfica.encomendas_api.dto.EscalaTrabalhoDTO;
 import com.benfica.encomendas_api.model.EscalaTrabalho;
 import com.benfica.encomendas_api.model.Usuario;
@@ -93,6 +94,54 @@ public class EscalaTrabalhoService {
                 paraSalvar.add(escala);
             }
             atual = atual.plusDays(1);
+        }
+
+        if (!paraSalvar.isEmpty()) {
+            escalaRepository.saveAll(paraSalvar);
+        }
+    }
+
+    // --- REPLICAÇÃO EM MASSA (múltiplos utilizadores) ---
+    @Transactional
+    public void replicarEscalaMassa(EscalaReplicacaoMassaDTO dto) {
+        List<Usuario> usuarios = usuarioRepository.findAllById(dto.getUsuarioIds());
+        if (usuarios.isEmpty()) {
+            throw new EntityNotFoundException("Nenhum usuário encontrado");
+        }
+
+        // Pré-carrega TODAS as escalas existentes de TODOS os utilizadores no período (1 query)
+        Map<String, EscalaTrabalho> existentes = escalaRepository
+                .findByUsuarioIdInAndDataBetween(dto.getUsuarioIds(), dto.getDataInicio(), dto.getDataFim())
+                .stream()
+                .collect(Collectors.toMap(
+                        e -> e.getUsuario().getId() + "_" + e.getData(),
+                        e -> e
+                ));
+
+        List<EscalaTrabalho> paraSalvar = new ArrayList<>();
+
+        for (Usuario usuario : usuarios) {
+            LocalDate atual = dto.getDataInicio();
+            while (!atual.isAfter(dto.getDataFim())) {
+                if (dto.getDiasSemana().contains(atual.getDayOfWeek().getValue())) {
+                    String chave = usuario.getId() + "_" + atual;
+                    EscalaTrabalho escala = existentes.get(chave);
+
+                    if (escala == null) {
+                        escala = new EscalaTrabalho();
+                        escala.setUsuario(usuario);
+                        escala.setData(atual);
+                    }
+
+                    escala.setTipo(dto.getTipo());
+                    escala.setHorarioInicio(dto.getHorarioInicio());
+                    escala.setHorarioFim(dto.getHorarioFim());
+                    escala.setObservacao(dto.getObservacao());
+
+                    paraSalvar.add(escala);
+                }
+                atual = atual.plusDays(1);
+            }
         }
 
         if (!paraSalvar.isEmpty()) {

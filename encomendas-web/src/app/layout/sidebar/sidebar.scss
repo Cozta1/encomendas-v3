@@ -19,6 +19,12 @@
 // Remove o padding padrão da lista para alinhar com o header
 mat-nav-list {
   padding-top: 0;
+
+  [matListItemTitle] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
 }
 
 :host-context(.dark-theme) {

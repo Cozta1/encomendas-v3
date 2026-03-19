@@ -1,0 +1,68 @@
+# =============================================
+# Docker Compose — Teste do Container Unificado
+# =============================================
+# Simula o ambiente AWS localmente:
+#   - Container unico (Nginx + Spring Boot)
+#   - PostgreSQL separado (simula RDS)
+#
+# Uso:
+#   cp .env.example .env  (preencher credenciais)
+#   docker compose -f docker-compose.aws.yml up -d --build
+#   Acessar: http://localhost:8090
+# =============================================
+
+services:
+  # --- Banco de Dados (simula RDS) ---
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sistema_encomendas}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata-aws:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sistema_encomendas}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # --- App (Container Unificado: Nginx + Spring Boot) ---
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8090}:80"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-sistema_encomendas}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_PROFILES_ACTIVE: prod
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_REGISTRATION_KEY: ${APP_REGISTRATION_KEY}
+      APP_ADMIN_REGISTRATION_KEY: ${APP_ADMIN_REGISTRATION_KEY}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      APP_SUPPORT_DEV_EMAIL: ${APP_SUPPORT_DEV_EMAIL:-}
+      CORS_ALLOWED_ORIGIN: "*"
+      JAVA_OPTS: "-Xmx384m -Xms256m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"
+    volumes:
+      - uploads-aws:/app/uploads
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  pgdata-aws:
+  uploads-aws:

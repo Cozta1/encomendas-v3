@@ -16,12 +16,22 @@ export interface EscalaTrabalho {
   observacao?: string;
 }
 
-// Nova interface
 export interface EscalaReplicacao {
   usuarioId: number;
   dataInicio: string;
   dataFim: string;
   diasSemana: number[]; // 1=Seg, 7=Dom
+  horarioInicio?: string;
+  horarioFim?: string;
+  tipo: TipoEscala;
+  observacao?: string;
+}
+
+export interface EscalaReplicacaoMassa {
+  usuarioIds: number[];
+  dataInicio: string;
+  dataFim: string;
+  diasSemana: number[];
   horarioInicio?: string;
   horarioFim?: string;
   tipo: TipoEscala;

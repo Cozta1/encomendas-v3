@@ -1,0 +1,65 @@
+# ============================================
+# Dockerfile Unificado — Sistema de Encomendas
+# Combina Angular (Nginx) + Spring Boot num unico container
+# Para uso com AWS App Runner ou qualquer plataforma de container unico
+#
+# Build:  docker build -f Dockerfile.unified -t encomendas-app .
+# Run:    docker run -p 80:80 --env-file .env encomendas-app
+# ============================================
+
+# === Stage 1: Build Angular Frontend ===
+FROM node:20-alpine AS frontend-build
+WORKDIR /app
+
+COPY encomendas-web/package*.json ./
+RUN npm ci --ignore-scripts=false
+
+COPY encomendas-web/ .
+RUN npm run build -- --configuration docker
+
+# === Stage 2: Build Spring Boot Backend ===
+FROM maven:3.9.6-eclipse-temurin-21 AS backend-build
+WORKDIR /app
+
+# Cache de dependencias (layer separado)
+COPY encomendas-api/pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Build do JAR
+COPY encomendas-api/src ./src
+RUN mvn clean package -DskipTests -B
+
+# === Stage 3: Runtime Unificado ===
+FROM eclipse-temurin:21-jre-alpine AS runtime
+
+# Instalar nginx e wget (health checks)
+RUN apk add --no-cache nginx wget \
+    && mkdir -p /run/nginx /var/log/nginx
+
+WORKDIR /app
+
+# Copiar JAR do backend
+COPY --from=backend-build /app/target/*.jar app.jar
+
+# Copiar frontend para nginx
+COPY --from=frontend-build /app/dist/encomendas-web/browser /usr/share/nginx/html
+
+# Copiar nginx config (proxy para 127.0.0.1:8080)
+COPY nginx-unified.conf /etc/nginx/http.d/default.conf
+
+# Copiar entrypoint
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Diretorio de uploads (modo local / fallback)
+RUN mkdir -p /app/uploads
+
+# JVM otimizado para instancias pequenas (0.25 vCPU / 0.5GB RAM)
+ENV JAVA_OPTS="-Xmx384m -Xms256m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget -qO- http://localhost:80/actuator/health || exit 1
+
+ENTRYPOINT ["/app/entrypoint.sh"]

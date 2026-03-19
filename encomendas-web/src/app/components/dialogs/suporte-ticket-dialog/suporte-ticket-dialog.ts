@@ -44,6 +44,10 @@ export class SuporteTicketDialog implements OnInit {
     { valor: 'Outro',                    icone: 'more_horiz'    }
   ];
 
+  get categoriaSelecionada() {
+    return this.categorias.find(c => c.valor === this.categoria);
+  }
+
   private nomeUsuario = '';
   private equipeNome = '';
 

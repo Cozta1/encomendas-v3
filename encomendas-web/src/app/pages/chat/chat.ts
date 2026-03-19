@@ -105,17 +105,29 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.chatService.connect(this.userId);
 
     this.msgSub = this.chatService.messages$.subscribe(msg => {
+      const c = this.conversas.find(c => c.id === msg.conversaId);
+
+      // Update sidebar: last message preview + timestamp
+      if (c) {
+        c.ultimaMensagem = msg.conteudo || (msg.anexos?.length ? 'Anexo' : '');
+        c.ultimaMensagemEm = msg.enviadoEm;
+        // Move conversation to top
+        const idx = this.conversas.indexOf(c);
+        if (idx > 0) {
+          this.conversas.splice(idx, 1);
+          this.conversas.unshift(c);
+        }
+      }
+
       if (this.conversaAtiva && msg.conversaId === this.conversaAtiva.id) {
         this.mensagens.push(msg);
         this.shouldScroll = true;
         this.cdr.detectChanges();
         if (msg.remetenteId !== this.userId) {
           this.chatService.marcarLida(this.conversaAtiva.id, this.userId).subscribe();
-          const c = this.conversas.find(c => c.id === msg.conversaId);
           if (c) c.naoLidas = 0;
         }
       } else {
-        const c = this.conversas.find(c => c.id === msg.conversaId);
         if (c && msg.remetenteId !== this.userId) {
           c.naoLidas = (c.naoLidas || 0) + 1;
         }
@@ -128,6 +140,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     this.msgSub?.unsubscribe();
+    this.chatService.disconnect();
   }
 
   ngAfterViewChecked(): void {

@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -10,14 +10,13 @@ import {
   UploadedFile,
   CriarConversaRequest
 } from '../models/chat.interfaces';
-// Lazy imports handled inside connect() to avoid esbuild CJS/UMD interop issues at module init time
-import type { Client as StompClient, IMessage } from '@stomp/stompjs';
+import { Client, type IMessage } from '@stomp/stompjs';
 
 @Injectable({ providedIn: 'root' })
-export class ChatService implements OnDestroy {
+export class ChatService {
   private apiUrl = `${environment.apiUrl}/chat`;
 
-  private stompClient: StompClient | null = null;
+  private stompClient: Client | null = null;
   private conversaSubscriptions = new Map<string, any>();
 
   // Group topics the component wants subscribed (persists across reconnects)
@@ -79,49 +78,47 @@ export class ChatService implements OnDestroy {
 
     const token = this.authService.getToken();
 
-    // Dynamically import @stomp/stompjs and sockjs-client at call time.
-    // This avoids UMD/CJS module-init errors at lazy chunk load time (esbuild interop).
-    Promise.all([
-      import('@stomp/stompjs'),
-      import('sockjs-client')
-    ]).then(([stompModule, sockjsModule]) => {
-      const Client = stompModule.Client;
-      // sockjs-client is CJS: esbuild's __toESM puts the constructor on .default
-      const SockJS: new (url: string) => WebSocket =
-        (sockjsModule as any).default ?? (sockjsModule as any);
+    // Convert HTTP URL to WebSocket URL (ws:// or wss://)
+    let wsUrl = environment.wsUrl;
+    if (wsUrl.startsWith('/')) {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${proto}//${location.host}${wsUrl}`;
+    } else {
+      wsUrl = wsUrl.replace(/^http/, 'ws');
+    }
 
-      this.stompClient = new Client({
-        webSocketFactory: () => new SockJS(environment.wsUrl),
-        connectHeaders: {
-          Authorization: `Bearer ${token}`
-        },
-        reconnectDelay: 5000,
-        onConnect: () => {
-          // Clear stale subscriptions from a previous session (handles reconnects)
-          this.conversaSubscriptions.clear();
+    this.stompClient = new Client({
+      brokerURL: wsUrl,
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        // Unsubscribe old STOMP subscriptions before clearing (handles reconnects)
+        this.conversaSubscriptions.forEach(sub => {
+          try { sub.unsubscribe(); } catch (_) { /* already closed */ }
+        });
+        this.conversaSubscriptions.clear();
 
-          // Private messages — Spring user destinations use /user/queue/... without userId.
-          // Spring routes via the WebSocket principal set in WebSocketAuthChannelInterceptor.
-          this.stompClient!.subscribe(`/user/queue/chat`, (message: IMessage) => {
-            const msg: MensagemChat = JSON.parse(message.body);
-            this.messagesSubject.next(msg);
-          });
+        // Private messages — Spring user destinations use /user/queue/... without userId.
+        // Spring routes via the WebSocket principal set in WebSocketAuthChannelInterceptor.
+        this.stompClient!.subscribe(`/user/queue/chat`, (message: IMessage) => {
+          const msg: MensagemChat = JSON.parse(message.body);
+          this.messagesSubject.next(msg);
+        });
 
-          // Badge updates
-          this.stompClient!.subscribe(`/user/queue/badge`, (message: IMessage) => {
-            const count = JSON.parse(message.body);
-            this.badgeSubject.next(count);
-          });
+        // Badge updates
+        this.stompClient!.subscribe(`/user/queue/badge`, (message: IMessage) => {
+          const count = JSON.parse(message.body);
+          this.badgeSubject.next(count);
+        });
 
-          // Re-subscribe to all group topics that were requested before/during connection
-          this.activeGroupTopics.forEach(id => this.doSubscribeToGroupTopic(id));
-        }
-      });
-
-      this.stompClient.activate();
-    }).catch(err => {
-      console.error('[ChatService] Failed to load WebSocket libraries:', err);
+        // Re-subscribe to all group topics that were requested before/during connection
+        this.activeGroupTopics.forEach(id => this.doSubscribeToGroupTopic(id));
+      }
     });
+
+    this.stompClient.activate();
   }
 
   /**
@@ -164,10 +161,6 @@ export class ChatService implements OnDestroy {
     this.stompClient = null;
     this.conversaSubscriptions.clear();
     this.activeGroupTopics.clear();
-  }
-
-  ngOnDestroy(): void {
-    this.disconnect();
   }
 
   private doSubscribeToGroupTopic(conversaId: string): void {
