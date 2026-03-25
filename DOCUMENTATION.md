@@ -471,11 +471,11 @@ Abstração de armazenamento com duas implementações:
 A escolha entre elas é feita por Spring Profile (`dev` / `aws`).
 
 #### `SupabaseBroadcastService`
-Realiza chamadas HTTP para a API REST do Supabase Realtime de forma **assíncrona** (`CompletableFuture`), sem bloquear a thread que processa a requisição.
+Realiza chamadas HTTP para a API REST do Supabase Realtime usando `RestTemplate`. A chamada é síncrona e encapsulada em try/catch — falhas de broadcast são logadas como `WARN` e não propagam exceção para o caller.
 
 ```java
 // Após salvar mensagem, broadcast para o canal "chat:{conversaId}"
-broadcastAsync("chat:" + conversaId, "mensagem", mensagemDTO)
+broadcast("chat:" + conversaId, "mensagem", mensagemDTO)
 ```
 
 #### `EmailService`
@@ -677,7 +677,7 @@ Extrai o header `X-Team-ID` de cada requisição e armazena no `TeamContextHolde
 
 ```java
 // Uso nos serviços:
-UUID equipeId = TeamContextHolder.getEquipeId();
+UUID equipeId = TeamContextHolder.getTeamId();
 ```
 
 #### RBAC (Role-Based Access Control)
@@ -722,7 +722,7 @@ spring.datasource.hikari.minimum-idle=5
 
 # JWT
 app.jwtSecret=${APP_JWT_SECRET}
-app.jwtExpirationMs=86400000
+app.jwtExpirationInMs=86400000
 
 # Chaves de registro
 app.registrationKey=${APP_REGISTRATION_KEY}
@@ -1306,7 +1306,7 @@ CREATE TABLE mensagens_chat (
   INDEX        idx_mensagens_remetente (remetente_id)
 );
 
-CREATE TABLE mensagem_anexo (
+CREATE TABLE mensagem_anexos (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   mensagem_id   UUID REFERENCES mensagens_chat(id) ON DELETE CASCADE,
   nome_arquivo  VARCHAR(255),
@@ -1314,7 +1314,7 @@ CREATE TABLE mensagem_anexo (
   url           TEXT
 );
 
-CREATE TABLE leitura_mensagem (
+CREATE TABLE leituras_mensagem (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversa_id    UUID REFERENCES conversas(id),
   usuario_id     BIGINT REFERENCES usuarios(id),
@@ -1507,15 +1507,17 @@ Verificações adicionais dentro dos serviços (programáticas, não via Securit
 
 **Backend:**
 ```java
-// SupabaseBroadcastService
-CompletableFuture.runAsync(() -> {
-    HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(supabaseUrl + "/realtime/v1/api/broadcast"))
-        .header("Authorization", "Bearer " + serviceRoleKey)
-        .POST(HttpRequest.BodyPublishers.ofString(payload))
-        .build();
-    httpClient.send(request, ...);
-});
+// SupabaseBroadcastService — RestTemplate síncrono, erros são capturados e logados
+HttpHeaders headers = new HttpHeaders();
+headers.set("apikey", serviceRoleKey);
+headers.set("Authorization", "Bearer " + serviceRoleKey);
+headers.setContentType(MediaType.APPLICATION_JSON);
+
+restTemplate.postForEntity(
+    supabaseUrl + "/realtime/v1/api/broadcast",
+    new HttpEntity<>(body, headers),
+    Void.class
+);
 ```
 
 **Frontend:**
@@ -2036,9 +2038,9 @@ EQUIPE  ──1:N── NOTIFICACAO
 
 | Configuração | API URL | Descrição |
 |---|---|---|
-| `development` | `http://localhost:8080/api` | Dev local sem Docker |
-| `production` | `/api` (relativo) | Docker separado (via Nginx no frontend) |
-| `docker` | `http://localhost/api` | Container unificado (Nginx na porta 80) |
+| `development` | `http://localhost:8080/api` | Dev local sem Docker (ng serve) |
+| `docker` | `/api` (relativo) | Container unificado — Nginx na porta 80 faz proxy para o backend |
+| `production` | URL absoluta (ex: Cloud Run) | Deploy em nuvem com URL fixa |
 
 ### E. Referência de Variáveis CORS
 

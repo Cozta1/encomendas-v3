@@ -81,6 +81,9 @@ public class EquipeService {
                 .administrador(admin)
                 .ativa(true)
                 .build();
+        // O admin deve ser membro da sua própria equipe para aparecer em queries
+        // que filtram por equipe_membros (ex: escalas, checklists, listas de membros)
+        novaEquipe.getMembros().add(admin);
         return equipeRepository.save(novaEquipe);
     }
 
