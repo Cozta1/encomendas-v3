@@ -150,29 +150,8 @@
         </div>
       </div>
 
-      <!-- Pré-visualização de anexos pendentes -->
-      <div class="pending-anexos" *ngIf="pendingAnexos.length > 0">
-        <mat-chip-set>
-          <mat-chip *ngFor="let a of pendingAnexos; let i = index" (removed)="removerAnexo(i)">
-            <mat-icon matChipAvatar>attach_file</mat-icon>
-            {{ a.nomeArquivo | slice:0:20 }}{{ a.nomeArquivo.length > 20 ? '…' : '' }}
-            <button matChipRemove>
-              <mat-icon>cancel</mat-icon>
-            </button>
-          </mat-chip>
-        </mat-chip-set>
-      </div>
-
       <!-- Input area -->
       <div class="input-area">
-        <button mat-icon-button
-                matTooltip="Anexar ficheiro"
-                (click)="fileInput.click()"
-                class="attach-btn">
-          <mat-icon>attach_file</mat-icon>
-        </button>
-        <input #fileInput type="file" hidden multiple (change)="onFileSelected($event)" />
-
         <mat-form-field appearance="outline" class="message-input-field">
           <input
             matInput
@@ -184,7 +163,7 @@
 
         <button mat-fab
                 color="primary"
-                [disabled]="enviando || (!textoMensagem.trim() && pendingAnexos.length === 0)"
+                [disabled]="enviando || !textoMensagem.trim()"
                 (click)="enviarMensagem()"
                 class="send-btn">
           <mat-icon>send</mat-icon>

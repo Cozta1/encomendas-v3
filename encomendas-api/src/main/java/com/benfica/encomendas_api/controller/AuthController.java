@@ -40,7 +40,7 @@ public class AuthController {
     private String adminRegistrationKey;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
@@ -91,7 +91,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDTO dto) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordDTO dto) {
         // Retorna sempre a mesma mensagem para não revelar se o email existe
         usuarioRepository.findByEmail(dto.getEmail()).ifPresent(usuario -> {
             String codigo = UUID.randomUUID().toString();
@@ -105,7 +105,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
         Usuario usuario = usuarioRepository.findByEmail(dto.getEmail()).orElse(null);
 
         if (usuario == null || usuario.getTokenResetSenha() == null || dto.getToken() == null) {

@@ -1,6 +1,5 @@
 .trello-card-container {
-  // Ajuste para parecer um modal do Trello
-  color: #172b4d; // Texto escuro padrão (ou claro se for dark mode)
+  color: var(--app-text-heading);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   max-height: 85vh;
   overflow-y: auto;
@@ -10,23 +9,23 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #fff7e6;
-    border-left: 4px solid #f6a623;
-    color: #7a4f01;
+    background: var(--app-status-warning-bg);
+    border-left: 4px solid var(--app-status-warning);
+    color: var(--app-status-warning-dark);
     padding: 10px 20px;
     font-size: 13px;
     mat-icon { font-size: 18px; height: 18px; width: 18px; }
 
     &.user-banner {
-      background: #e8f4fd;
-      border-left-color: #1976d2;
-      color: #0d47a1;
+      background: var(--app-status-info-bg-subtle);
+      border-left-color: var(--app-status-info-dark);
+      color: var(--app-status-info-dark);
     }
 
     &.fechado-banner {
-      background: #ffebee;
-      border-left-color: #d32f2f;
-      color: #b71c1c;
+      background: var(--app-status-danger-bg);
+      border-left-color: var(--app-status-danger-dark);
+      color: var(--app-status-danger-dark);
     }
   }
 
@@ -37,12 +36,12 @@
     padding: 20px 20px 10px;
     gap: 16px;
 
-    .header-icon { margin-top: 4px; color: #42526e; }
+    .header-icon { margin-top: 4px; color: var(--app-text-color-secondary); }
 
     .header-content {
       flex: 1;
       h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 24px; }
-      .subtext { margin: 4px 0 0; font-size: 14px; color: #5e6c84; }
+      .subtext { margin: 4px 0 0; font-size: 14px; color: var(--app-text-color-secondary); }
     }
   }
 
@@ -68,28 +67,28 @@
       gap: 16px;
       margin-bottom: 12px;
 
-      mat-icon { color: #42526e; }
-      h3 { margin: 0; font-size: 16px; font-weight: 600; color: #172b4d; }
+      mat-icon { color: var(--app-text-color-secondary); }
+      h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--app-text-heading); }
     }
   }
 
   // Descrição
   .desc-content {
     margin-left: 40px;
-    p { margin-top: 0; font-size: 14px; color: #172b4d; }
+    p { margin-top: 0; font-size: 14px; color: var(--app-text-body); }
 
     .btn-fake-input {
-      background: #eaecf0;
+      background: var(--app-surface-color);
       border: none;
       border-radius: 3px;
-      color: #172b4d;
+      color: var(--app-text-heading);
       padding: 8px 12px;
       width: 100%;
       text-align: left;
       cursor: pointer;
       height: 60px;
 
-      &:hover { background: #dfe1e6; }
+      &:hover { background: var(--app-divider-color); }
     }
   }
 
@@ -97,13 +96,15 @@
     margin-left: 40px;
     textarea {
       width: 100%;
-      border: 2px solid #0079bf;
+      border: 2px solid var(--app-status-info);
       border-radius: 3px;
       padding: 8px;
       font-family: inherit;
       resize: vertical;
       min-height: 108px;
       outline: none;
+      background: var(--app-card-background-color);
+      color: var(--app-text-color);
     }
     .editor-actions {
       display: flex;
@@ -121,15 +122,15 @@
 
     .anexo-thumb {
       width: 80px; height: 60px;
-      background: #e4e6ea;
-      border-radius: 4px;
+      background: var(--app-surface-color);
+      border-radius: var(--app-radius-sm);
       display: flex; align-items: center; justify-content: center;
-      font-weight: bold; color: #5e6c84;
+      font-weight: bold; color: var(--app-text-color-secondary);
     }
     .anexo-info {
       display: flex; flex-direction: column; justify-content: center;
       .anexo-name { font-weight: 700; font-size: 14px; }
-      .anexo-meta { font-size: 12px; color: #5e6c84; }
+      .anexo-meta { font-size: 12px; color: var(--app-text-color-secondary); }
     }
   }
 
@@ -139,19 +140,20 @@
     border-radius: 3px;
     padding: 2px 4px;
     margin: -2px -4px;
-    &:hover { background: #f4f5f7; }
+    &:hover { background: var(--app-hover-bg); }
   }
 
   .title-input {
     font-size: 20px;
     font-weight: 600;
-    border: 2px solid #0079bf;
+    border: 2px solid var(--app-primary-color);
     border-radius: 3px;
     padding: 4px 8px;
     width: 100%;
     outline: none;
     font-family: inherit;
-    color: #172b4d;
+    color: var(--app-text-heading);
+    background: var(--app-card-background-color);
     line-height: 24px;
   }
 
@@ -163,8 +165,8 @@
     gap: 12px;
     margin-bottom: 12px;
 
-    .percent { font-size: 11px; color: #5e6c84; width: 30px; }
-    mat-progress-bar { flex: 1; border-radius: 4px; height: 6px; }
+    .percent { font-size: 11px; color: var(--app-text-color-secondary); width: 30px; }
+    mat-progress-bar { flex: 1; border-radius: var(--app-radius-sm); height: 6px; }
   }
 
   .checklist-items {
@@ -176,28 +178,28 @@
       border-radius: 3px;
 
       &:hover {
-        background: #f4f5f7;
+        background: var(--app-hover-bg);
         .delete-item-btn { opacity: 1; }
       }
 
       mat-checkbox { flex: 1; }
-      .riscado { text-decoration: line-through; color: #5e6c84; }
+      .riscado { text-decoration: line-through; color: var(--app-text-color-secondary); }
 
       .delete-item-btn {
         opacity: 0;
-        transition: opacity 0.15s;
+        transition: opacity var(--app-transition-fast);
         width: 28px;
         height: 28px;
         line-height: 28px;
         flex-shrink: 0;
-        mat-icon { font-size: 16px; width: 16px; height: 16px; color: #c0c0c0; }
-        &:hover mat-icon { color: #eb5a46; }
+        mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--app-text-disabled); }
+        &:hover mat-icon { color: var(--app-status-danger); }
       }
     }
 
     .empty-checklist {
       margin-left: 0;
-      p { color: #5e6c84; font-size: 13px; margin: 8px 0; }
+      p { color: var(--app-text-color-secondary); font-size: 13px; margin: 8px 0; }
     }
   }
 
@@ -210,21 +212,21 @@
 
     .add-item-input {
       flex: 1;
-      background: #f4f5f7;
+      background: var(--app-surface-alt);
       border: 2px solid transparent;
       border-radius: 3px;
       padding: 8px 12px;
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      color: #172b4d;
+      color: var(--app-text-heading);
 
       &:focus {
-        background: #fff;
-        border-color: #0079bf;
+        background: var(--app-card-background-color);
+        border-color: var(--app-primary-color);
       }
 
-      &::placeholder { color: #8993a4; }
+      &::placeholder { color: var(--app-text-muted); }
     }
 
     button { flex-shrink: 0; }
@@ -235,7 +237,7 @@
     margin-bottom: 24px;
     h4 {
       font-size: 12px;
-      color: #5e6c84;
+      color: var(--app-text-color-secondary);
       text-transform: uppercase;
       font-weight: 600;
       margin-bottom: 8px;
@@ -244,15 +246,15 @@
     .sidebar-btn {
       width: 100%;
       justify-content: flex-start;
-      background: #eaecf0;
-      color: #172b4d;
+      background: var(--app-surface-color);
+      color: var(--app-text-heading);
       margin-bottom: 8px;
       font-size: 14px;
       height: 32px;
       border-radius: 3px;
 
       mat-icon { margin-right: 8px; font-size: 16px; height: 16px; width: 16px; }
-      &:hover { background: #dfe1e6; }
+      &:hover { background: var(--app-divider-color); }
     }
 
     .progress-summary {
@@ -262,9 +264,9 @@
         align-items: center;
         gap: 6px;
         font-size: 13px;
-        color: #5e6c84;
+        color: var(--app-text-color-secondary);
         mat-icon { font-size: 16px; width: 16px; height: 16px; }
-        &.done { color: #61bd4f; mat-icon { color: #61bd4f; } }
+        &.done { color: var(--app-status-success); mat-icon { color: var(--app-status-success); } }
       }
     }
 
@@ -273,95 +275,8 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
-      color: #5e6c84;
+      color: var(--app-text-color-secondary);
       mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    }
-  }
-}
-
-// ===================== DARK MODE =====================
-:host-context(.dark-theme) {
-  .trello-card-container {
-    color: #e0e0e0;
-    background: #1e1e1e;
-
-    .readonly-banner {
-      background: #2a1a06;
-      border-left-color: #f6a623;
-      color: #ffb74d;
-
-      &.fechado-banner {
-        background: #1a0808;
-        border-left-color: #d32f2f;
-        color: #ef9a9a;
-      }
-
-      &.user-banner {
-        background: #0a1929;
-        border-left-color: #42a5f5;
-        color: #90caf9;
-      }
-    }
-
-    .card-header {
-      .header-icon { color: #9a9a9a; }
-      .header-content {
-        h2 { color: #e0e0e0; }
-        .subtext { color: #9a9a9a; }
-      }
-    }
-
-    .section .section-header {
-      mat-icon { color: #9a9a9a; }
-      h3 { color: #e0e0e0; }
-    }
-
-    .desc-content {
-      p { color: #d0d0d0; }
-      .btn-fake-input {
-        background: #252525;
-        color: #a0a0a0;
-        &:hover { background: #2d2d2d; }
-      }
-    }
-
-    .title-input {
-      background: #1a1a1a;
-      color: #e0e0e0;
-      border-color: #8c9eff;
-    }
-
-    .editable-title:hover { background: rgba(255,255,255,0.06); }
-
-    .desc-editor textarea {
-      background: #252525;
-      color: #e0e0e0;
-      border-color: #8c9eff;
-    }
-
-    .progress-area .percent { color: #9a9a9a; }
-
-    .checklist-items .item-row {
-      &:hover { background: rgba(255,255,255,0.04); }
-      .riscado { color: #555; }
-    }
-
-    .add-item-form .add-item-input {
-      background: #252525;
-      color: #e0e0e0;
-      &:focus { background: #1a1a1a; border-color: #8c9eff; }
-      &::placeholder { color: #555; }
-    }
-
-    .sidebar-group {
-      h4 { color: #9a9a9a; }
-      .sidebar-btn {
-        background: #252525;
-        color: #c0c0c0;
-        &:hover { background: #2d2d2d; }
-      }
-      .progress-count { color: #9a9a9a; }
-      .horario-info { color: #9a9a9a; }
     }
   }
 }

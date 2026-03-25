@@ -2,21 +2,23 @@
   font-weight: 500;
   font-size: 0.85rem;
   padding: 8px 16px;
-  color: rgba(0, 0, 0, 0.54);
+  color: var(--app-text-color-secondary);
   margin-top: 16px;
 }
 
-// Estilo para o link que está ativo
+.sidebar-divider {
+  margin: 8px 0;
+}
+
 .active-link {
-  background-color: rgba(63, 81, 181, 0.1); // Um fundo leve da cor primária
-  color: #3f51b5; // Cor primária (Indigo)
+  background-color: var(--app-primary-light);
+  color: var(--app-primary-color);
 
   .mat-icon {
-    color: #3f51b5;
+    color: var(--app-primary-color);
   }
 }
 
-// Remove o padding padrão da lista para alinhar com o header
 mat-nav-list {
   padding-top: 0;
 
@@ -24,18 +26,5 @@ mat-nav-list {
     white-space: normal;
     overflow: visible;
     text-overflow: unset;
-  }
-}
-
-:host-context(.dark-theme) {
-  .menu-header {
-    color: rgba(255, 255, 255, 0.3);
-  }
-
-  .active-link {
-    background-color: rgba(140, 158, 255, 0.12);
-    color: #8c9eff;
-
-    .mat-icon { color: #8c9eff; }
   }
 }

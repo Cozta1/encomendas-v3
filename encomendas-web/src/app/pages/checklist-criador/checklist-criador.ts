@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,15 +47,17 @@ import { EnviarNotificacaoDialog } from '../../components/dialogs/enviar-notific
   templateUrl: './checklist-criador.html',
   styleUrls: ['./checklist-criador.scss']
 })
-export class ChecklistCriadorComponent implements OnInit {
+export class ChecklistCriadorComponent implements OnInit, OnDestroy {
 
   boards: ChecklistBoard[] = [];
   membros: MembroEquipe[] = [];
   loading = false;
   equipeId: string | null = null;
 
+  private readonly DRAFT_KEY = 'enc_draft_checklist_criador';
+
   showNovoBoardForm = false;
-  novoBoard = { nome: '', usuarioId: null };
+  novoBoard: { nome: string; usuarioId: number | null } = { nome: '', usuarioId: null };
 
   // Inline rename state
   editandoBoardId: string | null = null;
@@ -86,6 +88,38 @@ export class ChecklistCriadorComponent implements OnInit {
     if (this.equipeId) {
       this.carregarDados();
     }
+    this.carregarRascunho();
+  }
+
+  ngOnDestroy(): void {
+    this.salvarRascunho();
+  }
+
+  private carregarRascunho(): void {
+    const saved = localStorage.getItem(this.DRAFT_KEY);
+    if (!saved) return;
+    try {
+      const draft = JSON.parse(saved);
+      if (draft.novoBoard) {
+        this.novoBoard = draft.novoBoard;
+      }
+      if (draft.showNovoBoardForm) {
+        this.showNovoBoardForm = true;
+      }
+    } catch {
+      localStorage.removeItem(this.DRAFT_KEY);
+    }
+  }
+
+  private salvarRascunho(): void {
+    if (!this.novoBoard.nome && !this.showNovoBoardForm) {
+      localStorage.removeItem(this.DRAFT_KEY);
+      return;
+    }
+    localStorage.setItem(this.DRAFT_KEY, JSON.stringify({
+      novoBoard: this.novoBoard,
+      showNovoBoardForm: this.showNovoBoardForm
+    }));
   }
 
   carregarDados() {
@@ -115,6 +149,7 @@ export class ChecklistCriadorComponent implements OnInit {
           this.boards.push(board);
           this.novoBoard = { nome: '', usuarioId: null };
           this.showNovoBoardForm = false;
+          localStorage.removeItem(this.DRAFT_KEY);
           this.snackBar.open('Quadro criado com sucesso!', 'OK', { duration: 3000 });
         },
         error: () => this.snackBar.open('Erro ao criar quadro.', 'Fechar', { duration: 3000 })

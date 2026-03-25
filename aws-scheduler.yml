@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Pause/resume agendado do App Runner (00:15 pausa, 05:50 retoma) - America/Sao_Paulo'
+
+Parameters:
+  AppRunnerServiceArn:
+    Type: String
+    Description: 'ARN do servico App Runner (Console > App Runner > seu servico > ARN)'
+
+Resources:
+
+  # IAM Role que o EventBridge Scheduler usa para chamar a API do App Runner
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AppRunnerSchedulerRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AppRunnerPauseResumePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apprunner:PauseService
+                  - apprunner:ResumeService
+                Resource: !Ref AppRunnerServiceArn
+
+  # Pausa às 00:15 horário de Brasília
+  PauseSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: apprunner-pause-meia-noite
+      Description: 'Pausa o App Runner às 00:15 BRT para economizar custos'
+      ScheduleExpression: 'cron(15 0 * * ? *)'
+      ScheduleExpressionTimezone: America/Sao_Paulo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State: ENABLED
+      Target:
+        Arn: 'arn:aws:scheduler:::aws-sdk:apprunner:pauseService'
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: !Sub '{"ServiceArn": "${AppRunnerServiceArn}"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 2
+          MaximumEventAgeInSeconds: 300
+
+  # Retoma às 05:50 horário de Brasília
+  ResumeSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: apprunner-resume-manha
+      Description: 'Retoma o App Runner às 05:50 BRT'
+      ScheduleExpression: 'cron(50 5 * * ? *)'
+      ScheduleExpressionTimezone: America/Sao_Paulo
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State: ENABLED
+      Target:
+        Arn: 'arn:aws:scheduler:::aws-sdk:apprunner:resumeService'
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: !Sub '{"ServiceArn": "${AppRunnerServiceArn}"}'
+        RetryPolicy:
+          MaximumRetryAttempts: 3
+          MaximumEventAgeInSeconds: 600
+
+Outputs:
+  SchedulerRoleArn:
+    Description: 'ARN da role criada para o scheduler'
+    Value: !GetAtt SchedulerRole.Arn
+  PauseScheduleName:
+    Description: 'Nome do agendamento de pausa'
+    Value: !Ref PauseSchedule
+  ResumeScheduleName:
+    Description: 'Nome do agendamento de retomada'
+    Value: !Ref ResumeSchedule

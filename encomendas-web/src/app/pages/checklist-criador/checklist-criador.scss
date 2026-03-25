@@ -13,7 +13,7 @@
   h1 {
     margin: 0;
     font-size: 1.8rem;
-    color: #333;
+    color: var(--app-text-heading);
   }
 
   .header-btns {
@@ -25,11 +25,11 @@
 
 // Formulário Novo Board
 .novo-board-container {
-  background: #fff;
+  background: var(--app-card-background-color);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-md);
   margin-bottom: 24px;
-  border-left: 5px solid #ff4081; // Cor de destaque
+  border-left: 5px solid var(--app-accent-color);
 
   h3 { margin-top: 0; }
 
@@ -63,18 +63,18 @@
     align-items: center;
     gap: 10px;
 
-    .panel-icon { color: #673ab7; }
+    .panel-icon { color: var(--app-accent-purple); }
 
     .inline-edit-input {
       font-size: 1rem;
       font-weight: 500;
-      border: 1px solid #673ab7;
-      border-radius: 4px;
+      border: 1px solid var(--app-accent-purple);
+      border-radius: var(--app-radius-sm);
       padding: 4px 8px;
       outline: none;
       min-width: 200px;
-      background: white;
-      color: #333;
+      background: var(--app-card-background-color);
+      color: var(--app-text-heading);
     }
   }
 
@@ -93,13 +93,13 @@
       font-size: 0.85rem;
 
       &.tag-owner {
-        background-color: #e3f2fd;
-        color: #1565c0;
+        background-color: var(--app-status-info-bg);
+        color: var(--app-status-info-dark);
       }
 
       &.tag-general {
-        background-color: #f5f5f5;
-        color: #616161;
+        background-color: var(--app-status-neutral-bg);
+        color: var(--app-text-color-secondary);
       }
     }
 
@@ -150,7 +150,6 @@
     padding-top: 12px;
   }
 
-  // Edit form inside card
   .card-edit-form {
     padding: 8px;
 
@@ -181,11 +180,11 @@
     gap: 8px;
     padding: 2px 0;
     font-size: 0.9rem;
-    color: #424242;
-    border-radius: 4px;
+    color: var(--app-text-body);
+    border-radius: var(--app-radius-sm);
 
     &:hover {
-      background: #f5f5f5;
+      background: var(--app-hover-bg);
       .delete-item-btn { opacity: 1; }
     }
 
@@ -193,7 +192,7 @@
       font-size: 18px;
       width: 18px;
       height: 18px;
-      color: #4caf50;
+      color: var(--app-status-success);
       flex-shrink: 0;
     }
 
@@ -201,18 +200,18 @@
 
     .delete-item-btn {
       opacity: 0;
-      transition: opacity 0.15s;
+      transition: opacity var(--app-transition-fast);
       width: 24px;
       height: 24px;
       line-height: 24px;
-      mat-icon { font-size: 14px; width: 14px; height: 14px; color: #bdbdbd; }
-      &:hover mat-icon { color: #e53935; }
+      mat-icon { font-size: 14px; width: 14px; height: 14px; color: var(--app-text-disabled); }
+      &:hover mat-icon { color: var(--app-status-danger); }
     }
   }
 
   .empty-items {
     font-style: italic;
-    color: #9e9e9e;
+    color: var(--app-text-muted);
     font-size: 0.85rem;
   }
 }
@@ -221,37 +220,38 @@
 .add-item-box {
   display: flex;
   align-items: center;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--app-divider-color);
   padding-top: 8px;
 
   input {
     flex: 1;
     border: none;
-    background: #f5f5f5;
+    background: var(--app-surface-alt);
     padding: 8px;
-    border-radius: 4px;
+    border-radius: var(--app-radius-sm);
     outline: none;
     font-size: 0.9rem;
+    color: var(--app-text-color);
 
-    &:focus { background: #e0e0e0; }
+    &:focus { background: var(--app-surface-color); }
   }
 }
 
 // Placeholder para criar novo cartão
 .new-card-placeholder {
-  border: 2px dashed #e0e0e0;
-  border-radius: 8px;
+  border: 2px dashed var(--app-divider-color);
+  border-radius: var(--app-radius-md);
   padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background-color: #fafafa;
+  background-color: var(--app-surface-alt);
 
   h4 {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #757575;
+    color: var(--app-text-color-secondary);
     margin-top: 0;
     font-size: 0.95rem;
     mat-icon { font-size: 18px; width: 18px; height: 18px; }
@@ -270,7 +270,7 @@
 .empty-state {
   text-align: center;
   margin-top: 60px;
-  color: #9e9e9e;
+  color: var(--app-text-muted);
 
   mat-icon {
     font-size: 64px;
@@ -293,10 +293,10 @@
 }
 
 .relatorio-container {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--app-card-background-color);
+  border-radius: var(--app-radius-md);
   padding: 20px;
-  border-top: 4px solid #673ab7;
+  border-top: 4px solid var(--app-accent-purple);
 }
 
 .relatorio-date-nav {
@@ -308,7 +308,7 @@
   .relatorio-date-label {
     font-size: 1rem;
     font-weight: 500;
-    color: #333;
+    color: var(--app-text-heading);
     flex: 1;
     text-align: center;
   }
@@ -329,14 +329,14 @@
     align-items: center;
     gap: 4px;
     padding: 2px 10px;
-    border-radius: 12px;
-    background: #f5f5f5;
-    color: #616161;
+    border-radius: var(--app-radius-lg);
+    background: var(--app-status-neutral-bg);
+    color: var(--app-text-color-secondary);
     font-size: 0.85rem;
 
     &.completo {
-      background: #e8f5e9;
-      color: #2e7d32;
+      background: var(--app-status-success-bg);
+      color: var(--app-status-success-dark);
     }
   }
 }
@@ -351,7 +351,7 @@
     margin: 0 0 8px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #512da8;
+    color: var(--app-accent-purple);
 
     mat-icon { font-size: 18px; width: 18px; height: 18px; }
   }
@@ -366,30 +366,30 @@
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  color: #616161;
+  color: var(--app-text-color-secondary);
   font-size: 0.88rem;
 
   .item-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: #bdbdbd;
+    color: var(--app-text-disabled);
   }
 
   .item-desc { flex: 1; }
 
   .item-hora {
     font-size: 0.78rem;
-    color: #9e9e9e;
-    background: #f5f5f5;
+    color: var(--app-text-muted);
+    background: var(--app-surface-alt);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--app-radius-sm);
     white-space: nowrap;
   }
 
   &.item-marcado {
-    .item-icon { color: #4caf50; }
-    .item-desc { color: #212121; }
+    .item-icon { color: var(--app-status-success); }
+    .item-desc { color: var(--app-text-color); }
   }
 }
 
@@ -398,7 +398,7 @@
   flex-direction: column;
   align-items: center;
   padding: 40px;
-  color: #9e9e9e;
+  color: var(--app-text-muted);
 
   mat-icon { font-size: 40px; width: 40px; height: 40px; margin-bottom: 8px; }
 }
@@ -411,8 +411,8 @@
   gap: 8px;
   margin-bottom: 16px;
   padding: 12px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: var(--app-surface-alt);
+  border-radius: var(--app-radius-md);
 
   .chip {
     display: inline-flex;
@@ -420,32 +420,32 @@
     gap: 6px;
     padding: 4px 14px;
     border-radius: 16px;
-    border: 1.5px solid #e0e0e0;
-    background: #fff;
+    border: 1.5px solid var(--app-divider-color);
+    background: var(--app-card-background-color);
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.15s;
-    color: #424242;
+    transition: all var(--app-transition-fast);
+    color: var(--app-text-body);
 
-    &:hover { border-color: #9e9e9e; background: #f5f5f5; }
+    &:hover { border-color: var(--app-text-muted); background: var(--app-hover-bg); }
 
-    &.chip-ativo { background: #424242; color: #fff; border-color: #424242; }
-    &.chip-verde.chip-ativo { background: #2e7d32; border-color: #2e7d32; }
-    &.chip-amarela.chip-ativo { background: #e65100; border-color: #e65100; }
-    &.chip-vermelha.chip-ativo { background: #c62828; border-color: #c62828; }
-    &.chip-cinza.chip-ativo { background: #616161; border-color: #616161; }
+    &.chip-ativo { background: var(--app-text-color-secondary); color: var(--app-text-on-dark); border-color: var(--app-text-color-secondary); }
+    &.chip-verde.chip-ativo { background: var(--app-status-success-dark); border-color: var(--app-status-success-dark); }
+    &.chip-amarela.chip-ativo { background: var(--app-status-warning-dark); border-color: var(--app-status-warning-dark); }
+    &.chip-vermelha.chip-ativo { background: var(--app-status-danger-dark); border-color: var(--app-status-danger-dark); }
+    &.chip-cinza.chip-ativo { background: var(--app-status-neutral-dark); border-color: var(--app-status-neutral-dark); }
   }
 
   .chip-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--app-radius-round);
     flex-shrink: 0;
 
-    &.verde { background: #4caf50; }
-    &.amarela { background: #ff9800; }
-    &.vermelha { background: #f44336; }
-    &.cinza { background: #9e9e9e; }
+    &.verde { background: var(--app-status-success); }
+    &.amarela { background: var(--app-status-warning); }
+    &.vermelha { background: var(--app-status-danger); }
+    &.cinza { background: var(--app-status-neutral); }
   }
 }
 
@@ -454,25 +454,25 @@
 .relatorio-card {
   margin-left: 16px;
   margin-bottom: 12px;
-  border-left: 3px solid #e0e0e0;
+  border-left: 3px solid var(--app-divider-color);
   padding-left: 8px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--app-radius-sm) var(--app-radius-sm) 0;
 
   &.status-card-CONCLUIDA {
-    border-left-color: #4caf50;
-    background: rgba(76, 175, 80, 0.04);
+    border-left-color: var(--app-status-success);
+    background: var(--app-status-success-bg);
   }
   &.status-card-ABERTA {
-    border-left-color: #ff9800;
-    background: rgba(255, 152, 0, 0.04);
+    border-left-color: var(--app-status-warning);
+    background: var(--app-status-warning-bg);
   }
   &.status-card-FECHADA_INCOMPLETA {
-    border-left-color: #f44336;
-    background: rgba(244, 67, 54, 0.04);
+    border-left-color: var(--app-status-danger);
+    background: var(--app-status-danger-bg);
   }
   &.status-card-PENDENTE {
-    border-left-color: #9e9e9e;
-    background: rgba(0,0,0,0.02);
+    border-left-color: var(--app-status-neutral);
+    background: var(--app-hover-bg);
   }
 
   .relatorio-card-titulo {
@@ -482,21 +482,21 @@
     margin: 0 0 6px;
     font-size: 0.9rem;
     font-weight: 600;
-    color: #424242;
+    color: var(--app-text-body);
 
-    mat-icon { font-size: 16px; width: 16px; height: 16px; color: #7e57c2; }
+    mat-icon { font-size: 16px; width: 16px; height: 16px; color: var(--app-accent-purple); }
 
     .status-dot {
       width: 8px;
       height: 8px;
-      border-radius: 50%;
+      border-radius: var(--app-radius-round);
       flex-shrink: 0;
     }
 
     .relatorio-horario {
       font-size: 0.8rem;
       font-weight: 400;
-      color: #9e9e9e;
+      color: var(--app-text-muted);
       margin-left: 4px;
     }
   }
@@ -509,148 +509,22 @@
     margin-left: auto;
     white-space: nowrap;
 
-    &.label-CONCLUIDA { background: #e8f5e9; color: #2e7d32; }
-    &.label-ABERTA { background: #fff3e0; color: #e65100; }
-    &.label-FECHADA_INCOMPLETA { background: #ffebee; color: #c62828; }
-    &.label-PENDENTE { background: #f5f5f5; color: #616161; }
-    &.label-SEM_ITENS { background: #f5f5f5; color: #9e9e9e; }
+    &.label-CONCLUIDA { background: var(--app-status-success-bg); color: var(--app-status-success-dark); }
+    &.label-ABERTA { background: var(--app-status-warning-bg); color: var(--app-status-warning-dark); }
+    &.label-FECHADA_INCOMPLETA { background: var(--app-status-danger-bg); color: var(--app-status-danger-dark); }
+    &.label-PENDENTE { background: var(--app-status-neutral-bg); color: var(--app-status-neutral-dark); }
+    &.label-SEM_ITENS { background: var(--app-status-neutral-bg); color: var(--app-text-muted); }
   }
 }
 
-.dot-CONCLUIDA { background: #4caf50; }
-.dot-ABERTA { background: #ff9800; }
-.dot-FECHADA_INCOMPLETA { background: #f44336; }
-.dot-PENDENTE, .dot-SEM_ITENS { background: #9e9e9e; }
+.dot-CONCLUIDA { background: var(--app-status-success); }
+.dot-ABERTA { background: var(--app-status-warning); }
+.dot-FECHADA_INCOMPLETA { background: var(--app-status-danger); }
+.dot-PENDENTE, .dot-SEM_ITENS { background: var(--app-status-neutral); }
 
 .sem-cards-filtro {
   font-style: italic;
-  color: #9e9e9e;
+  color: var(--app-text-muted);
   font-size: 0.85rem;
   padding: 8px 0;
-}
-
-// ===================== DARK MODE =====================
-:host-context(.dark-theme) {
-  .header-action h1 { color: #e8e8e8; }
-
-  .novo-board-container {
-    background: #1e1e1e;
-    h3 { color: #e0e0e0; }
-  }
-
-  .board-panel {
-    mat-panel-title .panel-icon { color: #9f8fff; }
-    mat-panel-title .inline-edit-input {
-      background: #252525;
-      color: #e0e0e0;
-      border-color: #9f8fff;
-    }
-
-    mat-panel-description span {
-      &.tag-owner  { background: #0d2035; color: #90caf9; }
-      &.tag-general { background: #252525; color: #9a9a9a; }
-    }
-  }
-
-  .checklist-card {
-    mat-card-header {
-      mat-card-title    { color: #e0e0e0; }
-      mat-card-subtitle { color: #9a9a9a; }
-    }
-  }
-
-  .item-list {
-    .item-row {
-      color: #c0c0c0;
-      &:hover { background: #252525; }
-    }
-    .empty-items { color: #555; }
-  }
-
-  .add-item-box {
-    border-top-color: #2a2a2a;
-    input {
-      background: #1a1a1a;
-      color: #e0e0e0;
-      &:focus { background: #252525; }
-    }
-  }
-
-  .new-card-placeholder {
-    border-color: #2a2a2a;
-    background-color: #1a1a1a;
-    h4 { color: #606060; }
-  }
-
-  .empty-state { color: #555; }
-
-  // Relatório
-  .relatorio-container {
-    background: #1e1e1e;
-    border-top-color: #9f8fff;
-  }
-
-  .relatorio-date-nav .relatorio-date-label { color: #e0e0e0; }
-
-  .usuario-panel {
-    .progresso-label {
-      background: #252525;
-      color: #9a9a9a;
-      &.completo { background: #0d2a1a; color: #81c784; }
-    }
-  }
-
-  .relatorio-board .relatorio-board-titulo { color: #9f8fff; }
-
-  .relatorio-card {
-    .relatorio-card-titulo {
-      color: #c0c0c0;
-      mat-icon { color: #9f8fff; }
-      .relatorio-horario { color: #555; }
-    }
-  }
-
-  .relatorio-item {
-    color: #9a9a9a;
-    .item-hora { background: #252525; }
-    &.item-marcado .item-desc { color: #e0e0e0; }
-  }
-
-  .relatorio-vazio { color: #555; }
-
-  .filtro-chips {
-    background: #1a1a1a;
-    .chip {
-      background: #252525;
-      color: #c0c0c0;
-      border-color: #333;
-      &:hover { background: #2d2d2d; border-color: #555; }
-      &.chip-ativo { background: #616161; border-color: #616161; color: #fff; }
-      &.chip-verde.chip-ativo { background: #1b5e20; border-color: #1b5e20; }
-      &.chip-amarela.chip-ativo { background: #bf360c; border-color: #bf360c; }
-      &.chip-vermelha.chip-ativo { background: #b71c1c; border-color: #b71c1c; }
-    }
-  }
-
-  .relatorio-card {
-    &.status-card-CONCLUIDA { background: rgba(76, 175, 80, 0.08); }
-    &.status-card-ABERTA { background: rgba(255, 152, 0, 0.08); }
-    &.status-card-FECHADA_INCOMPLETA { background: rgba(244, 67, 54, 0.08); }
-    &.status-card-PENDENTE { background: rgba(255,255,255, 0.02); }
-
-    .relatorio-card-titulo {
-      color: #c0c0c0;
-      mat-icon { color: #9f8fff; }
-      .relatorio-horario { color: #555; }
-    }
-
-    .status-label {
-      &.label-CONCLUIDA { background: rgba(76, 175, 80, 0.2); color: #81c784; }
-      &.label-ABERTA { background: rgba(255, 152, 0, 0.2); color: #ffb74d; }
-      &.label-FECHADA_INCOMPLETA { background: rgba(244, 67, 54, 0.2); color: #ef9a9a; }
-      &.label-PENDENTE { background: #252525; color: #757575; }
-    }
-  }
-
-  .sem-cards-filtro { color: #555; }
 }

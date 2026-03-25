@@ -7,19 +7,19 @@
   display: flex;
   flex-direction: column;
   padding: 0;
-  background-color: #f4f5f7;
+  background-color: var(--app-background-color);
 }
 
 .page-header {
   padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--app-card-background-color);
+  border-bottom: 1px solid var(--app-divider-color);
   flex-shrink: 0;
 
   h1 {
     margin: 0 0 8px;
     font-size: 22px;
-    color: #172b4d;
+    color: var(--app-text-heading);
     font-weight: 600;
   }
 
@@ -43,21 +43,21 @@
 
     .data-hoje {
       margin: 0;
-      color: #172b4d;
+      color: var(--app-text-heading);
       font-size: 15px;
       font-weight: 500;
     }
 
     .chip-hoje {
-      background: #e3f2fd;
-      color: #1565c0;
+      background: var(--app-status-info-bg);
+      color: var(--app-status-info-dark);
       font-size: 11px;
       height: 22px;
     }
 
     .chip-leitura {
-      background: #fff3e0;
-      color: #e65100;
+      background: var(--app-status-warning-bg);
+      color: var(--app-status-warning-dark);
       font-size: 11px;
       height: 22px;
 
@@ -70,14 +70,13 @@
 // ESTADOS DE LOADING E MENSAGENS
 // =========================================
 
-
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #5e6c84;
+  color: var(--app-text-color-secondary);
   text-align: center;
 
   img {
@@ -88,7 +87,7 @@
 
   h3 {
     margin: 0 0 8px;
-    color: #172b4d;
+    color: var(--app-text-heading);
     font-size: 1.2rem;
   }
 }
@@ -104,16 +103,16 @@
   justify-content: center;
   text-align: center;
   padding: 40px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  background: var(--app-card-background-color);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-md);
   max-width: 500px;
-  margin: 40px auto; // Centraliza horizontalmente e dá margem no topo
+  margin: 40px auto;
 
   .icon-circle {
     width: 80px;
     height: 80px;
-    border-radius: 50%;
+    border-radius: var(--app-radius-round);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,22 +127,21 @@
   }
 
   h2 { margin: 0 0 10px; font-size: 1.5rem; font-weight: 600; }
-  p { color: #666; margin: 0; font-size: 1rem; line-height: 1.5; }
+  p { color: var(--app-text-caption); margin: 0; font-size: 1rem; line-height: 1.5; }
 
-  // Cores Específicas por Tipo
   &.folga {
-    .icon-circle { background-color: #8bc34a; } // Verde suave
-    h2 { color: #558b2f; }
+    .icon-circle { background-color: #8bc34a; }
+    h2 { color: var(--app-status-success-dark); }
   }
 
   &.ferias {
-    .icon-circle { background-color: #03a9f4; } // Azul piscina
-    h2 { color: #0277bd; }
+    .icon-circle { background-color: #03a9f4; }
+    h2 { color: var(--app-status-info-dark); }
   }
 
   &.atestado {
-    .icon-circle { background-color: #e57373; } // Vermelho suave
-    h2 { color: #c62828; }
+    .icon-circle { background-color: #e57373; }
+    h2 { color: var(--app-status-danger-dark); }
   }
 }
 
@@ -164,8 +162,8 @@
 .kanban-column {
   flex: 1 1 300px;
   max-width: 400px;
-  background-color: #ebecf0;
-  border-radius: 8px;
+  background-color: var(--app-kanban-column-bg);
+  border-radius: var(--app-radius-md);
   display: flex;
   flex-direction: column;
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
@@ -176,8 +174,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; // Cabeçalho não encolhe
-  cursor: grab; // Indica que a coluna pode ser arrastada
+  flex-shrink: 0;
+  cursor: grab;
 
   &:active {
     cursor: grabbing;
@@ -189,7 +187,7 @@
     gap: 8px;
 
     .drag-handle {
-      color: #6b778c;
+      color: var(--app-text-color-secondary);
       font-size: 20px;
       width: 20px;
       height: 20px;
@@ -205,17 +203,17 @@
       margin: 0;
       font-size: 14px;
       font-weight: 600;
-      color: #172b4d;
+      color: var(--app-text-heading);
       text-transform: uppercase;
     }
   }
 
   .card-count {
     font-size: 12px;
-    color: #5e6c84;
-    background: rgba(0,0,0,0.05);
+    color: var(--app-text-color-secondary);
+    background: var(--app-hover-bg);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--app-radius-sm);
   }
 }
 
@@ -224,7 +222,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 100px; // Área mínima para soltar items em lista vazia
+  min-height: 100px;
 }
 
 // =========================================
@@ -232,57 +230,54 @@
 // =========================================
 
 .kanban-card {
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
-  cursor: pointer; // Indica clicável (abrir detalhe)
+  background: var(--app-kanban-card-bg);
+  border-radius: var(--app-radius-sm);
+  box-shadow: var(--app-kanban-card-shadow);
+  cursor: pointer;
   position: relative;
   transition: all 0.2s;
   overflow: hidden;
 
-  // Efeito Hover
   &:hover {
-    background-color: #fafbfc;
-    box-shadow: 0 2px 4px rgba(9, 30, 66, 0.3);
+    background-color: var(--app-kanban-card-hover);
+    box-shadow: var(--app-kanban-card-shadow-hover);
   }
 
-  // Estado Concluído (Visual mais apagado)
   &.card-concluido {
     opacity: 0.7;
-    background-color: #f4f5f7;
+    background-color: var(--app-surface-alt);
 
     .card-title {
       text-decoration: line-through;
-      color: #888;
+      color: var(--app-text-muted);
     }
   }
 
-  // Estado Fechado Incompleto
   &.card-fechado {
-    border: 1px solid #ffcdd2;
-    background-color: #fff8f8;
+    border: 1px solid var(--app-status-danger-bg);
+    background-color: var(--app-status-danger-bg-subtle);
 
-    .card-title { color: #b71c1c; }
+    .card-title { color: var(--app-status-danger-dark); }
   }
 
   .status-indicator {
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 4px;
-    background: #ccc;
+    background: var(--app-text-disabled);
 
-    &.ABERTO { background: #0079bf; }
-    &.PENDENTE { background: #ff9800; }
-    &.FECHADO { background: #4caf50; }
-    &.ATRASADO { background: #eb5a46; }
-    &.fechado-incompleto { background: #d32f2f !important; }
+    &.ABERTO { background: var(--app-status-info); }
+    &.PENDENTE { background: var(--app-status-warning); }
+    &.FECHADO { background: var(--app-status-success); }
+    &.ATRASADO { background: var(--app-status-danger); }
+    &.fechado-incompleto { background: var(--app-status-danger-dark) !important; }
   }
 
   .fechada-tag {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    background: #d32f2f;
+    background: var(--app-status-danger-dark);
     color: white;
     font-size: 10px;
     font-weight: 700;
@@ -295,14 +290,14 @@
   }
 
   .card-content {
-    padding: 10px 10px 10px 14px; // Esquerda maior por causa da barra lateral
+    padding: 10px 10px 10px 14px;
   }
 
   .card-title {
     margin: 0 0 6px 0;
     font-size: 14px;
     font-weight: 500;
-    color: #172b4d;
+    color: var(--app-text-heading);
     line-height: 1.4;
   }
 
@@ -311,7 +306,7 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: #5e6c84;
+    color: var(--app-text-color-secondary);
     margin-bottom: 8px;
 
     .clock-icon { font-size: 12px; width: 12px; height: 12px; }
@@ -326,17 +321,17 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      color: #5e6c84;
+      color: var(--app-text-color-secondary);
       font-size: 12px;
       padding: 2px 4px;
       border-radius: 3px;
 
-      &:hover { background-color: rgba(9, 30, 66, 0.08); color: #172b4d; }
+      &:hover { background-color: var(--app-active-bg); color: var(--app-text-heading); }
 
       mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
       &.checkbox-badge.done {
-        background-color: #61bd4f;
+        background-color: var(--app-status-success);
         color: white;
       }
     }
@@ -352,163 +347,68 @@
 // ESTILOS DE DRAG & DROP (ANGULAR CDK)
 // =========================================
 
-// 1. O Item sendo arrastado (Preview flutuante)
-// Isso é o que "voa" junto com o mouse
 .cdk-drag-preview {
   box-sizing: border-box;
-  border-radius: 4px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.15); // Sombra grande para profundidade
+  border-radius: var(--app-radius-sm);
+  box-shadow: var(--app-kanban-drag-shadow);
 
-  // Se for um CARD
   &.kanban-card {
-    background: white;
+    background: var(--app-kanban-card-bg);
     opacity: 0.95;
     overflow: hidden;
 
     .status-indicator {
-        position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-        // Precisamos garantir que a cor persista no preview (pode herdar ou definir padrão)
-        background: #ccc;
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--app-text-disabled);
     }
 
     .card-content { padding: 10px 10px 10px 14px; }
-    .card-title { margin: 0 0 6px 0; font-size: 14px; font-weight: 500; color: #172b4d; }
-    // Escondemos detalhes no preview para ficar mais limpo
+    .card-title { margin: 0 0 6px 0; font-size: 14px; font-weight: 500; color: var(--app-text-heading); }
     .mini-progress, .card-badges { display: none; }
   }
 
-  // Se for uma COLUNA
   &.kanban-column {
-    background-color: #ebecf0;
-    border-radius: 8px;
+    background-color: var(--app-kanban-column-bg);
+    border-radius: var(--app-radius-md);
     padding: 12px;
     opacity: 0.9;
-    max-height: 400px; // Limita altura visual
+    max-height: 400px;
     overflow: hidden;
   }
 }
 
-// 2. O Placeholder padrão (esconde o original)
 .cdk-drag-placeholder {
   opacity: 0;
 }
 
-// 3. Placeholder Customizado para CARTÕES
-// (A caixa tracejada cinza onde o cartão vai cair)
 .custom-card-placeholder {
-  background: rgba(9, 30, 66, 0.04);
-  border: 2px dashed rgba(9, 30, 66, 0.1);
-  border-radius: 4px;
-  min-height: 80px; // Altura similar a um card real
+  background: var(--app-kanban-placeholder-bg);
+  border: 2px dashed var(--app-kanban-placeholder-border);
+  border-radius: var(--app-radius-sm);
+  min-height: 80px;
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
   margin-bottom: 8px;
 }
 
-// 4. Placeholder Customizado para COLUNAS
 .custom-column-placeholder {
-  background: rgba(0, 0, 0, 0.05);
-  border: 2px dashed rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  background: var(--app-kanban-placeholder-bg);
+  border: 2px dashed var(--app-kanban-placeholder-border);
+  border-radius: var(--app-radius-md);
   flex: 1 1 300px;
   max-width: 400px;
   min-height: 120px;
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-// 5. Animação de reordenação
 .cdk-drag-animating {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-// Garante que os outros itens da lista se movam suavemente
 .kanban-container.cdk-drop-list-dragging .kanban-column:not(.cdk-drag-placeholder),
 .cards-list.cdk-drop-list-dragging .kanban-card:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-// Animação do Loading
 @keyframes rotate {
   100% { transform: rotate(360deg); }
-}
-
-// ===================== DARK MODE =====================
-:host-context(.dark-theme) {
-
-  .board-wrapper { background-color: #141414; }
-
-  .page-header {
-    background: #1a1a1a;
-    border-bottom-color: #2a2a2a;
-    h1 { color: #e8e8e8; }
-  }
-
-  .date-nav .date-display {
-    .data-hoje { color: #c8c8c8; }
-    .chip-hoje  { background: #0d2035; color: #90caf9; }
-    .chip-leitura { background: #2a1a08; color: #ffb74d; }
-  }
-
-  // Estados de escala
-  .status-state {
-    background: #1e1e1e;
-    h2, p { color: inherit; }
-  }
-
-  .empty-state { color: #9a9a9a; }
-
-  // Colunas do Kanban
-  .kanban-column { background-color: #1e1e1e; }
-
-  .column-header {
-    .header-title {
-      .drag-handle { color: #555; }
-      h2 { color: #c8c8c8; }
-    }
-    .card-count { background: rgba(255,255,255,0.07); color: #9a9a9a; }
-  }
-
-  // Cards
-  .kanban-card {
-    background: #252525;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-
-    &:hover {
-      background-color: #2d2d2d;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    }
-
-    &.card-concluido {
-      background-color: #1e1e1e;
-      .card-title { color: #555; }
-    }
-
-    &.card-fechado {
-      border-color: #6b1a1a;
-      background-color: #1e1212;
-      .card-title { color: #ef9a9a; }
-    }
-
-    .fechada-tag { background: #b71c1c; }
-
-    .card-title  { color: #e0e0e0; }
-    .card-meta   { color: #9a9a9a; }
-    .card-badges .badge { color: #9a9a9a; }
-  }
-
-  // Placeholder de drag
-  .custom-card-placeholder {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.08);
-  }
-  .custom-column-placeholder {
-    background: rgba(255,255,255,0.03);
-    border-color: rgba(255,255,255,0.08);
-  }
-
-  // Preview de drag
-  .cdk-drag-preview.kanban-card {
-    background: #2d2d2d;
-    .card-title { color: #e0e0e0; }
-  }
-  .cdk-drag-preview.kanban-column { background-color: #1e1e1e; }
 }

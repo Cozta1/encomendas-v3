@@ -1,26 +1,23 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+// Note: usuarioId params were removed from getConversas/marcarLida/getBadge — the backend
+// now derives the user ID from the authenticated JWT principal (IDOR fix).
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
-import { AuthService } from '../auth/auth.service';
 import {
   Conversa,
   MensagemChat,
   EnviarMensagemRequest,
-  UploadedFile,
   CriarConversaRequest
 } from '../models/chat.interfaces';
-import { Client, type IMessage } from '@stomp/stompjs';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   private apiUrl = `${environment.apiUrl}/chat`;
 
-  private stompClient: Client | null = null;
-  private conversaSubscriptions = new Map<string, any>();
-
-  // Group topics the component wants subscribed (persists across reconnects)
-  private activeGroupTopics = new Set<string>();
+  private supabase: SupabaseClient | null = null;
+  private channels = new Map<string, RealtimeChannel>();
 
   private messagesSubject = new Subject<MensagemChat>();
   public messages$ = this.messagesSubject.asObservable();
@@ -28,17 +25,14 @@ export class ChatService {
   private badgeSubject = new BehaviorSubject<number>(0);
   public badge$ = this.badgeSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService
-  ) {}
+  private _activeConversaId: string | null = null;
+
+  constructor(private http: HttpClient) {}
 
   // ---- REST ----
 
-  getConversas(equipeId: string, usuarioId: number): Observable<Conversa[]> {
-    const params = new HttpParams()
-      .set('equipeId', equipeId)
-      .set('usuarioId', usuarioId.toString());
+  getConversas(equipeId: string): Observable<Conversa[]> {
+    const params = new HttpParams().set('equipeId', equipeId);
     return this.http.get<Conversa[]>(`${this.apiUrl}/conversas`, { params });
   }
 
@@ -53,103 +47,64 @@ export class ChatService {
     return this.http.get<MensagemChat[]>(`${this.apiUrl}/mensagens`, { params });
   }
 
-  uploadAnexo(file: File): Observable<UploadedFile> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post<UploadedFile>(`${this.apiUrl}/mensagens/upload`, formData);
+  enviarMensagem(req: EnviarMensagemRequest): Observable<MensagemChat> {
+    return this.http.post<MensagemChat>(`${this.apiUrl}/mensagens/enviar`, req);
   }
 
-  marcarLida(conversaId: string, usuarioId: number): Observable<void> {
-    const params = new HttpParams().set('usuarioId', usuarioId.toString());
-    return this.http.post<void>(`${this.apiUrl}/mensagens/${conversaId}/lida`, {}, { params });
+  marcarLida(conversaId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/mensagens/${conversaId}/lida`, {});
   }
 
-  getBadge(equipeId: string, usuarioId: number): Observable<number> {
-    const params = new HttpParams()
-      .set('equipeId', equipeId)
-      .set('usuarioId', usuarioId.toString());
+  getBadge(equipeId: string): Observable<number> {
+    const params = new HttpParams().set('equipeId', equipeId);
     return this.http.get<number>(`${this.apiUrl}/badge`, { params });
   }
 
-  // ---- WebSocket ----
+  // ---- Supabase Realtime ----
 
   connect(userId: number): void {
-    if (this.stompClient?.active) return;
+    if (this.supabase) return;
 
-    const token = this.authService.getToken();
+    this.supabase = createClient(environment.supabaseUrl, environment.supabaseAnonKey);
 
-    // Convert HTTP URL to WebSocket URL (ws:// or wss://)
-    let wsUrl = environment.wsUrl;
-    if (wsUrl.startsWith('/')) {
-      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsUrl = `${proto}//${location.host}${wsUrl}`;
-    } else {
-      wsUrl = wsUrl.replace(/^http/, 'ws');
-    }
-
-    this.stompClient = new Client({
-      brokerURL: wsUrl,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
-      },
-      reconnectDelay: 5000,
-      onConnect: () => {
-        // Unsubscribe old STOMP subscriptions before clearing (handles reconnects)
-        this.conversaSubscriptions.forEach(sub => {
-          try { sub.unsubscribe(); } catch (_) { /* already closed */ }
-        });
-        this.conversaSubscriptions.clear();
-
-        // Private messages — Spring user destinations use /user/queue/... without userId.
-        // Spring routes via the WebSocket principal set in WebSocketAuthChannelInterceptor.
-        this.stompClient!.subscribe(`/user/queue/chat`, (message: IMessage) => {
-          const msg: MensagemChat = JSON.parse(message.body);
-          this.messagesSubject.next(msg);
-        });
-
-        // Badge updates
-        this.stompClient!.subscribe(`/user/queue/badge`, (message: IMessage) => {
-          const count = JSON.parse(message.body);
-          this.badgeSubject.next(count);
-        });
-
-        // Re-subscribe to all group topics that were requested before/during connection
-        this.activeGroupTopics.forEach(id => this.doSubscribeToGroupTopic(id));
-      }
-    });
-
-    this.stompClient.activate();
+    // Assina canal de badge do usuário
+    const badgeChannel = this.supabase.channel(`badge:${userId}`);
+    badgeChannel
+      .on('broadcast', { event: 'update' }, ({ payload }) => {
+        this.badgeSubject.next(payload as number);
+      })
+      .subscribe();
+    this.channels.set(`badge:${userId}`, badgeChannel);
   }
 
-  /**
-   * Request a subscription to a group topic.
-   * If the WebSocket is already connected, subscribes immediately.
-   * If not yet connected, the subscription is queued and will be processed in onConnect.
-   */
   subscribeToConversa(conversaId: string): void {
-    this.activeGroupTopics.add(conversaId);
+    const key = `chat:${conversaId}`;
+    if (!this.supabase || this.channels.has(key)) return;
 
-    if (this.stompClient?.connected) {
-      this.doSubscribeToGroupTopic(conversaId);
-    }
-    // If not yet connected, onConnect will call doSubscribeToGroupTopic for all activeGroupTopics
+    const channel = this.supabase.channel(key);
+    channel
+      .on('broadcast', { event: 'mensagem' }, ({ payload }) => {
+        this.messagesSubject.next(payload as MensagemChat);
+      })
+      .subscribe();
+    this.channels.set(key, channel);
   }
 
   unsubscribeFromConversa(conversaId: string): void {
-    this.activeGroupTopics.delete(conversaId);
-    const sub = this.conversaSubscriptions.get(conversaId);
-    if (sub) {
-      sub.unsubscribe();
-      this.conversaSubscriptions.delete(conversaId);
+    const key = `chat:${conversaId}`;
+    const channel = this.channels.get(key);
+    if (channel) {
+      this.supabase?.removeChannel(channel);
+      this.channels.delete(key);
     }
   }
 
-  enviarMensagemWs(req: EnviarMensagemRequest): void {
-    if (!this.stompClient?.connected) return;
-    this.stompClient.publish({
-      destination: '/app/chat.send',
-      body: JSON.stringify(req)
-    });
+  setActiveConversa(conversaId: string | null): void {
+    this._activeConversaId = conversaId;
+  }
+
+  isConnected(): boolean {
+    return this.supabase !== null;
   }
 
   setBadge(value: number): void {
@@ -157,20 +112,11 @@ export class ChatService {
   }
 
   disconnect(): void {
-    this.stompClient?.deactivate();
-    this.stompClient = null;
-    this.conversaSubscriptions.clear();
-    this.activeGroupTopics.clear();
-  }
-
-  private doSubscribeToGroupTopic(conversaId: string): void {
-    if (this.conversaSubscriptions.has(conversaId)) return;
-    if (!this.stompClient?.connected) return;
-
-    const sub = this.stompClient.subscribe(`/topic/chat.${conversaId}`, (message: IMessage) => {
-      const msg: MensagemChat = JSON.parse(message.body);
-      this.messagesSubject.next(msg);
-    });
-    this.conversaSubscriptions.set(conversaId, sub);
+    if (this.supabase) {
+      this.supabase.removeAllChannels();
+      this.supabase = null;
+    }
+    this.channels.clear();
+    this._activeConversaId = null;
   }
 }

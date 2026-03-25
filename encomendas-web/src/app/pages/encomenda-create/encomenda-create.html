@@ -5,6 +5,12 @@
     <button mat-stroked-button color="warn" routerLink="/dashboard">Cancelar</button>
   </div>
 
+  <div *ngIf="temRascunho" style="display: flex; align-items: center; gap: 8px; background: var(--mat-app-surface-variant, #f3f4f6); border-left: 4px solid #1976d2; border-radius: 4px; padding: 10px 16px; margin-bottom: 16px;">
+    <mat-icon style="color: #1976d2; font-size: 20px; width: 20px; height: 20px;">history</mat-icon>
+    <span style="flex: 1; font-size: 14px;">Rascunho recuperado — seus dados foram restaurados automaticamente.</span>
+    <button mat-button color="warn" type="button" (click)="limparRascunho()">Descartar</button>
+  </div>
+
   <form [formGroup]="form" (ngSubmit)="salvar()">
 
     <mat-card class="mb-4">
@@ -171,9 +177,9 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <strong>{{ i + 1 }}. {{ item.get('produto')?.value?.nome || item.get('produto.nome')?.value }}</strong>
+                <strong>{{ i + 1 }}. {{ item.get('produtoNome')?.value }}</strong>
                 <div class="item-secondary-text">
-                  Fornecedor: {{ item.get('fornecedor')?.value?.nome || item.get('fornecedor.nome')?.value }}
+                  Fornecedor: {{ item.get('fornecedorNome')?.value }}
                 </div>
               </div>
 

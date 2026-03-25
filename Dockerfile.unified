@@ -32,8 +32,8 @@ RUN mvn clean package -DskipTests -B
 # === Stage 3: Runtime Unificado ===
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
-# Instalar nginx e wget (health checks)
-RUN apk add --no-cache nginx wget \
+# Instalar nginx, wget (health checks) e dos2unix (fix line endings)
+RUN apk add --no-cache nginx wget dos2unix \
     && mkdir -p /run/nginx /var/log/nginx
 
 WORKDIR /app
@@ -46,10 +46,11 @@ COPY --from=frontend-build /app/dist/encomendas-web/browser /usr/share/nginx/htm
 
 # Copiar nginx config (proxy para 127.0.0.1:8080)
 COPY nginx-unified.conf /etc/nginx/http.d/default.conf
+RUN dos2unix /etc/nginx/http.d/default.conf
 
-# Copiar entrypoint
+# Copiar entrypoint (converter CRLF para LF)
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN dos2unix /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Diretorio de uploads (modo local / fallback)
 RUN mkdir -p /app/uploads

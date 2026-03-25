@@ -6,7 +6,6 @@ import com.benfica.encomendas_api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +36,7 @@ public class ChatService {
     private EquipeRepository equipeRepository;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private SupabaseBroadcastService supabaseBroadcastService;
 
     @Transactional(readOnly = true)
     public List<ConversaDTO> getConversasDoUsuario(String equipeId, Long userId) {
@@ -127,18 +127,10 @@ public class ChatService {
         MensagemChat saved = mensagemChatRepository.save(mensagem);
         MensagemChatDTO dto = toMensagemDTO(saved);
 
-        if (conversa.getTipo() == TipoConversa.GRUPO) {
-            messagingTemplate.convertAndSend("/topic/chat." + conversa.getId(), dto);
-        } else {
-            Long destinatarioId = conversa.getParticipanteA().getId().equals(remetenteId)
-                    ? conversa.getParticipanteB().getId()
-                    : conversa.getParticipanteA().getId();
-            messagingTemplate.convertAndSendToUser(
-                    destinatarioId.toString(), "/queue/chat", dto);
-            // Also send back to sender's queue so their own UI updates
-            messagingTemplate.convertAndSendToUser(
-                    remetenteId.toString(), "/queue/chat", dto);
-        }
+        // Broadcast para todos os participantes do canal via Supabase Realtime
+        String channelId = conversa.getId().toString();
+        CompletableFuture.runAsync(() ->
+                supabaseBroadcastService.broadcast("chat:" + channelId, "mensagem", dto));
 
         pushBadgeUpdate(conversa, remetenteId);
 
@@ -162,7 +154,8 @@ public class ChatService {
         leituraMensagemRepository.save(leitura);
 
         long total = mensagemChatRepository.countTotalUnread(conversa.getEquipe().getId(), userId);
-        messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/badge", total);
+        CompletableFuture.runAsync(() ->
+                supabaseBroadcastService.broadcast("badge:" + userId, "update", total));
     }
 
     @Transactional(readOnly = true)
@@ -176,7 +169,8 @@ public class ChatService {
                     ? conversa.getParticipanteB().getId()
                     : conversa.getParticipanteA().getId();
             long total = mensagemChatRepository.countTotalUnread(conversa.getEquipe().getId(), otherUserId);
-            messagingTemplate.convertAndSendToUser(otherUserId.toString(), "/queue/badge", total);
+            CompletableFuture.runAsync(() ->
+                    supabaseBroadcastService.broadcast("badge:" + otherUserId, "update", total));
         }
     }
 

@@ -4,6 +4,7 @@ import com.benfica.encomendas_api.dto.*;
 import com.benfica.encomendas_api.model.Conversa;
 import com.benfica.encomendas_api.service.ChatService;
 import com.benfica.encomendas_api.service.FileUploadService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,16 +29,21 @@ public class ChatController {
     @Autowired
     private FileUploadService fileUploadService;
 
+    /**
+     * SECURITY FIX (OWASP A01 — IDOR): removed @RequestParam usuarioId.
+     * The user's ID is now always read from the authenticated principal.
+     */
     @GetMapping("/conversas")
     public ResponseEntity<List<ConversaDTO>> getConversas(
             @RequestParam String equipeId,
-            @RequestParam Long usuarioId) {
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long usuarioId = getUserIdFromPrincipal(userDetails);
         return ResponseEntity.ok(chatService.getConversasDoUsuario(equipeId, usuarioId));
     }
 
     @PostMapping("/conversas")
     public ResponseEntity<Map<String, Object>> criarConversa(
-            @RequestBody CriarConversaRequest req,
+            @Valid @RequestBody CriarConversaRequest req,
             @AuthenticationPrincipal UserDetails userDetails) {
         Conversa conversa;
         if (req.getDestinatarioId() == null) {
@@ -72,18 +78,31 @@ public class ChatController {
         }
     }
 
+    /** SECURITY FIX (IDOR): replaced @RequestParam usuarioId with authenticated principal. */
     @PostMapping("/mensagens/{conversaId}/lida")
     public ResponseEntity<Void> marcarLida(
             @PathVariable UUID conversaId,
-            @RequestParam Long usuarioId) {
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long usuarioId = getUserIdFromPrincipal(userDetails);
         chatService.marcarLida(conversaId, usuarioId);
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/mensagens/enviar")
+    public ResponseEntity<MensagemChatDTO> enviarMensagem(
+            @Valid @RequestBody EnviarMensagemRequest req,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getUserIdFromPrincipal(userDetails);
+        MensagemChatDTO dto = chatService.enviarMensagem(req, userId);
+        return ResponseEntity.ok(dto);
+    }
+
+    /** SECURITY FIX (IDOR): replaced @RequestParam usuarioId with authenticated principal. */
     @GetMapping("/badge")
     public ResponseEntity<Long> getBadge(
             @RequestParam String equipeId,
-            @RequestParam Long usuarioId) {
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long usuarioId = getUserIdFromPrincipal(userDetails);
         return ResponseEntity.ok(chatService.getTotalNaoLidas(equipeId, usuarioId));
     }
 

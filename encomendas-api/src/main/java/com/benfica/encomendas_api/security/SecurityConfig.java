@@ -39,6 +39,9 @@ public class SecurityConfig {
     @Autowired
     private TeamContextFilter teamContextFilter;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
     // Lê a origem permitida do ambiente (Ex: https://sua-app.vercel.app)
     // Se não houver, permite tudo ("*")
     @Value("${cors.allowed-origin:*}")
@@ -70,6 +73,9 @@ public class SecurityConfig {
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000))
+                        // CSP: restrict resource loading to same origin (API responses)
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'none'; frame-ancestors 'none'"))
                 )
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -78,12 +84,18 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws-sockjs/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
+        // All three custom filters anchored to standard Spring Security filters that have
+        // registered orders — avoids IllegalArgumentException on custom filter class lookup.
+        // Execution order: rateLimitFilter → jwtFilter → UPAF → teamContextFilter
+        // (rateLimitFilter added first so stable-sort keeps it before jwtFilter at same order level)
+        http.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAfter(teamContextFilter, JwtAuthenticationFilter.class);
+        http.addFilterAfter(teamContextFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

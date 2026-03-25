@@ -1,6 +1,5 @@
 :host {
   display: block;
-  // Cancels the 24px padding of .page-content so the chat fills the full screen
   margin: -24px;
   height: calc(100vh - 64px);
 }
@@ -16,10 +15,10 @@
 .conversations-panel {
   width: 320px;
   min-width: 280px;
-  border-right: 1px solid rgba(0,0,0,0.12);
+  border-right: 1px solid var(--app-border-color);
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--app-chat-panel-bg);
   overflow: hidden;
 }
 
@@ -30,12 +29,13 @@
   padding: 12px 8px 12px 16px;
   font-size: 16px;
   font-weight: 600;
-  background: #fff;
-  border-bottom: 1px solid rgba(0,0,0,0.12);
+  background: var(--app-chat-header-bg);
+  border-bottom: 1px solid var(--app-border-color);
   flex-shrink: 0;
+  color: var(--app-text-heading);
 
   mat-icon:first-child {
-    color: var(--mat-primary-color, #3f51b5);
+    color: var(--app-primary-color);
   }
 
   span {
@@ -44,15 +44,15 @@
 
   .new-conv-btn {
     flex-shrink: 0;
-    color: #666;
+    color: var(--app-text-caption);
     transition: color 0.2s;
 
     &.active {
-      color: #f44336;
+      color: var(--app-status-danger);
     }
 
     &:not(.active):hover {
-      color: #3f51b5;
+      color: var(--app-primary-color);
     }
   }
 }
@@ -74,31 +74,31 @@
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.2s;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background var(--app-transition-fast);
+  border-bottom: 1px solid var(--app-border-light);
 
   &:hover {
-    background: rgba(0,0,0,0.04);
+    background: var(--app-hover-bg);
   }
 
   &.active {
-    background: rgba(63, 81, 181, 0.1);
-    border-left: 3px solid #3f51b5;
+    background: var(--app-primary-light);
+    border-left: 3px solid var(--app-primary-color);
   }
 }
 
 .conv-avatar {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  background: rgba(63, 81, 181, 0.12);
+  border-radius: var(--app-radius-round);
+  background: var(--app-primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 
   mat-icon {
-    color: #3f51b5;
+    color: var(--app-primary-color);
   }
 }
 
@@ -113,24 +113,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--app-text-color);
 }
 
 .conv-ultima {
   font-size: 12px;
-  color: #666;
+  color: var(--app-text-caption);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
   &.sem-mensagem {
     font-style: italic;
-    color: #999;
+    color: var(--app-text-muted);
   }
 }
 
 .conv-badge {
-  background: #f44336;
-  color: #fff;
+  background: var(--app-status-danger);
+  color: var(--app-text-on-dark);
   border-radius: 10px;
   padding: 2px 7px;
   font-size: 11px;
@@ -146,7 +147,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--app-text-muted);
   text-align: center;
 
   mat-icon {
@@ -160,8 +161,8 @@
 // --- Member selector ---
 
 .member-selector {
-  border-bottom: 1px solid rgba(0,0,0,0.12);
-  background: #f5f5f5;
+  border-bottom: 1px solid var(--app-border-color);
+  background: var(--app-surface-alt);
   flex-shrink: 0;
 
   .member-search {
@@ -169,10 +170,10 @@
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
+    border-bottom: 1px solid var(--app-border-light);
 
     mat-icon {
-      color: #888;
+      color: var(--app-text-color-secondary);
       font-size: 18px;
       width: 18px;
       height: 18px;
@@ -185,10 +186,10 @@
       background: none;
       outline: none;
       font-size: 13px;
-      color: #212121;
+      color: var(--app-text-color);
 
       &::placeholder {
-        color: #aaa;
+        color: var(--app-text-muted);
       }
     }
   }
@@ -204,25 +205,25 @@
     gap: 10px;
     padding: 8px 12px;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--app-transition-fast);
 
     &:hover {
-      background: rgba(0,0,0,0.05);
+      background: var(--app-hover-bg);
     }
   }
 
   .member-avatar {
     width: 34px;
     height: 34px;
-    border-radius: 50%;
-    background: rgba(63, 81, 181, 0.12);
+    border-radius: var(--app-radius-round);
+    background: var(--app-primary-light);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 
     mat-icon {
-      color: #3f51b5;
+      color: var(--app-primary-color);
       font-size: 18px;
       width: 18px;
       height: 18px;
@@ -236,7 +237,7 @@
     .member-nome {
       font-size: 13px;
       font-weight: 500;
-      color: #212121;
+      color: var(--app-text-color);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -244,7 +245,7 @@
 
     .member-cargo {
       font-size: 11px;
-      color: #888;
+      color: var(--app-text-color-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -252,7 +253,7 @@
   }
 
   .member-arrow {
-    color: #ccc;
+    color: var(--app-text-disabled);
     font-size: 18px;
     width: 18px;
     height: 18px;
@@ -264,7 +265,7 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    color: #aaa;
+    color: var(--app-text-muted);
 
     mat-icon {
       margin-bottom: 6px;
@@ -287,7 +288,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #fff;
+  background: var(--app-chat-messages-bg);
 }
 
 .messages-header {
@@ -295,21 +296,21 @@
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: #fff;
+  background: var(--app-chat-header-bg);
   flex-shrink: 0;
 
   .header-avatar {
     width: 44px;
     height: 44px;
-    border-radius: 50%;
-    background: rgba(63, 81, 181, 0.12);
+    border-radius: var(--app-radius-round);
+    background: var(--app-primary-light);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 
     mat-icon {
-      color: #3f51b5;
+      color: var(--app-primary-color);
     }
   }
 
@@ -321,11 +322,12 @@
   .header-nome {
     font-weight: 600;
     font-size: 15px;
+    color: var(--app-text-color);
   }
 
   .header-tipo {
     font-size: 12px;
-    color: #666;
+    color: var(--app-text-caption);
   }
 }
 
@@ -333,7 +335,7 @@
   display: flex;
   justify-content: center;
   padding: 4px 0;
-  background: rgba(0,0,0,0.02);
+  background: var(--app-hover-bg);
   flex-shrink: 0;
 }
 
@@ -360,7 +362,7 @@
   justify-content: center;
   flex: 1;
   padding: 40px;
-  color: #999;
+  color: var(--app-text-muted);
   text-align: center;
   min-height: 200px;
 
@@ -393,8 +395,8 @@
     margin-left: auto;
 
     .bubble-conteudo {
-      background: #3f51b5;
-      color: #fff;
+      background: var(--app-chat-bubble-mine);
+      color: var(--app-chat-bubble-mine-text);
       border-radius: 18px 18px 4px 18px;
     }
 
@@ -407,8 +409,8 @@
     align-self: flex-start;
 
     .bubble-conteudo {
-      background: #f1f3f4;
-      color: #212121;
+      background: var(--app-chat-bubble-theirs);
+      color: var(--app-chat-bubble-theirs-text);
       border-radius: 18px 18px 18px 4px;
     }
   }
@@ -417,7 +419,7 @@
 .bubble-remetente {
   font-size: 11px;
   font-weight: 600;
-  color: #3f51b5;
+  color: var(--app-primary-color);
   margin-bottom: 2px;
   padding: 0 4px;
 }
@@ -439,15 +441,15 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(0,0,0,0.08);
-  border-radius: 8px;
+  background: var(--app-active-bg);
+  border-radius: var(--app-radius-md);
   text-decoration: none;
   color: inherit;
   font-size: 13px;
   margin: 2px;
 
   &:hover {
-    background: rgba(0,0,0,0.15);
+    background: var(--app-border-color);
   }
 
   mat-icon {
@@ -459,7 +461,7 @@
 
 .bubble-hora {
   font-size: 11px;
-  color: #999;
+  color: var(--app-text-muted);
   margin-top: 2px;
   padding: 0 4px;
 }
@@ -468,7 +470,7 @@
 
 .pending-anexos {
   padding: 8px 16px;
-  border-top: 1px solid rgba(0,0,0,0.06);
+  border-top: 1px solid var(--app-border-light);
   flex-shrink: 0;
 }
 
@@ -479,8 +481,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border-top: 1px solid rgba(0,0,0,0.12);
-  background: #fff;
+  border-top: 1px solid var(--app-border-color);
+  background: var(--app-chat-input-bg);
   flex-shrink: 0;
 
   .message-input-field {
@@ -509,7 +511,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #999;
+  color: var(--app-text-muted);
   text-align: center;
 
   mat-icon {
@@ -521,120 +523,6 @@
 
   p {
     font-size: 16px;
-  }
-}
-
-// --- Dark mode ---
-
-:host-context(.dark-theme) {
-  .conversations-panel {
-    background: #1e1e1e;
-    border-right-color: rgba(255,255,255,0.1);
-  }
-
-  .panel-header {
-    background: #2a2a2a;
-    border-bottom-color: rgba(255,255,255,0.1);
-    color: #e0e0e0;
-
-    .new-conv-btn {
-      color: #888;
-
-      &.active { color: #ef9a9a; }
-      &:not(.active):hover { color: #7986cb; }
-    }
-  }
-
-  .conversation-item {
-    border-bottom-color: rgba(255,255,255,0.06);
-
-    &:hover {
-      background: rgba(255,255,255,0.05);
-    }
-
-    &.active {
-      background: rgba(100, 120, 220, 0.2);
-      border-left-color: #7986cb;
-    }
-  }
-
-  .conv-avatar {
-    background: rgba(100, 120, 220, 0.2);
-    mat-icon { color: #7986cb; }
-  }
-
-  .conv-nome {
-    color: #e0e0e0;
-  }
-
-  .conv-ultima {
-    color: #aaa;
-  }
-
-  .member-selector {
-    background: #252525;
-    border-bottom-color: rgba(255,255,255,0.1);
-
-    .member-search {
-      border-bottom-color: rgba(255,255,255,0.06);
-
-      mat-icon { color: #888; }
-      input { color: #e0e0e0; &::placeholder { color: #555; } }
-    }
-
-    .member-item:hover { background: rgba(255,255,255,0.05); }
-
-    .member-avatar {
-      background: rgba(100, 120, 220, 0.2);
-      mat-icon { color: #7986cb; }
-    }
-
-    .member-nome { color: #e0e0e0; }
-    .member-cargo { color: #777; }
-    .member-empty { color: #555; }
-  }
-
-  .messages-panel {
-    background: #121212;
-  }
-
-  .messages-header {
-    background: #1e1e1e;
-
-    .header-avatar {
-      background: rgba(100, 120, 220, 0.2);
-      mat-icon { color: #7986cb; }
-    }
-
-    .header-nome { color: #e0e0e0; }
-    .header-tipo { color: #aaa; }
-  }
-
-  .message-bubble {
-    &.mine .bubble-conteudo {
-      background: #3949ab;
-      color: #fff;
-    }
-
-    &.theirs .bubble-conteudo {
-      background: #2a2a2a;
-      color: #e0e0e0;
-    }
-  }
-
-  .bubble-hora { color: #666; }
-
-  .input-area {
-    background: #1e1e1e;
-    border-top-color: rgba(255,255,255,0.1);
-  }
-
-  .pending-anexos {
-    border-top-color: rgba(255,255,255,0.06);
-  }
-
-  .load-more {
-    background: rgba(255,255,255,0.02);
   }
 }
 

@@ -14,7 +14,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -25,8 +24,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { TeamService } from '../../core/team/team.service';
 import { UsuarioResponse } from '../../core/models/usuario.interfaces';
 import {
-  Conversa, MensagemChat, EnviarMensagemRequest,
-  UploadedFile, CriarConversaRequest
+  Conversa, MensagemChat, EnviarMensagemRequest, CriarConversaRequest
 } from '../../core/models/chat.interfaces';
 import { environment } from '../../../environments/environment';
 
@@ -44,7 +42,6 @@ import { environment } from '../../../environments/environment';
     MatFormFieldModule,
     MatListModule,
     MatDividerModule,
-    MatChipsModule,
     MatBadgeModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
@@ -56,13 +53,11 @@ import { environment } from '../../../environments/environment';
 export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   conversas: Conversa[] = [];
   conversaAtiva: Conversa | null = null;
   mensagens: MensagemChat[] = [];
   textoMensagem = '';
-  pendingAnexos: UploadedFile[] = [];
 
   loadingConversas = false;
   loadingMensagens = false;
@@ -120,11 +115,14 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
       }
 
       if (this.conversaAtiva && msg.conversaId === this.conversaAtiva.id) {
-        this.mensagens.push(msg);
-        this.shouldScroll = true;
-        this.cdr.detectChanges();
+        // Deduplicate: skip if already added (e.g. from REST response)
+        if (!this.mensagens.some(m => m.id === msg.id)) {
+          this.mensagens.push(msg);
+          this.shouldScroll = true;
+          this.cdr.detectChanges();
+        }
         if (msg.remetenteId !== this.userId) {
-          this.chatService.marcarLida(this.conversaAtiva.id, this.userId).subscribe();
+          this.chatService.marcarLida(this.conversaAtiva.id).subscribe();
           if (c) c.naoLidas = 0;
         }
       } else {
@@ -140,6 +138,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     this.msgSub?.unsubscribe();
+    this.chatService.setActiveConversa(null);
     this.chatService.disconnect();
   }
 
@@ -152,7 +151,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   carregarConversas(): void {
     this.loadingConversas = true;
-    this.chatService.getConversas(this.equipeId, this.userId).subscribe({
+    this.chatService.getConversas(this.equipeId).subscribe({
       next: conversas => {
         this.conversas = conversas;
         this.loadingConversas = false;
@@ -209,15 +208,14 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.paginaAtual = 0;
     this.temMaisAnteriores = true;
 
-    if (conversa.tipo === 'GRUPO') {
-      this.chatService.subscribeToConversa(conversa.id);
-      this.activeConversaSubscription = conversa.id;
-    }
+    this.chatService.setActiveConversa(conversa.id);
+    this.chatService.subscribeToConversa(conversa.id);
+    this.activeConversaSubscription = conversa.id;
 
     this.carregarMensagens(0, true);
 
     conversa.naoLidas = 0;
-    this.chatService.marcarLida(conversa.id, this.userId).subscribe();
+    this.chatService.marcarLida(conversa.id).subscribe();
   }
 
   carregarMensagens(page: number = 0, append: boolean = false): void {
@@ -253,19 +251,40 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   enviarMensagem(): void {
     const texto = this.textoMensagem.trim();
-    if (!texto && this.pendingAnexos.length === 0) return;
-    if (!this.conversaAtiva || this.enviando) return;
+    if (!texto || !this.conversaAtiva || this.enviando) return;
 
     const req: EnviarMensagemRequest = {
       conversaId: this.conversaAtiva.id,
-      conteudo: texto || undefined,
-      urlsAnexos: this.pendingAnexos.length > 0 ? [...this.pendingAnexos] : undefined
+      conteudo: texto
     };
 
     this.textoMensagem = '';
-    this.pendingAnexos = [];
+    this.enviando = true;
 
-    this.chatService.enviarMensagemWs(req);
+    this.chatService.enviarMensagem(req).subscribe({
+      next: msg => {
+        // Add to UI if not already there (could arrive via WebSocket first)
+        if (this.conversaAtiva && msg.conversaId === this.conversaAtiva.id) {
+          if (!this.mensagens.some(m => m.id === msg.id)) {
+            this.mensagens.push(msg);
+            this.shouldScroll = true;
+          }
+        }
+        // Update sidebar
+        const c = this.conversas.find(c => c.id === msg.conversaId);
+        if (c) {
+          c.ultimaMensagem = msg.conteudo || (msg.anexos?.length ? 'Anexo' : '');
+          c.ultimaMensagemEm = msg.enviadoEm;
+        }
+        this.enviando = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.snackBar.open('Erro ao enviar mensagem', 'OK', { duration: 3000 });
+        this.textoMensagem = req.conteudo ?? '';
+        this.enviando = false;
+      }
+    });
   }
 
   onEnterKey(event: KeyboardEvent): void {
@@ -273,45 +292,6 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
       event.preventDefault();
       this.enviarMensagem();
     }
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-
-    const MAX_SIZE = 10 * 1024 * 1024;
-    const ALLOWED_TYPES = [
-      'image/',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument'
-    ];
-
-    Array.from(input.files).forEach(file => {
-      if (file.size > MAX_SIZE) {
-        this.snackBar.open('Arquivo muito grande (máx. 10MB)', 'OK', { duration: 4000 });
-        return;
-      }
-      if (!ALLOWED_TYPES.some(t => file.type.startsWith(t))) {
-        this.snackBar.open('Tipo de arquivo não suportado', 'OK', { duration: 4000 });
-        return;
-      }
-      this.chatService.uploadAnexo(file).subscribe({
-        next: uploaded => {
-          this.pendingAnexos.push(uploaded);
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.snackBar.open('Erro ao enviar ficheiro', 'OK', { duration: 3000 });
-        }
-      });
-    });
-
-    input.value = '';
-  }
-
-  removerAnexo(index: number): void {
-    this.pendingAnexos.splice(index, 1);
   }
 
   iniciarPrivado(destinatarioId: number): void {
@@ -331,7 +311,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
       next: resp => {
         this.showMemberSelect = false;
         this.filtroBusca = '';
-        this.chatService.getConversas(this.equipeId, this.userId).subscribe({
+        this.chatService.getConversas(this.equipeId).subscribe({
           next: conversas => {
             this.conversas = conversas;
             const novaConversa = conversas.find(c => c.id === resp.id);

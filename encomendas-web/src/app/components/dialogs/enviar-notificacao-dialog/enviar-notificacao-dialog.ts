@@ -73,7 +73,7 @@ export class EnviarNotificacaoDialog {
     this.enviando = true;
     const base = {
       equipeId: this.data.equipeId,
-      remetenteId: this.data.remetenteId,
+      // remetenteId is no longer sent — the backend uses the authenticated JWT principal
       titulo: this.titulo.trim(),
       mensagem: this.mensagem.trim()
     };

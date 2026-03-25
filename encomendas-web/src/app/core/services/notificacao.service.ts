@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
@@ -23,24 +23,23 @@ export class NotificacaoService {
     this.cache = {};
   }
 
-  getNotificacoes(usuarioId: number): Observable<Notificacao[]> {
+  // No usuarioId param — the backend derives it from the authenticated JWT principal
+  getNotificacoes(): Observable<Notificacao[]> {
     const now = Date.now();
     if (this.cache.notificacoes && (now - this.cache.notificacoes.timestamp) < this.NOTIFICACOES_TTL) {
       return of(this.cache.notificacoes.data);
     }
-    const params = new HttpParams().set('usuarioId', usuarioId.toString());
-    return this.http.get<Notificacao[]>(this.apiUrl, { params }).pipe(
+    return this.http.get<Notificacao[]>(this.apiUrl).pipe(
       tap(data => { this.cache.notificacoes = { data, timestamp: Date.now() }; })
     );
   }
 
-  getContadorNaoLidas(usuarioId: number): Observable<number> {
+  getContadorNaoLidas(): Observable<number> {
     const now = Date.now();
     if (this.cache.contador && (now - this.cache.contador.timestamp) < this.CONTADOR_TTL) {
       return of(this.cache.contador.data);
     }
-    const params = new HttpParams().set('usuarioId', usuarioId.toString());
-    return this.http.get<number>(`${this.apiUrl}/count`, { params }).pipe(
+    return this.http.get<number>(`${this.apiUrl}/count`).pipe(
       tap(data => { this.cache.contador = { data, timestamp: Date.now() }; })
     );
   }
@@ -48,7 +47,6 @@ export class NotificacaoService {
   enviarNotificacao(payload: {
     equipeId: string;
     destinatarioId?: number | null;
-    remetenteId: number;
     titulo: string;
     mensagem: string;
   }): Observable<void> {
@@ -60,15 +58,13 @@ export class NotificacaoService {
     return this.http.post<void>(`${this.apiUrl}/${id}/ler`, {});
   }
 
-  marcarTodasLidas(usuarioId: number): Observable<void> {
+  marcarTodasLidas(): Observable<void> {
     this.invalidateCache();
-    const params = new HttpParams().set('usuarioId', usuarioId.toString());
-    return this.http.post<void>(`${this.apiUrl}/ler-todas`, {}, { params });
+    return this.http.post<void>(`${this.apiUrl}/ler-todas`, {});
   }
 
-  limparNotificacoes(usuarioId: number): Observable<void> {
+  limparNotificacoes(): Observable<void> {
     this.invalidateCache();
-    const params = new HttpParams().set('usuarioId', usuarioId.toString());
-    return this.http.delete<void>(`${this.apiUrl}/limpar`, { params });
+    return this.http.delete<void>(`${this.apiUrl}/limpar`);
   }
 }

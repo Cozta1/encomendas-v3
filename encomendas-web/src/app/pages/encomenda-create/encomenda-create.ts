@@ -2,9 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { forkJoin, Observable, Subject } from 'rxjs';
-import { startWith, map, filter, takeUntil } from 'rxjs/operators';
+import { startWith, map, filter, takeUntil, debounceTime } from 'rxjs/operators';
 
 // Material
 import { MatCardModule } from '@angular/material/card';
@@ -40,6 +40,7 @@ import { PhoneMaskDirective } from '../../core/directives/phone-mask.directive';
     MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatDatepickerModule, MatNativeDateModule,
     MatCheckboxModule, MatDividerModule, MatAutocompleteModule, MatTooltipModule,
+    MatSnackBarModule,
     CepMaskDirective, CpfMaskDirective, PhoneMaskDirective
   ],
   templateUrl: './encomenda-create.html',
@@ -49,6 +50,8 @@ export class EncomendaCreate implements OnInit, OnDestroy {
   form: FormGroup;
   itemForm: FormGroup;
   private destroy$ = new Subject<void>();
+  private readonly DRAFT_KEY = 'enc_draft_nova_encomenda';
+  temRascunho = false;
 
   filteredProdutos$!: Observable<ProdutoResponse[]>;
   filteredFornecedores$!: Observable<FornecedorResponse[]>;
@@ -102,6 +105,7 @@ export class EncomendaCreate implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarDadosAuxiliares();
+    this.carregarRascunho();
     this.setupListeners();
   }
 
@@ -157,6 +161,81 @@ export class EncomendaCreate implements OnInit, OnDestroy {
         adiantamentoControl?.setValue(0);
       }
     });
+
+    // Auto-save rascunho
+    this.form.valueChanges.pipe(
+      debounceTime(800),
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.salvarRascunho());
+  }
+
+  // --- RASCUNHO ---
+
+  private carregarRascunho(): void {
+    const saved = localStorage.getItem(this.DRAFT_KEY);
+    if (!saved) return;
+    try {
+      const draft = JSON.parse(saved);
+
+      this.form.patchValue({
+        cliente: draft.cliente ?? {},
+        enderecoCep: draft.enderecoCep ?? '',
+        enderecoBairro: draft.enderecoBairro ?? '',
+        enderecoRua: draft.enderecoRua ?? '',
+        enderecoNumero: draft.enderecoNumero ?? '',
+        enderecoComplemento: draft.enderecoComplemento ?? '',
+        dataEstimadaEntrega: draft.dataEstimadaEntrega ? new Date(draft.dataEstimadaEntrega) : null,
+        horaEstimadaEntrega: draft.horaEstimadaEntrega ?? '',
+        observacoes: draft.observacoes ?? '',
+        notaFutura: draft.notaFutura ?? false,
+        vendaEstoqueNegativo: draft.vendaEstoqueNegativo ?? false,
+        apenasEncomenda: draft.apenasEncomenda ?? false,
+        quitado: draft.quitado ?? false,
+        valorAdiantamento: draft.valorAdiantamento ?? 0
+      });
+
+      if (Array.isArray(draft.itens) && draft.itens.length > 0) {
+        draft.itens.forEach((item: any) => {
+          this.itensFormArray.push(this.fb.group({
+            produto: [item.produtoNome ?? ''],
+            fornecedor: [item.fornecedorNome ?? ''],
+            produtoNome: [item.produtoNome ?? ''],
+            fornecedorNome: [item.fornecedorNome ?? ''],
+            quantidade: [item.quantidade ?? 1],
+            precoCotado: [item.precoCotado ?? 0]
+          }));
+        });
+        this.atualizarTotais();
+      }
+
+      this.temRascunho = true;
+      this.snackBar.open('Rascunho recuperado!', 'Descartar', { duration: 6000 })
+        .onAction().subscribe(() => this.limparRascunho());
+    } catch {
+      localStorage.removeItem(this.DRAFT_KEY);
+    }
+  }
+
+  private salvarRascunho(): void {
+    const raw = this.form.getRawValue();
+    const draft = {
+      ...raw,
+      dataEstimadaEntrega: raw.dataEstimadaEntrega instanceof Date
+        ? raw.dataEstimadaEntrega.toISOString()
+        : raw.dataEstimadaEntrega,
+      itens: raw.itens.map((item: any) => ({
+        produtoNome: item.produtoNome ?? '',
+        fornecedorNome: item.fornecedorNome ?? '',
+        quantidade: item.quantidade,
+        precoCotado: item.precoCotado
+      }))
+    };
+    localStorage.setItem(this.DRAFT_KEY, JSON.stringify(draft));
+  }
+
+  limparRascunho(): void {
+    localStorage.removeItem(this.DRAFT_KEY);
+    this.temRascunho = false;
   }
 
   // --- MÉTODOS DE FILTRO ---
@@ -202,11 +281,20 @@ export class EncomendaCreate implements OnInit, OnDestroy {
   adicionarItem() {
     if (this.itemForm.invalid) return;
 
-    const { produto, fornecedor, quantidade, precoCotado } = this.itemForm.value;
+    const produtoVal = this.itemForm.get('produto')?.value;
+    const fornecedorVal = this.itemForm.get('fornecedor')?.value;
+    const quantidade = this.itemForm.get('quantidade')?.value;
+    const precoCotado = this.itemForm.get('precoCotado')?.value;
+
+    // Extrai o nome independente de ser objeto (selecionado do autocomplete) ou string (digitado)
+    const produtoNome: string = typeof produtoVal === 'object' ? (produtoVal?.nome ?? '') : (produtoVal ?? '');
+    const fornecedorNome: string = typeof fornecedorVal === 'object' ? (fornecedorVal?.nome ?? '') : (fornecedorVal ?? '');
 
     const itemGroup = this.fb.group({
-      produto: [produto],
-      fornecedor: [fornecedor],
+      produto: [produtoVal],
+      fornecedor: [fornecedorVal],
+      produtoNome: [produtoNome],
+      fornecedorNome: [fornecedorNome],
       quantidade: [quantidade],
       precoCotado: [precoCotado]
     });
@@ -214,7 +302,6 @@ export class EncomendaCreate implements OnInit, OnDestroy {
     this.itensFormArray.push(itemGroup);
     this.atualizarTotais();
 
-    // Resetar form auxiliar
     this.itemForm.reset({
       produto: null,
       fornecedor: null,
@@ -297,6 +384,7 @@ export class EncomendaCreate implements OnInit, OnDestroy {
 
     this.encomendaService.criarEncomenda(payload).subscribe({
       next: () => {
+        this.limparRascunho();
         this.snackBar.open('Encomenda criada com sucesso!', 'OK', { duration: 3000 });
         this.router.navigate(['/dashboard']);
       },

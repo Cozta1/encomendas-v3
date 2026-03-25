@@ -1,10 +1,13 @@
 @use '@angular/material' as mat;
 @include mat.core();
 
-// 1. Define a paleta de cores do TEMA CLARO (Padrão)
-$light-primary: mat.m2-define-palette(mat.$m2-indigo-palette, A400, A100, A700);
-$light-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
-$light-warn: mat.m2-define-palette(mat.$m2-red-palette);
+// =============================================
+// 1. MATERIAL THEME PALETTES
+// =============================================
+
+$light-primary: mat.m2-define-palette(mat.$m2-red-palette, 700, 400, 900);
+$light-accent: mat.m2-define-palette(mat.$m2-green-palette, 700, 400, 900);
+$light-warn: mat.m2-define-palette(mat.$m2-orange-palette);
 
 $light-theme: mat.m2-define-light-theme((
   color: (
@@ -14,10 +17,9 @@ $light-theme: mat.m2-define-light-theme((
   )
 ));
 
-// 2. Define a paleta de cores do TEMA ESCURO
-$dark-primary: mat.m2-define-palette(mat.$m2-indigo-palette, A200, A100, A400); // Trocado para Indigo no dark
-$dark-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
-$dark-warn: mat.m2-define-palette(mat.$m2-red-palette);
+$dark-primary: mat.m2-define-palette(mat.$m2-red-palette, 400, 200, 700);
+$dark-accent: mat.m2-define-palette(mat.$m2-green-palette, 400, 200, 700);
+$dark-warn: mat.m2-define-palette(mat.$m2-orange-palette);
 
 $dark-theme: mat.m2-define-dark-theme((
   color: (
@@ -27,95 +29,286 @@ $dark-theme: mat.m2-define-dark-theme((
   )
 ));
 
-// 3. APLICA O TEMA CLARO como padrão (componentes Material)
+// =============================================
+// 2. MATERIAL THEME APPLICATION
+// =============================================
+
 @include mat.all-component-themes($light-theme);
 
-// 4. APLICA O TEMA ESCURO (componentes Material)
 .dark-theme {
   @include mat.all-component-colors($dark-theme);
 
-  // Alinha backgrounds do Material com a paleta escura
   .mat-mdc-card {
-    --mdc-elevated-card-container-color: #1e1e1e;
-    --mdc-outlined-card-container-color: #1e1e1e;
+    --mdc-elevated-card-container-color: var(--app-card-background-color);
+    --mdc-outlined-card-container-color: var(--app-card-background-color);
   }
 
   .mat-mdc-dialog-container {
-    --mdc-dialog-container-color: #1e1e1e;
+    --mdc-dialog-container-color: var(--app-card-background-color);
   }
 
   .mat-mdc-menu-panel {
-    --mat-menu-container-color: #1e1e1e;
+    --mat-menu-container-color: var(--app-card-background-color);
   }
 
-  // Corrige tabelas dentro de dialogs e cards (mat-elevation-z* usa branco por padrão)
   .mat-mdc-table {
-    --mat-table-background-color: #252525;
-    --mat-table-header-headline-color: #9a9a9a;
-    --mat-table-row-item-label-text-color: #e8e8e8;
-    --mat-table-row-item-outline-color: #2a2a2a;
+    --mat-table-background-color: var(--app-surface-color);
+    --mat-table-header-headline-color: var(--app-text-color-secondary);
+    --mat-table-row-item-label-text-color: var(--app-text-color);
+    --mat-table-row-item-outline-color: var(--app-divider-color);
   }
 }
 
-// 5. DEFINIÇÃO DAS VARIÁVEIS DE CSS GLOBAIS
+// =============================================
+// 3. DESIGN TOKENS — LIGHT THEME (DEFAULT)
+// =============================================
 
-// Variáveis para o TEMA CLARO (Padrão)
 :root {
-  // Cores da Paleta
-  --app-primary-color: #{mat.m2-get-color-from-palette($light-primary, 'A400')};
-  --app-accent-color: #{mat.m2-get-color-from-palette($light-accent, 'A200')};
+  // --- Brand / Palette ---
+  --app-primary-color: #dc1b20;
+  --app-primary-light: rgba(220, 27, 32, 0.1);
+  --app-primary-lighter: rgba(220, 27, 32, 0.06);
+  --app-accent-color: #{mat.m2-get-color-from-palette($light-accent, 'default')};
   --app-warn-color: #{mat.m2-get-color-from-palette($light-warn, 'default')};
+  --app-accent-purple: #673ab7;
+  --app-accent-purple-light: rgba(103, 58, 183, 0.08);
 
-  // Cores de Fundo
+  // --- Backgrounds ---
   --app-background-color: #f5f5f5;
   --app-card-background-color: #ffffff;
   --app-sidebar-background-color: #fafafa;
   --app-surface-color: #f0f0f0;
+  --app-surface-alt: #f8f9fa;
+  --app-surface-raised: #ffffff;
+
+  // --- Borders & Dividers ---
   --app-border-color: rgba(0, 0, 0, 0.12);
+  --app-border-light: rgba(0, 0, 0, 0.06);
   --app-divider-color: #e0e0e0;
 
-  // Cores de Texto
+  // --- Text ---
   --app-text-color: rgba(0, 0, 0, 0.87);
   --app-text-color-secondary: rgba(0, 0, 0, 0.6);
   --app-text-muted: #9e9e9e;
+  --app-text-heading: #333333;
+  --app-text-body: #424242;
+  --app-text-caption: #666666;
+  --app-text-disabled: #bdbdbd;
+  --app-text-on-primary: #ffffff;
+  --app-text-on-dark: #ffffff;
 
-  // Interação
+  // --- Interaction ---
   --app-hover-bg: rgba(0, 0, 0, 0.04);
+  --app-active-bg: rgba(0, 0, 0, 0.08);
+  --app-focus-ring: rgba(220, 27, 32, 0.4);
 
-  // Cores do Chip Cancelado
+  // --- Status: Success (Green) ---
+  --app-status-success: #4caf50;
+  --app-status-success-dark: #2e7d32;
+  --app-status-success-bg: #e8f5e9;
+  --app-status-success-bg-subtle: #f1f8e9;
+
+  // --- Status: Warning (Orange) ---
+  --app-status-warning: #ff9800;
+  --app-status-warning-dark: #e65100;
+  --app-status-warning-bg: #fff3e0;
+  --app-status-warning-bg-subtle: #fff8e1;
+
+  // --- Status: Danger (Red) ---
+  --app-status-danger: #f44336;
+  --app-status-danger-dark: #c62828;
+  --app-status-danger-bg: #ffebee;
+  --app-status-danger-bg-subtle: #fff8f8;
+
+  // --- Status: Info (Blue) ---
+  --app-status-info: #2196f3;
+  --app-status-info-dark: #1565c0;
+  --app-status-info-bg: #e3f2fd;
+  --app-status-info-bg-subtle: #e8f4fd;
+
+  // --- Status: Neutral (Gray) ---
+  --app-status-neutral: #9e9e9e;
+  --app-status-neutral-dark: #616161;
+  --app-status-neutral-bg: #f5f5f5;
+
+  // --- Calendar Day Backgrounds ---
+  --app-cal-work-bg: #f1f8e9;
+  --app-cal-off-bg: #f5f5f5;
+  --app-cal-vacation-bg: #e3f2fd;
+  --app-cal-sick-bg: #ffebee;
+  --app-cal-today-bg: #fffde7;
+  --app-cal-other-month-bg: #f9f9f9;
+
+  // --- Kanban / Trello-style ---
+  --app-kanban-column-bg: #ebecf0;
+  --app-kanban-card-bg: #ffffff;
+  --app-kanban-card-hover: #fafbfc;
+  --app-kanban-card-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+  --app-kanban-card-shadow-hover: 0 2px 4px rgba(9, 30, 66, 0.3);
+  --app-kanban-drag-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  --app-kanban-placeholder-bg: rgba(9, 30, 66, 0.04);
+  --app-kanban-placeholder-border: rgba(9, 30, 66, 0.1);
+
+  // --- Chat ---
+  --app-chat-bubble-mine: var(--app-primary-color);
+  --app-chat-bubble-mine-text: #ffffff;
+  --app-chat-bubble-theirs: #f1f3f4;
+  --app-chat-bubble-theirs-text: #212121;
+  --app-chat-panel-bg: #fafafa;
+  --app-chat-header-bg: #ffffff;
+  --app-chat-input-bg: #ffffff;
+  --app-chat-messages-bg: #ffffff;
+
+  // --- Chips / Badges ---
   --app-chip-cancelado-bg: #e0e0e0;
   --app-chip-cancelado-text: #616161;
+  --app-chip-info-bg: #ffebee;
+  --app-chip-info-text: #c62828;
+
+  // --- Scrollbar ---
+  --app-scrollbar-thumb: #cccccc;
+  --app-scrollbar-track: transparent;
+
+  // --- Elevation ---
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --app-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --app-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --app-shadow-card: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+
+  // --- Radius ---
+  --app-radius-sm: 4px;
+  --app-radius-md: 8px;
+  --app-radius-lg: 12px;
+  --app-radius-xl: 20px;
+  --app-radius-round: 50%;
+
+  // --- Transitions ---
+  --app-transition-fast: 0.15s ease;
+  --app-transition-normal: 0.25s ease;
+  --app-transition-slow: 0.35s ease;
 }
 
-// Variáveis para o TEMA ESCURO
-.dark-theme {
-  // Cores da Paleta
-  --app-primary-color: #{mat.m2-get-color-from-palette($dark-primary, 'A200')};
-  --app-accent-color: #{mat.m2-get-color-from-palette($dark-accent, 'A200')};
-  --app-warn-color: #{mat.m2-get-color-from-palette($dark-warn, 'default')};
+// =============================================
+// 4. DESIGN TOKENS — DARK THEME
+// =============================================
 
-  // Cores de Fundo
+.dark-theme {
+  // --- Brand / Palette ---
+  --app-primary-color: #ef5350;
+  --app-primary-light: rgba(239, 83, 80, 0.12);
+  --app-primary-lighter: rgba(239, 83, 80, 0.06);
+  --app-accent-color: #{mat.m2-get-color-from-palette($dark-accent, 'default')};
+  --app-warn-color: #{mat.m2-get-color-from-palette($dark-warn, 'default')};
+  --app-accent-purple: #9f8fff;
+  --app-accent-purple-light: rgba(159, 143, 255, 0.12);
+
+  // --- Backgrounds ---
   --app-background-color: #141414;
   --app-card-background-color: #1e1e1e;
   --app-sidebar-background-color: #111111;
   --app-surface-color: #252525;
+  --app-surface-alt: #1a1a1a;
+  --app-surface-raised: #2a2a2a;
+
+  // --- Borders & Dividers ---
   --app-border-color: rgba(255, 255, 255, 0.10);
+  --app-border-light: rgba(255, 255, 255, 0.06);
   --app-divider-color: #2a2a2a;
 
-  // Cores de Texto
+  // --- Text ---
   --app-text-color: #e8e8e8;
   --app-text-color-secondary: #9a9a9a;
   --app-text-muted: #555555;
+  --app-text-heading: #e8e8e8;
+  --app-text-body: #c0c0c0;
+  --app-text-caption: #9a9a9a;
+  --app-text-disabled: #555555;
+  --app-text-on-primary: #ffffff;
+  --app-text-on-dark: #ffffff;
 
-  // Interação
+  // --- Interaction ---
   --app-hover-bg: rgba(255, 255, 255, 0.05);
+  --app-active-bg: rgba(255, 255, 255, 0.08);
+  --app-focus-ring: rgba(239, 83, 80, 0.4);
 
-  // Cores do Chip Cancelado
+  // --- Status: Success ---
+  --app-status-success: #81c784;
+  --app-status-success-dark: #4caf50;
+  --app-status-success-bg: rgba(76, 175, 80, 0.15);
+  --app-status-success-bg-subtle: #0d1f0d;
+
+  // --- Status: Warning ---
+  --app-status-warning: #ffb74d;
+  --app-status-warning-dark: #ff9800;
+  --app-status-warning-bg: rgba(255, 152, 0, 0.15);
+  --app-status-warning-bg-subtle: #2a1a08;
+
+  // --- Status: Danger ---
+  --app-status-danger: #ef9a9a;
+  --app-status-danger-dark: #f44336;
+  --app-status-danger-bg: rgba(244, 67, 54, 0.15);
+  --app-status-danger-bg-subtle: #2a0a0a;
+
+  // --- Status: Info ---
+  --app-status-info: #90caf9;
+  --app-status-info-dark: #42a5f5;
+  --app-status-info-bg: rgba(33, 150, 243, 0.12);
+  --app-status-info-bg-subtle: #0d1e35;
+
+  // --- Status: Neutral ---
+  --app-status-neutral: #757575;
+  --app-status-neutral-dark: #9e9e9e;
+  --app-status-neutral-bg: #252525;
+
+  // --- Calendar Day Backgrounds ---
+  --app-cal-work-bg: #0d1f0d;
+  --app-cal-off-bg: #1e1e1e;
+  --app-cal-vacation-bg: #0d1e35;
+  --app-cal-sick-bg: #2a0a0a;
+  --app-cal-today-bg: #0d1e35;
+  --app-cal-other-month-bg: #181818;
+
+  // --- Kanban ---
+  --app-kanban-column-bg: #1e1e1e;
+  --app-kanban-card-bg: #252525;
+  --app-kanban-card-hover: #2d2d2d;
+  --app-kanban-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --app-kanban-card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.6);
+  --app-kanban-drag-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  --app-kanban-placeholder-bg: rgba(255, 255, 255, 0.03);
+  --app-kanban-placeholder-border: rgba(255, 255, 255, 0.08);
+
+  // --- Chat ---
+  --app-chat-bubble-mine: #b71c1c;
+  --app-chat-bubble-mine-text: #ffffff;
+  --app-chat-bubble-theirs: #2a2a2a;
+  --app-chat-bubble-theirs-text: #e0e0e0;
+  --app-chat-panel-bg: #1e1e1e;
+  --app-chat-header-bg: #2a2a2a;
+  --app-chat-input-bg: #1e1e1e;
+  --app-chat-messages-bg: #121212;
+
+  // --- Chips / Badges ---
   --app-chip-cancelado-bg: #272727;
   --app-chip-cancelado-text: #9a9a9a;
+  --app-chip-info-bg: #4a0a0a;
+  --app-chip-info-text: #ff8a80;
+
+  // --- Scrollbar ---
+  --app-scrollbar-thumb: #333333;
+  --app-scrollbar-track: #1a1a1a;
+
+  // --- Elevation ---
+  --app-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --app-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --app-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --app-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-// Resets globais e aplicação das variáveis
+// =============================================
+// 5. GLOBAL RESETS & BASE STYLES
+// =============================================
+
 html, body {
   height: 100%;
 }
@@ -125,55 +318,54 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: var(--app-background-color);
   color: var(--app-text-color);
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color var(--app-transition-normal), color var(--app-transition-normal);
 }
 
-// Estilo global do chip cancelado
+// =============================================
+// 6. GLOBAL UTILITY CLASSES
+// =============================================
+
 .chip-cancelado {
   background-color: var(--app-chip-cancelado-bg) !important;
   color: var(--app-chip-cancelado-text) !important;
 }
 
+.primary-text { color: var(--app-primary-color); }
 
-// Scrollbars globais no modo escuro
+// =============================================
+// 7. SCROLLBAR (DARK MODE)
+// =============================================
+
 .dark-theme {
   * {
-    scrollbar-color: #333 #1a1a1a;
+    scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
     scrollbar-width: thin;
   }
   *::-webkit-scrollbar { width: 8px; height: 8px; }
-  *::-webkit-scrollbar-track { background: #1a1a1a; }
-  *::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  *::-webkit-scrollbar-track { background: var(--app-scrollbar-track); }
+  *::-webkit-scrollbar-thumb { background: var(--app-scrollbar-thumb); border-radius: var(--app-radius-sm); }
   *::-webkit-scrollbar-thumb:hover { background: #444; }
 }
 
-/* --- Estilos Responsivos Globais --- */
+// =============================================
+// 8. RESPONSIVE GLOBAL STYLES
+// =============================================
 
-/* 1. Responsividade para Tabelas
-   Faz com que o container da tabela tenha scroll horizontal em telas pequenas.
-   Pode ser aplicado no 'mat-card-content' das páginas.
-*/
 .mat-mdc-card-content {
   overflow-x: auto;
 }
 
-/* 2. Ajuste para Diálogos em Mobile
-   Sobrescreve a largura fixa se a tela for pequena.
-*/
 .cdk-overlay-pane {
-  max-width: 95vw !important; /* Margem de segurança */
+  max-width: 95vw !important;
 }
 
-/* Em telas muito pequenas, o diálogo ocupa quase tudo */
 @media (max-width: 600px) {
   .mat-mdc-dialog-container {
     padding: 12px !important;
   }
 }
 
-/* 3. Ajuste de Layout Principal */
 .app-content {
-  /* Em mobile, reduz o padding para ganhar espaço */
   @media (max-width: 600px) {
     .page-content {
       padding: 12px;
@@ -181,15 +373,15 @@ body {
   }
 }
 
-/* ===================== NOTIFICATION MENU PANEL ===================== */
-/* mat-menu panels are rendered in <body>, so styles must be global. */
+// =============================================
+// 9. NOTIFICATION MENU PANEL (global scope)
+// =============================================
 
 .notif-menu-panel {
   width: 360px !important;
   max-width: min(360px, calc(100vw - 16px)) !important;
   overflow-x: hidden !important;
 
-  // Allow items to wrap text and grow in height
   .mat-mdc-menu-item {
     height: auto !important;
     min-height: 56px !important;
@@ -206,19 +398,19 @@ body {
 }
 
 .dark-theme .notif-menu-panel {
-  .notif-header { color: #e0e0e0; }
+  .notif-header { color: var(--app-text-color); }
   .notif-body {
-    .notif-titulo { color: #e0e0e0; }
-    .notif-msg { color: #9a9a9a; }
+    .notif-titulo { color: var(--app-text-color); }
+    .notif-msg { color: var(--app-text-color-secondary); }
   }
-  .notif-nao-lida { background: rgba(144, 202, 249, 0.06) !important; }
-  .notif-vazio { color: #555; }
+  .notif-nao-lida { background: var(--app-primary-lighter) !important; }
+  .notif-vazio { color: var(--app-text-muted); }
 
-  .notif-action-btn mat-icon { color: #aaa !important; }
-  .notif-action-btn--clear mat-icon { color: #ef9a9a !important; }
+  .notif-action-btn mat-icon { color: var(--app-text-color-secondary) !important; }
+  .notif-action-btn--clear mat-icon { color: var(--app-status-danger) !important; }
 
   .notif-section-header {
-    color: #555;
+    color: var(--app-text-muted);
     background: rgba(255, 255, 255, 0.03);
 
     .notif-section-count { background: rgba(255, 255, 255, 0.1); }

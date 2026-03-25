@@ -24,7 +24,7 @@
 /* Ajustes no Accordion */
 mat-expansion-panel {
     margin-bottom: 8px;
-    background-color: #f9f9f9;
+    background-color: var(--app-surface-alt);
 }
 
 mat-panel-title {

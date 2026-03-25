@@ -1,8 +1,8 @@
 import { Component, OnInit, Output, EventEmitter, OnDestroy, ViewChild } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription, interval } from 'rxjs';
-import { switchMap, startWith } from 'rxjs/operators';
+import { switchMap, startWith, filter } from 'rxjs/operators';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
 // Material Imports
@@ -63,6 +63,27 @@ export class Navbar implements OnInit, OnDestroy {
   // Chat badge (REST-only polling, no WebSocket in navbar)
   chatNaoLidas = 0;
   private chatPollingInterval: Subscription | undefined;
+  private routerSub: Subscription | undefined;
+
+  // Page title shown next to the logo
+  paginaTitulo = 'Dashboard';
+
+  private readonly PAGE_TITLES: Record<string, string> = {
+    '/dashboard':         'Dashboard',
+    '/clientes':          'Clientes',
+    '/fornecedores':      'Fornecedores',
+    '/produtos':          'Produtos',
+    '/encomendas':        'Encomendas',
+    '/encomendas/nova':   'Nova Encomenda',
+    '/equipes':           'Minhas Equipes',
+    '/gestao-equipes':    'Gestão de Equipe',
+    '/checklists':        'Checklist do Dia',
+    '/admin/checklists':  'Gerenciar Checklists',
+    '/admin/escalas':     'Escalas de Trabalho',
+    '/meu-calendario':    'Meu Calendário',
+    '/chat':              'Chat da Equipe',
+    '/perfil':            'Meu Perfil',
+  };
 
   constructor(
     private authService: AuthService,
@@ -93,11 +114,19 @@ export class Navbar implements OnInit, OnDestroy {
       this.nomeUsuario = 'Usuário';
     }
 
+    // Track current route to update page title
+    this.paginaTitulo = this.resolveTitle(this.router.url);
+    this.routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe((e) => {
+      this.paginaTitulo = this.resolveTitle((e as NavigationEnd).urlAfterRedirects);
+    });
+
     if (this.usuarioId) {
       // Poll for new notifications every 60 seconds
       this.pollingInterval = interval(60000).pipe(
         startWith(0),
-        switchMap(() => this.notificacaoService.getContadorNaoLidas(this.usuarioId!))
+        switchMap(() => this.notificacaoService.getContadorNaoLidas())
       ).subscribe(count => {
         this.naoLidas = count;
       });
@@ -108,13 +137,23 @@ export class Navbar implements OnInit, OnDestroy {
     this.breakpointSub?.unsubscribe();
     this.pollingInterval?.unsubscribe();
     this.chatPollingInterval?.unsubscribe();
+    this.routerSub?.unsubscribe();
+  }
+
+  private resolveTitle(url: string): string {
+    // Strip query params and fragment
+    const path = url.split('?')[0].split('#')[0];
+    if (this.PAGE_TITLES[path]) return this.PAGE_TITLES[path];
+    // Match /encomendas/:id
+    if (/^\/encomendas\/[^/]+$/.test(path)) return 'Detalhes da Encomenda';
+    return 'Dashboard';
   }
 
   carregarNotificacoes() {
     if (!this.usuarioId) return;
     // Force overlay reposition after CSS panelClass has been applied (fixes off-screen on first open)
     setTimeout(() => this.notifTrigger?.updatePosition(), 0);
-    this.notificacaoService.getNotificacoes(this.usuarioId).subscribe(lista => {
+    this.notificacaoService.getNotificacoes().subscribe(lista => {
       this.notificacoes = lista.slice(0, 15);
     });
   }
@@ -145,7 +184,7 @@ export class Navbar implements OnInit, OnDestroy {
 
   marcarTodasLidas() {
     if (!this.usuarioId) return;
-    this.notificacaoService.marcarTodasLidas(this.usuarioId).subscribe(() => {
+    this.notificacaoService.marcarTodasLidas().subscribe(() => {
       this.notificacoes.forEach(n => n.lida = true);
       this.naoLidas = 0;
     });
@@ -153,7 +192,7 @@ export class Navbar implements OnInit, OnDestroy {
 
   limparNotificacoes() {
     if (!this.usuarioId) return;
-    this.notificacaoService.limparNotificacoes(this.usuarioId).subscribe(() => {
+    this.notificacaoService.limparNotificacoes().subscribe(() => {
       this.notificacoes = [];
       this.naoLidas = 0;
     });

@@ -11,10 +11,10 @@
 
 .item-box {
   padding: 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--app-divider-color);
   border-radius: 4px;
   margin-bottom: 8px;
-  background-color: #fff;
+  background-color: var(--app-card-background-color);
 }
 
 .item-form-area {
@@ -24,18 +24,18 @@
   flex-wrap: wrap;
   margin-bottom: 24px;
   padding: 16px;
-  background-color: #f9f9f9;
+  background-color: var(--app-surface-alt);
   border-radius: 8px;
 }
 
 .item-secondary-text {
   font-size: 0.9em;
-  color: #666;
+  color: var(--app-text-caption);
 }
 
 .item-empty-state {
   text-align: center;
-  color: #999;
+  color: var(--app-text-muted);
   padding: 20px;
 }
 
@@ -44,7 +44,7 @@
   gap: 24px;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--app-divider-color);
   flex-wrap: wrap;
   align-items: center;
 }
@@ -64,28 +64,11 @@
 .total-display {
   h3 {
     font-size: 1.5rem;
-    color: #2c3e50;
+    color: var(--app-text-heading);
     margin: 0;
   }
 }
 
-:host-context(.dark-theme) {
-  .item-form-area {
-    background-color: #252525;
-  }
-
-  .item-box {
-    background-color: #1e1e1e;
-    border-color: #2a2a2a;
-  }
-
-  .item-secondary-text { color: #9a9a9a; }
-  .item-empty-state { color: #555; }
-
-  .options-row { border-bottom-color: #2a2a2a; }
-
-  .total-display h3 { color: #e0e0e0; }
-}
 
 /* NOVO: Destaque para o botão de calendário */
 .calendar-toggle-highlight {
@@ -93,13 +76,13 @@
   margin-right: 4px;
 
   ::ng-deep button {
-    color: #3f51b5; /* Azul do Material ou sua cor primária */
-    background-color: rgba(63, 81, 181, 0.1);
+    color: var(--app-primary-color);
+    background-color: var(--app-primary-light);
     border-radius: 50%;
     transition: all 0.2s ease;
 
     &:hover {
-      background-color: rgba(63, 81, 181, 0.2);
+      background-color: var(--app-primary-light);
       transform: scale(1.1);
     }
   }
